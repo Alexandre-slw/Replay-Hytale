@@ -47,10 +47,16 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             return;
         }
 
-        replaying = true;
         tick = 0;
 
         logger.atInfo().log("Started replaying");
+
+        for (PlayerRef playerRef : Universe.get().getPlayers()) {
+            World world = playerRef.getReference().getStore().getExternalData().getWorld();
+            world.execute(() -> {
+                playerRef.removeFromStore();
+            });
+        }
     }
 
     public void stop() {
@@ -73,8 +79,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         // TODO: reset only to requesting user
         for (PlayerRef playerRef : Universe.get().getPlayers()) {
             World world = playerRef.getReference().getStore().getExternalData().getWorld();
-            playerRef.removeFromStore();
-            world.addPlayer(playerRef);
+            world.execute(() -> {
+                playerRef.removeFromStore();
+                world.addPlayer(playerRef);
+            });
         }
     }
 
@@ -86,7 +94,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         try {
             while (inputStream.available() > 0) {
-                if (!readPacket()) {
+                if (!processPacket()) {
                     break;
                 }
             }
@@ -101,25 +109,9 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         tick++;
     }
 
-    public boolean readPacket() {
+    private boolean processPacket() {
         if (packet == null) {
-            ByteBuf in = Unpooled.buffer();
-            int packetId;
-            int length;
-
-            try {
-                packetId = inputStream.readInt();
-                length = inputStream.readInt();
-                byte[] data = new byte[length];
-                inputStream.readFully(data);
-                in.writeBytes(data);
-            } catch (IOException e) {
-                e.printStackTrace();
-                return true;
-            }
-
-            packet = protocol.getInstance(packetId);
-            packet.deserialize(in);
+            packet = readPacket();
         }
 
         if (packet instanceof TickReplayPacket tickReplayPacket) {
@@ -137,6 +129,27 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         logger.atInfo().log("Sent packet");
         return true;
+    }
+
+    private ReplayPacket readPacket() {
+        ByteBuf in;
+        int packetId;
+        int length;
+
+        try {
+            packetId = inputStream.readInt();
+            length = inputStream.readInt();
+            byte[] data = new byte[length];
+            inputStream.readFully(data);
+            in = Unpooled.buffer(length);
+            in.writeBytes(data);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        ReplayPacket packet = protocol.getInstance(packetId);
+        packet.deserialize(in);
+        return packet;
     }
 
 }

@@ -26,31 +26,33 @@ public class HytaleReplayPacket implements ReplayPacket {
 
     @Override
     public void deserialize(ByteBuf buffer) {
-        data = buffer;
+        data = Unpooled.buffer(buffer.readableBytes());
+        data.writeBytes(buffer, buffer.readerIndex(), buffer.readableBytes());
     }
 
     @Override
     public void serialize(ByteBuf buffer) {
-        buffer.writeBytes(data);
+        buffer.writeBytes(data, data.readerIndex(), data.readableBytes());
     }
 
     @Override
     public void handle(PlayerRef playerRef) {
         PacketHandler packetHandler = playerRef.getPacketHandler();
 
+        int length = data.readIntLE();
         int packetId = data.readIntLE();
         PacketRegistry.PacketInfo info = PacketRegistry.getToClientPacketById(packetId);
         if (info == null) {
             throw new ProtocolException("Unknown packet ID: " + packetId);
         }
 
-        Packet p = PacketIO.readFramedPacketWithInfo(data, data.readableBytes(), info, PacketStatsRecorder.NOOP);
+        Packet p = PacketIO.readFramedPacketWithInfo(data, length, info, PacketStatsRecorder.NOOP);
         // TODO: fixed by snapshots?
         if (p instanceof RemoveAssets) {
             return;
         }
 
-        packetHandler.writePacket((ToClientPacket) p, false);
+        packetHandler.write((ToClientPacket) p);
     }
 
 }

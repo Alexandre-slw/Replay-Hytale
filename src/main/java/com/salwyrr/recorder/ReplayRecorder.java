@@ -3,12 +3,17 @@ package com.salwyrr.recorder;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.protocol.CachedPacket;
 import com.hypixel.hytale.protocol.Packet;
+import com.hypixel.hytale.protocol.PacketRegistry;
 import com.hypixel.hytale.protocol.io.PacketIO;
 import com.hypixel.hytale.protocol.io.PacketStatsRecorder;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.Universe;
+import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.salwyrr.protocol.ReplayPacket;
 import com.salwyrr.protocol.ReplayProtocol;
@@ -18,7 +23,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import javax.annotation.Nonnull;
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class ReplayRecorder extends TickingSystem<EntityStore> {
 
@@ -51,11 +59,21 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
             return;
         }
 
-        recording = true;
         writtenTick = -1;
         tick = 0;
 
         logger.atInfo().log("Started recording");
+
+        recording = true;
+
+        // TODO: reset only to requesting user
+        for (PlayerRef playerRef : Universe.get().getPlayers()) {
+            World world = playerRef.getReference().getStore().getExternalData().getWorld();
+            world.execute(() -> {
+                playerRef.removeFromStore();
+                world.addPlayer(playerRef);
+            });
+        }
     }
 
     public void stop() {
@@ -101,15 +119,19 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
     }
 
     private ReplayPacket toReplayPacket(Packet packet) {
-        ByteBuf buffer = Unpooled.buffer();
-        PacketIO.writeFramedPacket(packet, packet.getClass(), buffer, PacketStatsRecorder.NOOP);
+        ByteBuf buffer = Unpooled.buffer(packet.computeSize() + 256);
 
-        // PacketIO.writeFramedPacket always writes a 0
-        buffer.skipBytes(4);
+        Class<? extends Packet> type = packet.getClass();
+        if (packet instanceof CachedPacket<?> cachedPacket) {
+            type = cachedPacket.getPacketType();
+        }
+
+        PacketIO.writeFramedPacket(packet, type, buffer, PacketStatsRecorder.NOOP);
+
         return new HytaleReplayPacket(buffer);
     }
 
-    private void write(ReplayPacket packet) {
+    private synchronized void write(ReplayPacket packet) {
         if (outputStream == null) {
             return;
         }
