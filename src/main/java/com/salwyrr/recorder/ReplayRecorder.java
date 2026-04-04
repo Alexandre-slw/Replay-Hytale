@@ -1,7 +1,9 @@
-package com.alexandre.recorder;
+package com.salwyrr.recorder;
 
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.Packet;
+import com.hypixel.hytale.protocol.io.PacketIO;
+import com.hypixel.hytale.protocol.io.PacketStatsRecorder;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import io.netty.buffer.ByteBuf;
@@ -30,7 +32,7 @@ public class ReplayRecorder {
         }
 
         ByteBuf buffer = Unpooled.buffer();
-        packet.serialize(buffer);
+        PacketIO.writeFramedPacket(packet, packet.getClass(), buffer, PacketStatsRecorder.NOOP);
 
         try {
             outputStream.writeInt(packet.getId());

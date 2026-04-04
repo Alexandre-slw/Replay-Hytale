@@ -1,8 +1,7 @@
-package com.alexandre.commands;
+package com.salwyrr.commands;
 
-import com.alexandre.ReplayPlugin;
-import com.alexandre.recorder.ReplayRecorder;
-import com.alexandre.replay.ReplayPlayer;
+import com.salwyrr.ReplayPlugin;
+import com.salwyrr.recorder.ReplayRecorder;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
@@ -12,11 +11,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.concurrent.CompletableFuture;
 
-public class PlayCommand extends AbstractCommand {
+public class RecordCommand extends AbstractCommand {
 
     private final RequiredArg<Boolean> runArg;
 
-    public PlayCommand(String name, String description) {
+    public RecordCommand(String name, String description) {
         super(name, description);
 
         runArg = withRequiredArg("run", "", ArgTypes.BOOLEAN);
@@ -25,12 +24,12 @@ public class PlayCommand extends AbstractCommand {
     @Nullable
     @Override
     protected CompletableFuture<Void> execute(@Nonnull CommandContext context) {
-        ReplayPlayer player = ReplayPlugin.get().getPlayer();
+        ReplayRecorder recorder = ReplayPlugin.get().getRecorder();
 
         if (runArg.get(context)) {
-            player.start();
+            recorder.start();
         } else {
-            player.stop();
+            recorder.stop();
         }
 
         return CompletableFuture.completedFuture(null);

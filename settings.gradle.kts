@@ -1,4 +1,4 @@
-rootProject.name = "dev.hytalemodding"
+rootProject.name = "replay-plugin"
 
 plugins {
     // See documentation on https://scaffoldit.dev
@@ -23,6 +23,6 @@ hytale {
     manifest {
         Group = "Alexandre"
         Name = "ReplayPlugin"
-        Main = "com.alexandre.ReplayPlugin"
+        Main = "com.salwyrr.ReplayPlugin"
     }
 }

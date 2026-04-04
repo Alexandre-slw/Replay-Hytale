@@ -1,7 +1,6 @@
-package com.alexandre.replay;
+package com.salwyrr.replay;
 
 import com.github.luben.zstd.Zstd;
-import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
@@ -17,11 +16,11 @@ import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.protocol.packets.setup.RemoveAssets;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.ServerManager;
-import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.salwyrr.protocol.packets.HytaleReplayPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -31,9 +30,6 @@ import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 public class ReplayPlayer extends TickingSystem<EntityStore> {
 
@@ -100,7 +96,6 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return;
         }
     }
 
@@ -120,10 +115,6 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             return;
         }
 
-        if (length == 0) {
-            return;
-        }
-
         send(packetId, in, length);
         logger.atInfo().log("Sent packet");
     }
@@ -133,70 +124,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         payload.markReaderIndex();
         // TODO: send only to requesting user
         for (PlayerRef player : Universe.get().getPlayers()) {
-            PacketHandler packetHandler = player.getPacketHandler();
-            Channel listener = packetHandler.getChannel();
             payload.resetReaderIndex();
 
-            PacketRegistry.PacketInfo packetInfo = PacketRegistry.getToClientPacketById(packetId);
-            if (packetInfo == null) {
-                closeChannel(listener, payload);
-                logger.atInfo().log("AAAAAA");
-            } else if (length > packetInfo.maxSize()) {
-                closeChannel(listener, payload);
-                logger.atInfo().log("BBBBBB");
-            } else {
-                NetworkChannel channelVal = listener.attr(ProtocolUtil.STREAM_CHANNEL_KEY).get();
-                if (channelVal != null && channelVal != packetInfo.channel()) {
-                    closeChannel(listener, payload);
-                    logger.atInfo().log("CCCCC");
-                } else {
-                    PacketStatsRecorder statsRecorder = listener.attr(PacketStatsRecorder.CHANNEL_KEY).get();
-                    if (statsRecorder == null) {
-                        statsRecorder = PacketStatsRecorder.NOOP;
-                    }
-
-                    try {
-                        System.out.println(length + " " + packetInfo.name() + " " + packetInfo.id());
-
-                        // TODO: compress on record
-                        ByteBuf in = payload;
-                        int inLength = length;
-                        if (packetInfo.compressed()) {
-                            ByteBuf compressed = Unpooled.buffer((int) Zstd.compressBound(length));
-                            int compressedSize = compressToBuffer(in, compressed, 0, compressed.capacity());
-                            in = compressed.slice(0, compressedSize);
-                            inLength = compressedSize;
-                        }
-
-                        Packet p = PacketIO.readFramedPacketWithInfo(in, inLength, packetInfo, statsRecorder);
-                        if (p instanceof Ping) {
-                            continue;
-                        }
-                        // TODO: fixed by snapshots?
-                        if (p instanceof RemoveAssets) {
-                            continue;
-                        }
-                        packetHandler.writePacket((ToClientPacket) p, false);
-                    } catch (ProtocolException | IndexOutOfBoundsException e) {
-                        e.printStackTrace();
-                        closeChannel(listener, payload);
-                    }
-                }
-            }
-        }
-    }
-
-    private static int compressToBuffer(@Nonnull ByteBuf src, @Nonnull ByteBuf dst, int dstOffset, int maxDstSize) {
-        int COMPRESSION_LEVEL = Integer.getInteger("hytale.protocol.compressionLevel", Zstd.defaultCompressionLevel());
-        if (src.isDirect() && dst.isDirect()) {
-            return Zstd.compress(dst.nioBuffer(dstOffset, maxDstSize), src.nioBuffer(), COMPRESSION_LEVEL);
-        } else {
-            int srcSize = src.readableBytes();
-            byte[] srcBytes = new byte[srcSize];
-            src.getBytes(src.readerIndex(), srcBytes);
-            byte[] compressed = Zstd.compress(srcBytes, COMPRESSION_LEVEL);
-            dst.setBytes(dstOffset, compressed);
-            return compressed.length;
+            // TODO
+            new HytaleReplayPacket(payload).handle(player);
         }
     }
 

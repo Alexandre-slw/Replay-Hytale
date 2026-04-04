@@ -5,16 +5,16 @@
     "Description": "Description of your plugin",
     "Authors": [
         {
-            "Name": "Your Name",
-            "Email": "your.email@example.com",
-            "Url": "https://your-website.com"
+            "Name": "Alexandre",
+            "Email": "alexandre@moonsworth.com",
+            "Url": "https://github.com/Alexandre-slw"
         }
     ],
-    "Website": "https://your-plugin-website.com",
+    "Website": "https://www.salwyrr.com",
     "DisabledByDefault": false,
     "IncludesAssetPack": false,
     "Dependencies": {},
     "OptionalDependencies": {},
     "ServerVersion": "*",
-    "Main": "com.alexandre.ReplayPlugin"
+    "Main": "com.salwyrr.ReplayPlugin"
 }
