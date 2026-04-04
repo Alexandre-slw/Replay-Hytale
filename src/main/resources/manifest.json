@@ -1,0 +1,20 @@
+{
+    "Group": "Alexandre",
+    "Name": "ReplayPlugin",
+    "Version": "0.0.0",
+    "Description": "Description of your plugin",
+    "Authors": [
+        {
+            "Name": "Your Name",
+            "Email": "your.email@example.com",
+            "Url": "https://your-website.com"
+        }
+    ],
+    "Website": "https://your-plugin-website.com",
+    "DisabledByDefault": false,
+    "IncludesAssetPack": false,
+    "Dependencies": {},
+    "OptionalDependencies": {},
+    "ServerVersion": "*",
+    "Main": "com.alexandre.ReplayPlugin"
+}

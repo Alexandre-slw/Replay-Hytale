@@ -1,0 +1,38 @@
+package com.alexandre.commands;
+
+import com.alexandre.ReplayPlugin;
+import com.alexandre.recorder.ReplayRecorder;
+import com.hypixel.hytale.server.core.command.system.AbstractCommand;
+import com.hypixel.hytale.server.core.command.system.CommandContext;
+import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
+import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.concurrent.CompletableFuture;
+
+public class RecordCommand extends AbstractCommand {
+
+    private final RequiredArg<Boolean> runArg;
+
+    public RecordCommand(String name, String description) {
+        super(name, description);
+
+        runArg = withRequiredArg("run", "", ArgTypes.BOOLEAN);
+    }
+
+    @Nullable
+    @Override
+    protected CompletableFuture<Void> execute(@Nonnull CommandContext context) {
+        ReplayRecorder recorder = ReplayPlugin.get().getRecorder();
+
+        if (runArg.get(context)) {
+            recorder.start();
+        } else {
+            recorder.stop();
+        }
+
+        return CompletableFuture.completedFuture(null);
+    }
+
+}
