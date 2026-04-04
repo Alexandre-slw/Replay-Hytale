@@ -6,6 +6,7 @@ import com.hypixel.hytale.protocol.ToClientPacket;
 import com.hypixel.hytale.protocol.io.PacketIO;
 import com.hypixel.hytale.protocol.io.PacketStatsRecorder;
 import com.hypixel.hytale.protocol.io.ProtocolException;
+import com.hypixel.hytale.protocol.packets.player.JoinWorld;
 import com.hypixel.hytale.protocol.packets.setup.RemoveAssets;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -50,6 +51,11 @@ public class HytaleReplayPacket implements ReplayPacket {
         // TODO: fixed by snapshots?
         if (p instanceof RemoveAssets) {
             return;
+        }
+
+        if (p instanceof JoinWorld packet) {
+            packet.clearWorld = false;
+            packet.fadeInOut = false;
         }
 
         packetHandler.write((ToClientPacket) p);

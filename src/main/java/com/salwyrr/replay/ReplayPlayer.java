@@ -3,6 +3,8 @@ package com.salwyrr.replay;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.protocol.packets.player.JoinWorld;
+import com.hypixel.hytale.server.core.modules.entity.player.ChunkTracker;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -47,16 +49,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             return;
         }
 
+        replaying = true;
         tick = 0;
 
         logger.atInfo().log("Started replaying");
-
-        for (PlayerRef playerRef : Universe.get().getPlayers()) {
-            World world = playerRef.getReference().getStore().getExternalData().getWorld();
-            world.execute(() -> {
-                playerRef.removeFromStore();
-            });
-        }
     }
 
     public void stop() {
