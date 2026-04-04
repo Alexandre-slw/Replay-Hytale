@@ -1,11 +1,10 @@
 package com.salwyrr.commands;
 
-import com.salwyrr.ReplayPlugin;
-import com.salwyrr.recorder.ReplayRecorder;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
+import com.salwyrr.ReplayPlugin;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -24,12 +23,10 @@ public class RecordCommand extends AbstractCommand {
     @Nullable
     @Override
     protected CompletableFuture<Void> execute(@Nonnull CommandContext context) {
-        ReplayRecorder recorder = ReplayPlugin.get().getRecorder();
-
         if (runArg.get(context)) {
-            recorder.start();
+            ReplayPlugin.get().startRecording();
         } else {
-            recorder.stop();
+            ReplayPlugin.get().stopRecording();
         }
 
         return CompletableFuture.completedFuture(null);

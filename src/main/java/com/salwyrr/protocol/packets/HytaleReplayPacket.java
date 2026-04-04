@@ -6,7 +6,6 @@ import com.hypixel.hytale.protocol.ToClientPacket;
 import com.hypixel.hytale.protocol.io.PacketIO;
 import com.hypixel.hytale.protocol.io.PacketStatsRecorder;
 import com.hypixel.hytale.protocol.io.ProtocolException;
-import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.protocol.packets.setup.RemoveAssets;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -27,7 +26,7 @@ public class HytaleReplayPacket implements ReplayPacket {
 
     @Override
     public void deserialize(ByteBuf buffer) {
-        buffer.readBytes(data);
+        data = buffer;
     }
 
     @Override
@@ -39,8 +38,6 @@ public class HytaleReplayPacket implements ReplayPacket {
     public void handle(PlayerRef playerRef) {
         PacketHandler packetHandler = playerRef.getPacketHandler();
 
-        data.readIntLE();
-
         int packetId = data.readIntLE();
         PacketRegistry.PacketInfo info = PacketRegistry.getToClientPacketById(packetId);
         if (info == null) {
@@ -48,10 +45,6 @@ public class HytaleReplayPacket implements ReplayPacket {
         }
 
         Packet p = PacketIO.readFramedPacketWithInfo(data, data.readableBytes(), info, PacketStatsRecorder.NOOP);
-        if (p instanceof Ping) {
-            return;
-        }
-
         // TODO: fixed by snapshots?
         if (p instanceof RemoveAssets) {
             return;

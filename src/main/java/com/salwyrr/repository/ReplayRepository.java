@@ -30,13 +30,18 @@ public class ReplayRepository {
 
     public List<Path> getReplays(PlayerRef playerRef) {
         File directory = REPLAY_DIRECTORY.resolve(playerRef.getUuid().toString()).toFile();
-        if (directory.exists()) {
-            return Stream.of(
-                    directory.listFiles((_, name) -> name.endsWith(REPLAY_EXTENSION))
-            ).map(File::toPath).toList();
+        if (!directory.exists()) {
+            return List.of();
         }
 
-        return List.of();
+        File[] values = directory.listFiles((_, name) -> name.endsWith(REPLAY_EXTENSION));
+        if (values == null) {
+            return List.of();
+        }
+
+        return Stream.of(
+                values
+        ).map(File::toPath).toList();
     }
 
 }

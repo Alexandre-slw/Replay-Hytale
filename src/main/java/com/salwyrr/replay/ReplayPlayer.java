@@ -1,29 +1,17 @@
 package com.salwyrr.replay;
 
-import com.github.luben.zstd.Zstd;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
-import com.hypixel.hytale.protocol.NetworkChannel;
-import com.hypixel.hytale.protocol.Packet;
-import com.hypixel.hytale.protocol.PacketRegistry;
-import com.hypixel.hytale.protocol.ToClientPacket;
-import com.hypixel.hytale.protocol.io.PacketIO;
-import com.hypixel.hytale.protocol.io.PacketStatsRecorder;
-import com.hypixel.hytale.protocol.io.ProtocolException;
-import com.hypixel.hytale.protocol.io.netty.ProtocolUtil;
-import com.hypixel.hytale.protocol.packets.connection.Ping;
-import com.hypixel.hytale.protocol.packets.setup.RemoveAssets;
-import com.hypixel.hytale.server.core.io.PacketHandler;
-import com.hypixel.hytale.server.core.io.ServerManager;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.salwyrr.protocol.packets.HytaleReplayPacket;
+import com.salwyrr.protocol.ReplayPacket;
+import com.salwyrr.protocol.ReplayProtocol;
+import com.salwyrr.protocol.packets.TickReplayPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedInputStream;
@@ -40,6 +28,15 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
     private final HytaleLogger logger = HytaleLogger.forEnclosingClass();
 
+    private final ReplayProtocol protocol;
+
+    private int tick = 0;
+    private ReplayPacket packet;
+
+    public ReplayPlayer(ReplayProtocol protocol) {
+        this.protocol = protocol;
+    }
+
     public void start() {
         stop();
 
@@ -51,6 +48,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
 
         replaying = true;
+        tick = 0;
 
         logger.atInfo().log("Started replaying");
     }
@@ -87,8 +85,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
 
         try {
-            for (int j = 0; j < 2 && inputStream.available() > 0; j++) {
-                readPacket();
+            while (inputStream.available() > 0) {
+                if (!readPacket()) {
+                    break;
+                }
             }
 
             if (inputStream.available() == 0) {
@@ -97,44 +97,46 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        tick++;
     }
 
-    public void readPacket() {
-        ByteBuf in = Unpooled.buffer();
-        int packetId;
-        int length;
+    public boolean readPacket() {
+        if (packet == null) {
+            ByteBuf in = Unpooled.buffer();
+            int packetId;
+            int length;
 
-        try {
-            packetId = inputStream.readInt();
-            length = inputStream.readInt();
-            byte[] data = new byte[length];
-            inputStream.readFully(data);
-            in.writeBytes(data);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
+            try {
+                packetId = inputStream.readInt();
+                length = inputStream.readInt();
+                byte[] data = new byte[length];
+                inputStream.readFully(data);
+                in.writeBytes(data);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return true;
+            }
+
+            packet = protocol.getInstance(packetId);
+            packet.deserialize(in);
         }
 
-        send(packetId, in, length);
+        if (packet instanceof TickReplayPacket tickReplayPacket) {
+            if (tickReplayPacket.getTick() > tick) {
+                return false;
+            }
+        } else {
+            // TODO: send only to requesting user
+            for (PlayerRef player : Universe.get().getPlayers()) {
+                packet.handle(player);
+            }
+        }
+        
+        packet = null;
+
         logger.atInfo().log("Sent packet");
-    }
-
-    public void send(int packetId, ByteBuf payload, int length) {
-        System.out.println(ServerManager.get().getListeners().size());
-        payload.markReaderIndex();
-        // TODO: send only to requesting user
-        for (PlayerRef player : Universe.get().getPlayers()) {
-            payload.resetReaderIndex();
-
-            // TODO
-            new HytaleReplayPacket(payload).handle(player);
-        }
-    }
-
-    private void closeChannel(Channel listener, ByteBuf in) {
-        in.skipBytes(in.readableBytes());
-        ProtocolUtil.closeConnection(listener);
-        logger.atInfo().log("Closed channel");
+        return true;
     }
 
 }

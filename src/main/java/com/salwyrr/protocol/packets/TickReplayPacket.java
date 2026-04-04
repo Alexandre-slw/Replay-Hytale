@@ -31,4 +31,7 @@ public class TickReplayPacket implements ReplayPacket {
 
     }
 
+    public int getTick() {
+        return tick;
+    }
 }
