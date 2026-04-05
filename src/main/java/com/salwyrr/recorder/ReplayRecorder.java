@@ -12,6 +12,7 @@ import com.hypixel.hytale.protocol.io.PacketStatsRecorder;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.protocol.packets.player.ClientReady;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
+import com.hypixel.hytale.protocol.packets.player.SetClientId;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.handlers.game.GamePacketHandler;
@@ -24,8 +25,10 @@ import com.salwyrr.protocol.ReplayPacket;
 import com.salwyrr.protocol.ReplayProtocol;
 import com.salwyrr.protocol.packets.HytaleReplayPacket;
 import com.salwyrr.protocol.packets.TickReplayPacket;
+import com.salwyrr.replay.ReplayPlayer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.embedded.EmbeddedChannel;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedOutputStream;
@@ -81,13 +84,10 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
             Store<EntityStore> store = ref.getStore();
             World world = store.getExternalData().getWorld();
             world.execute(() -> {
-                player.removeFromStore();
-                world.addPlayer(player, null, true, false).thenAccept(p -> {
-                    ReplayPlugin.spawnDummyWatcher(world, p, packet -> {
-                        write(toReplayPacket(packet));
-                    }).thenAccept(watcher -> {
-                        watchers.put(p, watcher);
-                    });
+                ReplayPlugin.spawnDummyWatcher(world, player, packet -> {
+                    write(toReplayPacket(packet));
+                }).thenAccept(watcher -> {
+                    watchers.put(player, watcher);
                 });
             });
         }
@@ -143,12 +143,26 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
                 return;
             }
 
-            if (packet instanceof JoinWorld && handler instanceof GamePacketHandler gamePacketHandler) {
-                // TODO: filter for dummy only
-                PlayerRef ref = gamePacketHandler.getPlayerRef();
+            if (!(handler instanceof GamePacketHandler gamePacketHandler)) {
+                return;
+            }
 
+            if (packet instanceof JoinWorld) {
                 gamePacketHandler.handle(new ClientReady(true, false));
                 gamePacketHandler.handle(new ClientReady(false, true));
+            }
+
+            // TODO: filter by recording user
+            PlayerRef ref = gamePacketHandler.getPlayerRef();
+            boolean isDummy = ref.getLanguage().equals("dummy");
+            System.out.println(isDummy);
+
+            if (!isDummy) {
+                return;
+            }
+
+            if (packet instanceof SetClientId) {
+                return;
             }
 
             write(toReplayPacket(packet));

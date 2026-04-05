@@ -3,11 +3,18 @@ package com.salwyrr;
 import com.hypixel.hytale.component.ComponentRegistryProxy;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.protocol.Hitbox;
 import com.hypixel.hytale.protocol.NetworkChannel;
 import com.hypixel.hytale.protocol.ToClientPacket;
 import com.hypixel.hytale.protocol.io.netty.ProtocolUtil;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.io.netty.NettyUtil;
+import com.hypixel.hytale.server.core.modules.entity.component.Intangible;
+import com.hypixel.hytale.server.core.modules.entity.component.Invulnerable;
+import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
+import com.hypixel.hytale.server.core.modules.entity.hitboxcollision.HitboxCollision;
+import com.hypixel.hytale.server.core.modules.entity.player.PlayerSkinComponent;
 import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
@@ -79,14 +86,29 @@ public class ReplayPlugin extends JavaPlugin {
 
         return Universe.get().addPlayer(
                 dummyChannel,
-                targetPlayer.getLanguage(),
+                "dummy",
                 targetPlayer.getPacketHandler().getProtocolVersion(),
-                UUID.fromString(name),
+                UUID.randomUUID(),
                 name,
                 targetPlayer.getPacketHandler().getAuth(),
                 4,
                 null
-        ).thenApply(playerRef -> playerRef.getReference());
+        ).thenApply(playerRef -> {
+            Ref<EntityStore> reference = playerRef.getReference();
+
+            reference.getStore().putComponent(reference, TAG_TYPE, new TargetWatcherTag(targetPlayer.getReference()));
+            makeGhost(playerRef.getReference().getStore(), playerRef.getReference());
+
+            return reference;
+        });
+    }
+
+    public static void makeGhost(Store<EntityStore> store, Ref<EntityStore> playerRef) {
+        store.tryRemoveComponent(playerRef, ModelComponent.getComponentType());
+        store.tryRemoveComponent(playerRef, PlayerSkinComponent.getComponentType());
+        store.tryRemoveComponent(playerRef, HitboxCollision.getComponentType());
+        store.ensureComponent(playerRef, Intangible.getComponentType());
+        store.ensureComponent(playerRef, Invulnerable.getComponentType());
     }
 
     public void startRecording() {
