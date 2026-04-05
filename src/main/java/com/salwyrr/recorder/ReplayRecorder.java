@@ -1,11 +1,12 @@
 package com.salwyrr.recorder;
 
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.CachedPacket;
 import com.hypixel.hytale.protocol.Packet;
-import com.hypixel.hytale.protocol.PacketRegistry;
 import com.hypixel.hytale.protocol.io.PacketIO;
 import com.hypixel.hytale.protocol.io.PacketStatsRecorder;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
@@ -15,6 +16,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.salwyrr.ReplayPlugin;
 import com.salwyrr.protocol.ReplayPacket;
 import com.salwyrr.protocol.ReplayProtocol;
 import com.salwyrr.protocol.packets.HytaleReplayPacket;
@@ -27,6 +29,8 @@ import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ReplayRecorder extends TickingSystem<EntityStore> {
 
@@ -42,6 +46,8 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
 
     private int writtenTick = -1;
     private int tick = 0;
+
+    private Map<PlayerRef, Ref<EntityStore>> watchers = new HashMap<>();
 
     public ReplayRecorder(ReplayProtocol protocol) {
         this.protocol = protocol;
@@ -67,11 +73,15 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
         recording = true;
 
         // TODO: reset only to requesting user
-        for (PlayerRef playerRef : Universe.get().getPlayers()) {
-            World world = playerRef.getReference().getStore().getExternalData().getWorld();
+        for (PlayerRef player : Universe.get().getPlayers()) {
+            Ref<EntityStore> ref = player.getReference();
+            Store<EntityStore> store = ref.getStore();
+            World world = store.getExternalData().getWorld();
             world.execute(() -> {
-                playerRef.removeFromStore();
-                world.addPlayer(playerRef);
+                player.removeFromStore();
+                world.addPlayer(player).thenAccept(p -> {
+                    watchers.put(p, ReplayPlugin.spawnDummyWatcher(world, p.getReference()));
+                });
             });
         }
     }
@@ -92,6 +102,18 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
         }
 
         logger.atInfo().log("Stopped recording");
+
+        for (PlayerRef player : Universe.get().getPlayers()) {
+            Ref<EntityStore> ref = player.getReference();
+            Store<EntityStore> store = ref.getStore();
+            World world = store.getExternalData().getWorld();
+            world.execute(() -> {
+                Ref<EntityStore> watcherRef = watchers.remove(player);
+                if (watcherRef != null) {
+                    world.getEntityStore().getStore().removeEntity(watcherRef, RemoveReason.REMOVE);
+                }
+            });
+        }
     }
 
     @Override
