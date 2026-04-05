@@ -80,7 +80,9 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
             world.execute(() -> {
                 player.removeFromStore();
                 world.addPlayer(player).thenAccept(p -> {
-                    watchers.put(p, ReplayPlugin.spawnDummyWatcher(world, p.getReference()));
+                    watchers.put(p, ReplayPlugin.spawnDummyWatcher(world, p, packet -> {
+                        write(toReplayPacket(packet));
+                    }));
                 });
             });
         }

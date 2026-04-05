@@ -1,10 +1,12 @@
 package com.salwyrr;
 
 import com.hypixel.hytale.component.*;
+import com.hypixel.hytale.protocol.ToClientPacket;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.salwyrr.commands.ReplayCommand;
@@ -18,6 +20,7 @@ import com.salwyrr.replay.ReplayPlayer;
 import com.salwyrr.repository.ReplayRepository;
 
 import javax.annotation.Nonnull;
+import java.util.function.Consumer;
 
 public class ReplayPlugin extends JavaPlugin {
 
@@ -58,16 +61,17 @@ public class ReplayPlugin extends JavaPlugin {
         ));
     }
 
-    public static Ref<EntityStore> spawnDummyWatcher(World world, Ref<EntityStore> targetPlayer) {
+    public static Ref<EntityStore> spawnDummyWatcher(World world, PlayerRef targetPlayer,
+                                                     Consumer<ToClientPacket> consumer) {
         Store<EntityStore> store = world.getEntityStore().getStore();
 
         Holder<EntityStore> holder = store.getRegistry().newHolder();
 
         holder.putComponent(
                 EntityTrackerSystems.EntityViewer.getComponentType(),
-                new EntityTrackerSystems.EntityViewer(0, new DummyReceiver())
+                new EntityTrackerSystems.EntityViewer(0, new DummyReceiver(targetPlayer, consumer))
         );
-        holder.putComponent(TAG_TYPE, new TargetWatcherTag(targetPlayer));
+        holder.putComponent(TAG_TYPE, new TargetWatcherTag(targetPlayer.getReference()));
 
         Ref<EntityStore> dummyRef = store.addEntity(holder, AddReason.SPAWN);
 
