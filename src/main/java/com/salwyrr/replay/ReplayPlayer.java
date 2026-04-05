@@ -3,8 +3,6 @@ package com.salwyrr.replay;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
-import com.hypixel.hytale.protocol.packets.player.JoinWorld;
-import com.hypixel.hytale.server.core.modules.entity.player.ChunkTracker;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -77,7 +75,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             World world = playerRef.getReference().getStore().getExternalData().getWorld();
             world.execute(() -> {
                 playerRef.removeFromStore();
-                world.addPlayer(playerRef);
+                world.addPlayer(playerRef, null, true, false);
             });
         }
     }
@@ -120,10 +118,9 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 packet.handle(player);
             }
         }
-        
+
         packet = null;
 
-        logger.atInfo().log("Sent packet");
         return true;
     }
 

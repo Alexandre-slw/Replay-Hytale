@@ -10,8 +10,11 @@ import com.hypixel.hytale.protocol.Packet;
 import com.hypixel.hytale.protocol.io.PacketIO;
 import com.hypixel.hytale.protocol.io.PacketStatsRecorder;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
+import com.hypixel.hytale.protocol.packets.player.ClientReady;
+import com.hypixel.hytale.protocol.packets.player.JoinWorld;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
+import com.hypixel.hytale.server.core.io.handlers.game.GamePacketHandler;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -79,10 +82,12 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
             World world = store.getExternalData().getWorld();
             world.execute(() -> {
                 player.removeFromStore();
-                world.addPlayer(player).thenAccept(p -> {
-                    watchers.put(p, ReplayPlugin.spawnDummyWatcher(world, p, packet -> {
+                world.addPlayer(player, null, true, false).thenAccept(p -> {
+                    ReplayPlugin.spawnDummyWatcher(world, p, packet -> {
                         write(toReplayPacket(packet));
-                    }));
+                    }).thenAccept(watcher -> {
+                        watchers.put(p, watcher);
+                    });
                 });
             });
         }
@@ -136,6 +141,14 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
 
             if (packet instanceof Ping) {
                 return;
+            }
+
+            if (packet instanceof JoinWorld && handler instanceof GamePacketHandler gamePacketHandler) {
+                // TODO: filter for dummy only
+                PlayerRef ref = gamePacketHandler.getPlayerRef();
+
+                gamePacketHandler.handle(new ClientReady(true, false));
+                gamePacketHandler.handle(new ClientReady(false, true));
             }
 
             write(toReplayPacket(packet));

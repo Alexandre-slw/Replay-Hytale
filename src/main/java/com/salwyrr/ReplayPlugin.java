@@ -1,16 +1,21 @@
 package com.salwyrr;
 
-import com.hypixel.hytale.component.*;
+import com.hypixel.hytale.component.ComponentRegistryProxy;
+import com.hypixel.hytale.component.ComponentType;
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.protocol.NetworkChannel;
 import com.hypixel.hytale.protocol.ToClientPacket;
+import com.hypixel.hytale.protocol.io.netty.ProtocolUtil;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
+import com.hypixel.hytale.server.core.io.netty.NettyUtil;
 import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.salwyrr.commands.ReplayCommand;
-import com.salwyrr.components.DummyReceiver;
 import com.salwyrr.components.DummyViewerSystem;
 import com.salwyrr.components.TargetWatcherTag;
 import com.salwyrr.events.ExampleEvent;
@@ -18,8 +23,11 @@ import com.salwyrr.protocol.ReplayProtocol;
 import com.salwyrr.recorder.ReplayRecorder;
 import com.salwyrr.replay.ReplayPlayer;
 import com.salwyrr.repository.ReplayRepository;
+import io.netty.channel.embedded.EmbeddedChannel;
 
 import javax.annotation.Nonnull;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class ReplayPlugin extends JavaPlugin {
@@ -61,25 +69,24 @@ public class ReplayPlugin extends JavaPlugin {
         ));
     }
 
-    public static Ref<EntityStore> spawnDummyWatcher(World world, PlayerRef targetPlayer,
-                                                     Consumer<ToClientPacket> consumer) {
-        Store<EntityStore> store = world.getEntityStore().getStore();
+    public static CompletableFuture<Ref<EntityStore>> spawnDummyWatcher(World world, PlayerRef targetPlayer,
+                                                                        Consumer<ToClientPacket> consumer) {
+        EmbeddedChannel dummyChannel = new EmbeddedChannel();
+        dummyChannel.attr(ProtocolUtil.STREAM_CHANNEL_KEY).set(NetworkChannel.Default);
+        NettyUtil.TimeoutContext.init(dummyChannel, "play", "");
 
-        Holder<EntityStore> holder = store.getRegistry().newHolder();
+        String name = "DummyPlayer_" + targetPlayer.getUsername();
 
-        holder.putComponent(
-                EntityTrackerSystems.EntityViewer.getComponentType(),
-                new EntityTrackerSystems.EntityViewer(0, new DummyReceiver(targetPlayer, consumer))
-        );
-        holder.putComponent(TAG_TYPE, new TargetWatcherTag(targetPlayer.getReference()));
-
-        Ref<EntityStore> dummyRef = store.addEntity(holder, AddReason.SPAWN);
-
-        if (dummyRef == null || !dummyRef.isValid()) {
-            throw new RuntimeException("Failed to spawn dummy watcher");
-        }
-
-        return dummyRef;
+        return Universe.get().addPlayer(
+                dummyChannel,
+                targetPlayer.getLanguage(),
+                targetPlayer.getPacketHandler().getProtocolVersion(),
+                UUID.fromString(name),
+                name,
+                targetPlayer.getPacketHandler().getAuth(),
+                4,
+                null
+        ).thenApply(playerRef -> playerRef.getReference());
     }
 
     public void startRecording() {
