@@ -45,10 +45,6 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
     }
 
     public void start() {
-        if (replaying) {
-            return;
-        }
-
         try {
             inputStream = new DataInputStream(new BufferedInputStream(new FileInputStream(outputFile)));
         } catch (java.io.IOException e) {
@@ -129,19 +125,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             processingPackets = false;
         }
 
-        // TODO: wait on replay player only
-        boolean waiting = false;
-        for (PlayerRef playerRef : Universe.get().getPlayers()) {
-            CompletableFuture<Void> future = playerRef.getPacketHandler().getClientReadyForChunksFuture();
-            if (future != null && future.isDone()) {
-                waiting = true;
-                break;
-            }
-        }
-
-        if (!waiting) {
-            tick++;
-        }
+        tick++;
     }
 
     private boolean processPacket() {

@@ -13,8 +13,6 @@ import com.salwyrr.protocol.ReplayPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import java.util.List;
-
 public class HytaleReplayPacket implements ReplayPacket {
 
     private ByteBuf data;
@@ -49,16 +47,12 @@ public class HytaleReplayPacket implements ReplayPacket {
         }
 
         Packet p = PacketIO.readFramedPacketWithInfo(data, length, info, PacketStatsRecorder.NOOP);
-        if (p instanceof JoinWorld packet) {
-            packet.fadeInOut = false;
+
+        if (p instanceof JoinWorld) {
+            return;
         }
 
         packetHandler.write((ToClientPacket) p);
-
-        if (p instanceof JoinWorld) {
-            packetHandler.tryFlush();
-            packetHandler.setQueuePackets(true);
-        }
     }
 
 }

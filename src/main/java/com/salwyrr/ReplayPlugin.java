@@ -67,7 +67,7 @@ public class ReplayPlugin extends JavaPlugin {
 
     public void startReplaying() {
         recorder.stop();
-        player.stop().thenRun(player::start);
+        player.start();
     }
 
     public void stopReplaying() {
