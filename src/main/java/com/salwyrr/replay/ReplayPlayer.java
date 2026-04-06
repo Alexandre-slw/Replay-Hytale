@@ -3,6 +3,10 @@ package com.salwyrr.replay;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.protocol.packets.connection.Ping;
+import com.hypixel.hytale.protocol.packets.player.SetClientId;
+import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
+import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -32,9 +36,12 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
     private int tick = 0;
     private ReplayPacket packet;
+    private boolean processingPackets;
 
     public ReplayPlayer(ReplayProtocol protocol) {
         this.protocol = protocol;
+
+        PacketAdapters.registerOutbound((PacketFilter) (_, packet) -> !(packet instanceof Ping) && replaying && !processingPackets);
     }
 
     public void start() {
@@ -87,6 +94,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
 
         try {
+            processingPackets = true;
             while (inputStream.available() > 0) {
                 if (!processPacket()) {
                     break;
@@ -98,6 +106,8 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            processingPackets = false;
         }
 
         tick++;

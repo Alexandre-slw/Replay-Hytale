@@ -20,15 +20,13 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.salwyrr.ReplayPlugin;
 import com.salwyrr.protocol.ReplayPacket;
 import com.salwyrr.protocol.ReplayProtocol;
 import com.salwyrr.protocol.packets.HytaleReplayPacket;
 import com.salwyrr.protocol.packets.TickReplayPacket;
-import com.salwyrr.replay.ReplayPlayer;
+import com.salwyrr.util.DummyUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.embedded.EmbeddedChannel;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedOutputStream;
@@ -84,11 +82,8 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
             Store<EntityStore> store = ref.getStore();
             World world = store.getExternalData().getWorld();
             world.execute(() -> {
-                ReplayPlugin.spawnDummyWatcher(world, player, packet -> {
-                    write(toReplayPacket(packet));
-                }).thenAccept(watcher -> {
-                    watchers.put(player, watcher);
-                });
+                DummyUtil.spawnDummyWatcher(player)
+                        .thenAccept(watcher -> watchers.put(player, watcher));
             });
         }
     }
@@ -155,7 +150,6 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
             // TODO: filter by recording user
             PlayerRef ref = gamePacketHandler.getPlayerRef();
             boolean isDummy = ref.getLanguage().equals("dummy");
-            System.out.println(isDummy);
 
             if (!isDummy) {
                 return;

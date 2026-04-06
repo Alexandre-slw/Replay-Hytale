@@ -10,6 +10,7 @@ import com.hypixel.hytale.component.dependency.SystemDependency;
 import com.hypixel.hytale.component.dependency.SystemGroupDependency;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
@@ -53,6 +54,13 @@ public class DummyViewerSystem extends EntityTickingSystem<EntityStore> {
 
         if (viewer != null && tag != null && tag.target != null && tag.target.isValid()) {
             viewer.visible.add(tag.target);
+
+            TransformComponent targetTransform = store.getComponent(tag.target, TransformComponent.getComponentType());
+            TransformComponent dummyTransform = chunk.getComponent(index, TransformComponent.getComponentType());
+
+            if (targetTransform != null && dummyTransform != null) {
+                dummyTransform.setPosition(targetTransform.getPosition());
+            }
         }
     }
 }
