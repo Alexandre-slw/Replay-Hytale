@@ -13,6 +13,7 @@ import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.protocol.packets.player.ClientReady;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
 import com.hypixel.hytale.protocol.packets.player.SetClientId;
+import com.hypixel.hytale.protocol.packets.world.SpawnParticleSystem;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.handlers.game.GamePacketHandler;
@@ -135,6 +136,15 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
             }
 
             if (packet instanceof Ping) {
+                return;
+            }
+
+            if (packet instanceof SpawnParticleSystem particleSystem &&
+                    particleSystem.particleSystemId.equals("PlayerSpawn_Spawn") &&
+                    particleSystem.position.x == 0 &&
+                    particleSystem.position.z == 0) {
+                // Hide dummy player spawn particles
+                particleSystem.scale = 0;
                 return;
             }
 

@@ -4,7 +4,6 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
-import com.hypixel.hytale.protocol.packets.player.SetClientId;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -22,6 +21,7 @@ import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 public class ReplayPlayer extends TickingSystem<EntityStore> {
 
@@ -45,7 +45,9 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
     }
 
     public void start() {
-        stop();
+        if (replaying) {
+            return;
+        }
 
         try {
             inputStream = new DataInputStream(new BufferedInputStream(new FileInputStream(outputFile)));
@@ -54,15 +56,22 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             return;
         }
 
-        replaying = true;
         tick = 0;
+        packet = null;
+
+        replaying = true;
 
         logger.atInfo().log("Started replaying");
+
+        // TODO: send only to requesting user
+        for (PlayerRef playerRef : Universe.get().getPlayers()) {
+            playerRef.getPacketHandler().setQueuePackets(false);
+        }
     }
 
-    public void stop() {
+    public CompletableFuture<Void> stop() {
         if (!replaying) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
 
         if (inputStream != null) {
@@ -77,19 +86,29 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         logger.atInfo().log("Stopped replaying");
 
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
         // TODO: reset only to requesting user
         for (PlayerRef playerRef : Universe.get().getPlayers()) {
             World world = playerRef.getReference().getStore().getExternalData().getWorld();
             world.execute(() -> {
                 playerRef.removeFromStore();
-                world.addPlayer(playerRef, null, true, false);
+                CompletableFuture<PlayerRef> playerFuture = world.addPlayer(
+                        playerRef, null, true, false
+                );
+                if (playerFuture != null) {
+                    playerFuture.thenRun(() -> future.complete(null));
+                }
             });
         }
+
+        return future;
     }
 
     @Override
     public void tick(float v, int i, @Nonnull Store<EntityStore> store) {
-        if (!replaying || inputStream == null) {
+        // TODO: verify player is still here
+        if (!replaying || inputStream == null || Universe.get().getPlayers().isEmpty()) {
             return;
         }
 
@@ -110,7 +129,19 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             processingPackets = false;
         }
 
-        tick++;
+        // TODO: wait on replay player only
+        boolean waiting = false;
+        for (PlayerRef playerRef : Universe.get().getPlayers()) {
+            CompletableFuture<Void> future = playerRef.getPacketHandler().getClientReadyForChunksFuture();
+            if (future != null && future.isDone()) {
+                waiting = true;
+                break;
+            }
+        }
+
+        if (!waiting) {
+            tick++;
+        }
     }
 
     private boolean processPacket() {

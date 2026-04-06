@@ -7,12 +7,13 @@ import com.hypixel.hytale.protocol.io.PacketIO;
 import com.hypixel.hytale.protocol.io.PacketStatsRecorder;
 import com.hypixel.hytale.protocol.io.ProtocolException;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
-import com.hypixel.hytale.protocol.packets.setup.RemoveAssets;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.salwyrr.protocol.ReplayPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+
+import java.util.List;
 
 public class HytaleReplayPacket implements ReplayPacket {
 
@@ -48,17 +49,16 @@ public class HytaleReplayPacket implements ReplayPacket {
         }
 
         Packet p = PacketIO.readFramedPacketWithInfo(data, length, info, PacketStatsRecorder.NOOP);
-        // TODO: fixed by snapshots?
-        if (p instanceof RemoveAssets) {
-            return;
-        }
-
         if (p instanceof JoinWorld packet) {
-            packet.clearWorld = false;
             packet.fadeInOut = false;
         }
 
         packetHandler.write((ToClientPacket) p);
+
+        if (p instanceof JoinWorld) {
+            packetHandler.tryFlush();
+            packetHandler.setQueuePackets(true);
+        }
     }
 
 }
