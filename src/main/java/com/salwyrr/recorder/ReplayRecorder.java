@@ -165,10 +165,6 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
                 return;
             }
 
-            if (packet instanceof SetClientId) {
-                return;
-            }
-
             write(toReplayPacket(packet));
         });
     }

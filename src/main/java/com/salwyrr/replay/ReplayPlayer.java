@@ -1,11 +1,14 @@
 package com.salwyrr.replay;
 
+import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
+import com.hypixel.hytale.protocol.packets.entities.EntityUpdates;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
+import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -55,13 +58,24 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         tick = 0;
         packet = null;
 
-        replaying = true;
-
-        logger.atInfo().log("Started replaying");
-
-        // TODO: send only to requesting user
+        // TODO: setup only for requesting user
         for (PlayerRef playerRef : Universe.get().getPlayers()) {
-            playerRef.getPacketHandler().setQueuePackets(false);
+            Ref<EntityStore> reference = playerRef.getReference();
+            Store<EntityStore> store = reference.getStore();
+
+            store.getExternalData().getWorld().execute(() -> {
+                NetworkId networkId = store.getComponent(reference, NetworkId.getComponentType());
+                assert networkId != null;
+
+                EntityUpdates entityUpdates = new EntityUpdates();
+                entityUpdates.removed = new int[] { networkId.getId() };
+
+                playerRef.getPacketHandler().write(entityUpdates);
+
+                replaying = true;
+
+                logger.atInfo().log("Started replaying");
+            });
         }
     }
 
