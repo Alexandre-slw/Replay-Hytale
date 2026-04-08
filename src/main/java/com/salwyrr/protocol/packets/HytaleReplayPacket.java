@@ -8,8 +8,8 @@ import com.hypixel.hytale.protocol.io.PacketStatsRecorder;
 import com.hypixel.hytale.protocol.io.ProtocolException;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
 import com.hypixel.hytale.server.core.io.PacketHandler;
-import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.salwyrr.protocol.ReplayPacket;
+import com.salwyrr.replay.state.ReplayState;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -36,9 +36,7 @@ public class HytaleReplayPacket implements ReplayPacket {
     }
 
     @Override
-    public void handle(PlayerRef playerRef) {
-        PacketHandler packetHandler = playerRef.getPacketHandler();
-
+    public void handle(PacketHandler packetHandler, ReplayState state) {
         int length = data.readIntLE();
         int packetId = data.readIntLE();
         PacketRegistry.PacketInfo info = PacketRegistry.getToClientPacketById(packetId);
@@ -49,7 +47,11 @@ public class HytaleReplayPacket implements ReplayPacket {
         Packet p = PacketIO.readFramedPacketWithInfo(data, length, info, PacketStatsRecorder.NOOP);
 
         if (p instanceof JoinWorld) {
-            return;
+            if (state.sentJoinWorld) {
+                return;
+            }
+
+            state.sentJoinWorld = true;
         }
 
         packetHandler.write((ToClientPacket) p);

@@ -1,6 +1,7 @@
 package com.salwyrr.protocol;
 
-import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.io.PacketHandler;
+import com.salwyrr.replay.state.ReplayState;
 import io.netty.buffer.ByteBuf;
 
 public interface ReplayPacket {
@@ -9,6 +10,6 @@ public interface ReplayPacket {
 
     void serialize(ByteBuf buffer);
 
-    void handle(PlayerRef playerRef);
+    void handle(PacketHandler packetHandler, ReplayState state);
 
 }

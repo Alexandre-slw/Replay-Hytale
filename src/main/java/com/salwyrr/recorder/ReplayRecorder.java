@@ -12,44 +12,41 @@ import com.hypixel.hytale.protocol.io.PacketStatsRecorder;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.protocol.packets.player.ClientReady;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
-import com.hypixel.hytale.protocol.packets.player.SetClientId;
+import com.hypixel.hytale.protocol.packets.setup.WorldLoadFinished;
+import com.hypixel.hytale.protocol.packets.setup.WorldLoadProgress;
 import com.hypixel.hytale.protocol.packets.world.SpawnParticleSystem;
+import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.asset.AssetRegistryLoader;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.handlers.game.GamePacketHandler;
+import com.hypixel.hytale.server.core.modules.i18n.I18nModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.salwyrr.file.ReplayOutputFile;
 import com.salwyrr.protocol.ReplayPacket;
 import com.salwyrr.protocol.ReplayProtocol;
 import com.salwyrr.protocol.packets.HytaleReplayPacket;
-import com.salwyrr.protocol.packets.TickReplayPacket;
 import com.salwyrr.util.DummyUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import javax.annotation.Nonnull;
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ReplayRecorder extends TickingSystem<EntityStore> {
 
-    private boolean recording;
-
-    // TODO: select file
-    private String outputFile = "test.replay";
-    private DataOutputStream outputStream;
+    private final ReplayProtocol protocol;
 
     private final HytaleLogger logger = HytaleLogger.forEnclosingClass();
 
-    private final ReplayProtocol protocol;
-
-    private int writtenTick = -1;
+    private boolean recording;
+    private ReplayOutputFile outputFile;
     private int tick = 0;
 
     private Map<PlayerRef, Ref<EntityStore>> watchers = new HashMap<>();
@@ -64,17 +61,15 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
         stop();
 
         try {
-            outputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile)));
-        } catch (java.io.IOException e) {
-            e.printStackTrace();
-            return;
+            // TODO: use repository
+            outputFile = new ReplayOutputFile(Path.of("test.replay"), protocol);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-
-        writtenTick = -1;
-        tick = 0;
 
         logger.atInfo().log("Started recording");
 
+        tick = 0;
         recording = true;
 
         // TODO: reset only to requesting user
@@ -82,10 +77,29 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
             Ref<EntityStore> ref = player.getReference();
             Store<EntityStore> store = ref.getStore();
             World world = store.getExternalData().getWorld();
-            world.execute(() -> {
-                DummyUtil.spawnDummyWatcher(player)
-                        .thenAccept(watcher -> watchers.put(player, watcher));
-            });
+
+            outputFile.startSnapshot(tick);
+            world.execute(() -> DummyUtil.spawnDummyWatcher(player)
+                    .thenAccept(watcher -> {
+                        outputFile.endSnapshot(tick);
+
+                        watchers.put(player, watcher.getReference());
+
+                        outputFile.configPhase(() -> {
+                            PacketHandler packetHandler = watcher.getPacketHandler();
+                            AssetRegistryLoader.sendAssets(packetHandler);
+                            I18nModule.get().sendTranslations(packetHandler, watcher.getLanguage());
+                            packetHandler.write(new WorldLoadProgress(
+                                    Message.translation(
+                                            "client.general.worldLoad.loadingWorld"
+                                    ).getFormattedMessage(),
+                                    0,
+                                    0
+                            ));
+                            packetHandler.write(new WorldLoadFinished());
+                        });
+                    }));
+            break;
         }
     }
 
@@ -95,16 +109,6 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
         }
 
         recording = false;
-
-        if (outputStream != null) {
-            try {
-                outputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        logger.atInfo().log("Stopped recording");
 
         for (PlayerRef player : Universe.get().getPlayers()) {
             Ref<EntityStore> ref = player.getReference();
@@ -117,6 +121,14 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
                 }
             });
         }
+
+        try {
+            outputFile.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        logger.atInfo().log("Stopped recording");
     }
 
     @Override
@@ -159,13 +171,13 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
 
             // TODO: filter by recording user
             PlayerRef ref = gamePacketHandler.getPlayerRef();
-            boolean isDummy = ref.getLanguage().equals("dummy");
+            boolean isDummy = ref.getUsername().startsWith("DummyPlayer_");
 
             if (!isDummy) {
                 return;
             }
 
-            write(toReplayPacket(packet));
+            outputFile.write(toReplayPacket(packet), tick);
         });
     }
 
@@ -180,28 +192,6 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
         PacketIO.writeFramedPacket(packet, type, buffer, PacketStatsRecorder.NOOP);
 
         return new HytaleReplayPacket(buffer);
-    }
-
-    private synchronized void write(ReplayPacket packet) {
-        if (outputStream == null) {
-            return;
-        }
-
-        if (writtenTick != tick) {
-            writtenTick = tick;
-            write(new TickReplayPacket(tick));
-        }
-
-        try {
-            ByteBuf buffer = Unpooled.buffer();
-            packet.serialize(buffer);
-
-            outputStream.writeInt(protocol.getId(packet));
-            outputStream.writeInt(buffer.readableBytes());
-            buffer.readBytes(outputStream, buffer.readableBytes());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }

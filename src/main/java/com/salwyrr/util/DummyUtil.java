@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class DummyUtil {
 
-    public static CompletableFuture<Ref<EntityStore>> spawnDummyWatcher(PlayerRef targetPlayer) {
+    public static CompletableFuture<PlayerRef> spawnDummyWatcher(PlayerRef targetPlayer) {
         Player player = targetPlayer.getReference().getStore().getComponent(targetPlayer.getReference(), Player.getComponentType());
 
         EmbeddedChannel dummyChannel = new EmbeddedChannel();
@@ -34,7 +34,7 @@ public class DummyUtil {
 
         return Universe.get().addPlayer(
                 dummyChannel,
-                "dummy",
+                targetPlayer.getLanguage(),
                 targetPlayer.getPacketHandler().getProtocolVersion(),
                 UUID.randomUUID(),
                 name,
@@ -45,9 +45,9 @@ public class DummyUtil {
             Ref<EntityStore> reference = playerRef.getReference();
 
             reference.getStore().putComponent(reference, ReplayPlugin.TAG_TYPE, new TargetWatcherTag(targetPlayer.getReference()));
-            makeGhost(playerRef.getReference().getStore(), playerRef.getReference());
+            makeGhost(reference.getStore(), reference);
 
-            return reference;
+            return playerRef;
         });
     }
 

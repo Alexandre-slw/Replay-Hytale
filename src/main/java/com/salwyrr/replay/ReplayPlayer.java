@@ -1,105 +1,122 @@
 package com.salwyrr.replay;
 
-import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
-import com.hypixel.hytale.protocol.packets.entities.EntityUpdates;
+import com.hypixel.hytale.protocol.packets.player.ClientReady;
+import com.hypixel.hytale.protocol.packets.setup.PlayerOptions;
+import com.hypixel.hytale.protocol.packets.setup.RequestAssets;
+import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
-import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
+import com.hypixel.hytale.server.core.io.handlers.SetupPacketHandler;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.salwyrr.protocol.ReplayPacket;
+import com.salwyrr.file.ReplayInputFile;
 import com.salwyrr.protocol.ReplayProtocol;
-import com.salwyrr.protocol.packets.TickReplayPacket;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import com.salwyrr.replay.state.ReplayState;
 
 import javax.annotation.Nonnull;
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 
 public class ReplayPlayer extends TickingSystem<EntityStore> {
 
-    private boolean replaying = false;
+    private ReplayState state = new ReplayState();
 
-    private String outputFile = "test.replay";
-    private DataInputStream inputStream;
+    private ReplayInputFile inputFile;
 
     private final HytaleLogger logger = HytaleLogger.forEnclosingClass();
 
     private final ReplayProtocol protocol;
 
-    private int tick = 0;
-    private ReplayPacket packet;
-    private boolean processingPackets;
-
     public ReplayPlayer(ReplayProtocol protocol) {
         this.protocol = protocol;
 
-        PacketAdapters.registerOutbound((PacketFilter) (_, packet) -> !(packet instanceof Ping) && replaying && !processingPackets);
+        PacketAdapters.registerInbound((PacketFilter) (handler, packet) -> {
+            if (state.playerUuid == null ||
+                    handler.getAuth() == null ||
+                    !state.playerUuid.equals(handler.getAuth().getUuid())) {
+                return false;
+            }
+
+            if (packet instanceof RequestAssets) {
+                inputFile.consumeConfigPhase((replayPacket) -> replayPacket.handle(handler, state));
+                handler.tryFlush();
+
+                try {
+                    Field receivedRequest = SetupPacketHandler.class.getDeclaredField("receivedRequest");
+                    receivedRequest.setAccessible(true);
+                    receivedRequest.set(handler, true);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
+                state.isFilteringPackets = true;
+
+                return true;
+            }
+
+            if (packet instanceof PlayerOptions) {
+                state.isPlaying = true;
+            }
+
+            if (packet instanceof ClientReady) {
+                state.isProcessingPackets = true;
+            }
+
+            return false;
+        });
+        PacketAdapters.registerOutbound((PacketFilter) (_, packet) -> {
+            if (packet instanceof Ping) {
+                return false;
+            }
+
+            return state.isFilteringPackets && !state.isProcessingPackets;
+        });
     }
 
     public void start() {
         try {
-            inputStream = new DataInputStream(new BufferedInputStream(new FileInputStream(outputFile)));
-        } catch (java.io.IOException e) {
-            e.printStackTrace();
-            return;
+            // TODO: use repository
+            inputFile = new ReplayInputFile(Path.of("test.replay"), protocol);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
-        tick = 0;
-        packet = null;
+        state = new ReplayState();
 
         // TODO: setup only for requesting user
         for (PlayerRef playerRef : Universe.get().getPlayers()) {
-            Ref<EntityStore> reference = playerRef.getReference();
-            Store<EntityStore> store = reference.getStore();
-
-            store.getExternalData().getWorld().execute(() -> {
-                NetworkId networkId = store.getComponent(reference, NetworkId.getComponentType());
-                assert networkId != null;
-
-                EntityUpdates entityUpdates = new EntityUpdates();
-                entityUpdates.removed = new int[] { networkId.getId() };
-
-                playerRef.getPacketHandler().write(entityUpdates);
-
-                replaying = true;
-
-                logger.atInfo().log("Started replaying");
-            });
+            state.playerUuid = playerRef.getUuid();
+            // TODO: use real address and port
+            playerRef.referToServer("localhost", 5520);
+            break;
         }
     }
 
     public CompletableFuture<Void> stop() {
-        if (!replaying) {
+        if (inputFile == null) {
             return CompletableFuture.completedFuture(null);
         }
 
-        if (inputStream != null) {
-            try {
-                inputStream.close();
-            } catch (java.io.IOException e) {
-                e.printStackTrace();
-            }
+        try {
+            inputFile.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-
-        replaying = false;
 
         logger.atInfo().log("Stopped replaying");
 
         CompletableFuture<Void> future = new CompletableFuture<>();
 
-        // TODO: reset only to requesting user
-        for (PlayerRef playerRef : Universe.get().getPlayers()) {
+        PlayerRef playerRef = Universe.get().getPlayer(state.playerUuid);
+        if (playerRef != null && playerRef.isValid()) {
             World world = playerRef.getReference().getStore().getExternalData().getWorld();
             world.execute(() -> {
                 playerRef.removeFromStore();
@@ -112,76 +129,50 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             });
         }
 
+        state = new ReplayState();
+
         return future;
     }
 
     @Override
     public void tick(float v, int i, @Nonnull Store<EntityStore> store) {
-        // TODO: verify player is still here
-        if (!replaying || inputStream == null || Universe.get().getPlayers().isEmpty()) {
+        if (!state.isPlaying) {
             return;
         }
 
+        PlayerRef playerRef = Universe.get().getPlayer(state.playerUuid);
+        if (playerRef == null || !playerRef.isValid()) {
+            return;
+        }
+
+        PacketHandler packetHandler = playerRef.getPacketHandler();
         try {
-            processingPackets = true;
-            while (inputStream.available() > 0) {
-                if (!processPacket()) {
-                    break;
-                }
+            state.isProcessingPackets = true;
+            while (canProcessPackets(packetHandler) && inputFile.read(state.tick)) {
+                inputFile.consumePacket().handle(packetHandler, state);
             }
 
-            if (inputStream.available() == 0) {
+            if (inputFile.isEndOfFile()) {
                 stop();
             }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            processingPackets = false;
+            state.isProcessingPackets = false;
         }
 
-        tick++;
+        if (canProcessPackets(packetHandler)) {
+            state.tick++;
+        }
     }
 
-    private boolean processPacket() {
-        if (packet == null) {
-            packet = readPacket();
+    private boolean canProcessPackets(PacketHandler packetHandler) {
+        if (!state.sentJoinWorld) {
+            return true;
         }
 
-        if (packet instanceof TickReplayPacket tickReplayPacket) {
-            if (tickReplayPacket.getTick() > tick) {
-                return false;
-            }
-        } else {
-            // TODO: send only to requesting user
-            for (PlayerRef player : Universe.get().getPlayers()) {
-                packet.handle(player);
-            }
-        }
-
-        packet = null;
-
-        return true;
-    }
-
-    private ReplayPacket readPacket() {
-        ByteBuf in;
-        int packetId;
-        int length;
-
-        try {
-            packetId = inputStream.readInt();
-            length = inputStream.readInt();
-            byte[] data = new byte[length];
-            inputStream.readFully(data);
-            in = Unpooled.buffer(length);
-            in.writeBytes(data);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        ReplayPacket packet = protocol.getInstance(packetId);
-        packet.deserialize(in);
-        return packet;
+        CompletableFuture<Void> clientReadyForChunksFuture = packetHandler.getClientReadyForChunksFuture();
+        return clientReadyForChunksFuture == null || clientReadyForChunksFuture.isDone();
     }
 
 }

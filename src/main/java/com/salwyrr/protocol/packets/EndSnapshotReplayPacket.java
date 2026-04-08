@@ -1,30 +1,23 @@
 package com.salwyrr.protocol.packets;
 
-import com.hypixel.hytale.protocol.io.VarInt;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.salwyrr.protocol.ReplayPacket;
 import com.salwyrr.replay.state.ReplayState;
 import io.netty.buffer.ByteBuf;
 
-public class TickReplayPacket implements ReplayPacket {
+public class EndSnapshotReplayPacket implements ReplayPacket {
 
-    private int tick;
-
-    public TickReplayPacket() {
-    }
-
-    public TickReplayPacket(int tick) {
-        this.tick = tick;
+    public EndSnapshotReplayPacket() {
     }
 
     @Override
     public void deserialize(ByteBuf buffer) {
-        tick = VarInt.read(buffer);
+
     }
 
     @Override
     public void serialize(ByteBuf buffer) {
-        VarInt.write(buffer, tick);
+
     }
 
     @Override
@@ -32,7 +25,4 @@ public class TickReplayPacket implements ReplayPacket {
 
     }
 
-    public int getTick() {
-        return tick;
-    }
 }
