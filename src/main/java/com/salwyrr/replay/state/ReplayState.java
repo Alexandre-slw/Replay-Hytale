@@ -9,6 +9,7 @@ public class ReplayState {
     public boolean isFilteringPackets;
     public boolean isProcessingPackets;
     public boolean sentJoinWorld;
+    public boolean clearedWorld;
     public UUID playerUuid;
 
 }
