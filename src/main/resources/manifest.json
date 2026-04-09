@@ -1,20 +1,20 @@
 {
     "Group": "Alexandre",
     "Name": "ReplayPlugin",
-    "Version": "0.0.0",
-    "Description": "Description of your plugin",
+    "Version": "1.0.0",
+    "Description": "Record, Replay and Edit your Hytale sessions.",
     "Authors": [
         {
             "Name": "Alexandre",
-            "Email": "alexandre@moonsworth.com",
+            "Email": "contact@alexandre.gg",
             "Url": "https://github.com/Alexandre-slw"
         }
     ],
-    "Website": "https://www.salwyrr.com",
+    "Website": "https://alexandre.gg",
     "DisabledByDefault": false,
     "IncludesAssetPack": false,
     "Dependencies": {},
     "OptionalDependencies": {},
     "ServerVersion": "*",
-    "Main": "com.salwyrr.ReplayPlugin"
+    "Main": "gg.alexandre.replay.ReplayPlugin"
 }
