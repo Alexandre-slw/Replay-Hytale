@@ -1,5 +1,7 @@
 package gg.alexandre.replay.replay;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
@@ -8,9 +10,11 @@ import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.protocol.packets.entities.EntityUpdates;
 import com.hypixel.hytale.protocol.packets.player.ClientReady;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
+import com.hypixel.hytale.protocol.packets.setup.PlayerOptions;
 import com.hypixel.hytale.protocol.packets.setup.RequestAssets;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.io.PacketHandler;
+import com.hypixel.hytale.server.core.io.ServerManager;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
 import com.hypixel.hytale.server.core.io.handlers.SetupPacketHandler;
@@ -24,16 +28,22 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import gg.alexandre.replay.file.ReplayInputFile;
 import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.replay.state.ReplayState;
+import gg.alexandre.replay.repository.ReplayRepository;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.file.Path;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 public class ReplayPlayer extends TickingSystem<EntityStore> {
+
+    private final ReplayProtocol protocol;
+    private final ReplayRepository repository;
 
     private ReplayState state = new ReplayState();
 
@@ -41,10 +51,11 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
     private final HytaleLogger logger = HytaleLogger.forEnclosingClass();
 
-    private final ReplayProtocol protocol;
+    private final Gson gson = new Gson();
 
-    public ReplayPlayer(ReplayProtocol protocol) {
+    public ReplayPlayer(ReplayProtocol protocol, ReplayRepository repository) {
         this.protocol = protocol;
+        this.repository = repository;
 
         PacketAdapters.registerInbound((PacketFilter) (handler, packet) -> {
             if (state.playerUuid == null ||
@@ -70,6 +81,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 return true;
             }
 
+            if (packet instanceof PlayerOptions) {
+                state.hasStarted = true;
+            }
+
             if (packet instanceof ClientReady clientReady) {
                 state.isProcessingPackets = clientReady.readyForChunks;
                 state.isPlaying = clientReady.readyForGameplay;
@@ -77,6 +92,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
             return false;
         });
+
         PacketAdapters.registerOutbound((PacketFilter) (_, packet) -> {
             if (packet instanceof Ping) {
                 return false;
@@ -122,26 +138,46 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
-    public void start() {
+    public boolean isPlaying(PlayerRef playerRef) {
+        // TODO: state by player
+        return state.isPlaying;
+    }
+
+    public void start(PlayerRef playerRef, String name) {
         try {
             // TODO: use repository
-            inputFile = new ReplayInputFile(Path.of("test.replay"), protocol);
+            inputFile = new ReplayInputFile(repository.getReplay(playerRef, name), protocol);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         state = new ReplayState();
+        state.playerUuid = playerRef.getUuid();
 
-        // TODO: setup only for requesting user
-        for (PlayerRef playerRef : Universe.get().getPlayers()) {
-            state.playerUuid = playerRef.getUuid();
-            // TODO: use real address and port
-            playerRef.referToServer("localhost", 5520);
-            break;
+        try {
+            // Some plugins might want to know that this is a replay
+            JsonObject referral = new JsonObject();
+            referral.addProperty("replay",  true);
+
+            InetSocketAddress publicAddress = ServerManager.get().getPublicAddress();
+            assert publicAddress != null;
+
+            playerRef.referToServer(
+                    publicAddress.getHostName(),
+                    publicAddress.getPort(),
+                    gson.toJson(referral).getBytes(StandardCharsets.UTF_8)
+            );
+        } catch (SocketException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public CompletableFuture<Void> stop() {
+    public CompletableFuture<Void> stop(PlayerRef playerRef) {
+        // TODO: check replaying based on player
+        if (!state.hasStarted) {
+            return CompletableFuture.completedFuture(null);
+        }
+
         if (inputFile == null) {
             return CompletableFuture.completedFuture(null);
         }
@@ -156,8 +192,8 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         CompletableFuture<Void> future = new CompletableFuture<>();
 
-        PlayerRef playerRef = Universe.get().getPlayer(state.playerUuid);
         if (playerRef != null && playerRef.isValid()) {
+            // TODO: transfer back?
             World world = playerRef.getReference().getStore().getExternalData().getWorld();
             world.execute(() -> {
                 playerRef.removeFromStore();
@@ -200,7 +236,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             }
 
             if (inputFile.isEndOfFile()) {
-                stop();
+                stop(playerRef);
             }
         } catch (Exception e) {
             e.printStackTrace();

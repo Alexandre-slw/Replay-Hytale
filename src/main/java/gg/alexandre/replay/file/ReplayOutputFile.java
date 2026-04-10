@@ -1,6 +1,7 @@
 package gg.alexandre.replay.file;
 
 import com.hypixel.hytale.server.core.util.io.FileUtil;
+import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.protocol.packets.EndSnapshotReplayPacket;
@@ -19,7 +20,7 @@ import java.util.zip.ZipOutputStream;
 
 public class ReplayOutputFile {
 
-    private static final Path RECORD_DIRECTORY = Path.of(".record");
+    private static final Path RECORD_DIRECTORY = ReplayPlugin.get().getDataDirectory().resolve(".record");
 
     private final Path savePath;
     private final ReplayProtocol protocol;

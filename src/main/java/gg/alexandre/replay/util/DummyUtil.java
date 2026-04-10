@@ -42,10 +42,10 @@ public class DummyUtil {
                 player.getClientViewRadius(),
                 null
         ).thenApply(playerRef -> {
-            Ref<EntityStore> reference = playerRef.getReference();
+            Ref<EntityStore> ref = playerRef.getReference();
 
-            reference.getStore().putComponent(reference, ReplayPlugin.TAG_TYPE, new TargetWatcherTag(targetPlayer.getReference()));
-            makeGhost(reference.getStore(), reference);
+            ref.getStore().putComponent(ref, ReplayPlugin.TAG_TYPE, new TargetWatcherTag(targetPlayer.getReference()));
+            makeGhost(ref.getStore(), ref);
 
             return playerRef;
         });

@@ -1,6 +1,5 @@
 package gg.alexandre.replay.commands;
 
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 
@@ -20,7 +19,6 @@ public class ReplayCommand extends AbstractCommand {
     @Nullable
     @Override
     protected CompletableFuture<Void> execute(@Nonnull CommandContext context) {
-        context.sendMessage(Message.raw("Hello from ExampleCommand!"));
         return CompletableFuture.completedFuture(null);
     }
 

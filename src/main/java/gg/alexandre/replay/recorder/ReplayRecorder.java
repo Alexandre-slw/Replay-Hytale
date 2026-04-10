@@ -29,19 +29,20 @@ import gg.alexandre.replay.file.ReplayOutputFile;
 import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.protocol.packets.HytaleReplayPacket;
+import gg.alexandre.replay.repository.ReplayRepository;
 import gg.alexandre.replay.util.DummyUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ReplayRecorder extends TickingSystem<EntityStore> {
 
     private final ReplayProtocol protocol;
+    private final ReplayRepository repository;
 
     private final HytaleLogger logger = HytaleLogger.forEnclosingClass();
 
@@ -51,18 +52,18 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
 
     private Map<PlayerRef, Ref<EntityStore>> watchers = new HashMap<>();
 
-    public ReplayRecorder(ReplayProtocol protocol) {
+    public ReplayRecorder(ReplayProtocol protocol, ReplayRepository repository) {
         this.protocol = protocol;
+        this.repository = repository;
 
         registerPacketsListener();
     }
 
-    public void start() {
-        stop();
+    public void start(PlayerRef playerRef) {
+        stop(playerRef);
 
         try {
-            // TODO: use repository
-            outputFile = new ReplayOutputFile(Path.of("test.replay"), protocol);
+            outputFile = new ReplayOutputFile(repository.newReplay(playerRef), protocol);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -72,38 +73,34 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
         tick = 0;
         recording = true;
 
-        // TODO: reset only to requesting user
-        for (PlayerRef player : Universe.get().getPlayers()) {
-            Ref<EntityStore> ref = player.getReference();
-            Store<EntityStore> store = ref.getStore();
-            World world = store.getExternalData().getWorld();
+        Ref<EntityStore> ref = playerRef.getReference();
+        Store<EntityStore> store = ref.getStore();
+        World world = store.getExternalData().getWorld();
 
-            outputFile.startSnapshot(tick);
-            world.execute(() -> DummyUtil.spawnDummyWatcher(player)
-                    .thenAccept(watcher -> {
-                        outputFile.endSnapshot(tick);
+        outputFile.startSnapshot(tick);
+        world.execute(() -> DummyUtil.spawnDummyWatcher(playerRef)
+                .thenAccept(watcher -> {
+                    outputFile.endSnapshot(tick);
 
-                        watchers.put(player, watcher.getReference());
+                    watchers.put(playerRef, watcher.getReference());
 
-                        outputFile.configPhase(() -> {
-                            PacketHandler packetHandler = watcher.getPacketHandler();
-                            AssetRegistryLoader.sendAssets(packetHandler);
-                            I18nModule.get().sendTranslations(packetHandler, watcher.getLanguage());
-                            packetHandler.write(new WorldLoadProgress(
-                                    Message.translation(
-                                            "client.general.worldLoad.loadingWorld"
-                                    ).getFormattedMessage(),
-                                    0,
-                                    0
-                            ));
-                            packetHandler.write(new WorldLoadFinished());
-                        });
-                    }));
-            break;
-        }
+                    outputFile.configPhase(() -> {
+                        PacketHandler packetHandler = watcher.getPacketHandler();
+                        AssetRegistryLoader.sendAssets(packetHandler);
+                        I18nModule.get().sendTranslations(packetHandler, watcher.getLanguage());
+                        packetHandler.write(new WorldLoadProgress(
+                                Message.translation(
+                                        "client.general.worldLoad.loadingWorld"
+                                ).getFormattedMessage(),
+                                0,
+                                0
+                        ));
+                        packetHandler.write(new WorldLoadFinished());
+                    });
+                }));
     }
 
-    public void stop() {
+    public void stop(PlayerRef playerRef) {
         if (!recording) {
             return;
         }

@@ -10,11 +10,16 @@ import java.util.stream.Stream;
 
 public class ReplayRepository {
 
-    public final static Path REPLAY_DIRECTORY = Path.of("replays");
     public final static String REPLAY_EXTENSION = ".replay";
 
+    public final Path replayDirectory;
+
+    public ReplayRepository(Path dataDirectory) {
+        replayDirectory = dataDirectory.resolve("replays");
+    }
+
     public Path newReplay(PlayerRef playerRef) {
-        Path dir = REPLAY_DIRECTORY.resolve(playerRef.getUuid().toString());
+        Path dir = replayDirectory.resolve(playerRef.getUuid().toString());
 
         File directoryFile = dir.toFile();
         if (!directoryFile.exists()) {
@@ -24,12 +29,15 @@ public class ReplayRepository {
             }
         }
 
-        String name = DateFormat.getDateTimeInstance().format(System.currentTimeMillis());
+        String name = DateFormat.getDateTimeInstance().format(System.currentTimeMillis())
+                .replace(":", "-")
+                .replace("/", "-")
+                .replace("\u202F", " ");
         return dir.resolve(name + REPLAY_EXTENSION);
     }
 
     public List<Path> getReplays(PlayerRef playerRef) {
-        File directory = REPLAY_DIRECTORY.resolve(playerRef.getUuid().toString()).toFile();
+        File directory = replayDirectory.resolve(playerRef.getUuid().toString()).toFile();
         if (!directory.exists()) {
             return List.of();
         }
@@ -44,4 +52,11 @@ public class ReplayRepository {
         ).map(File::toPath).toList();
     }
 
+    public Path getReplay(PlayerRef playerRef, String name) {
+        if (!name.endsWith(REPLAY_EXTENSION)) {
+            name += REPLAY_EXTENSION;
+        }
+
+        return replayDirectory.resolve(playerRef.getUuid().toString()).resolve(name);
+    }
 }

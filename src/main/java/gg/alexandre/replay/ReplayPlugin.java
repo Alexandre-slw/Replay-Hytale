@@ -2,10 +2,11 @@ package gg.alexandre.replay;
 
 import com.hypixel.hytale.component.ComponentRegistryProxy;
 import com.hypixel.hytale.component.ComponentType;
-import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
+import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import gg.alexandre.replay.commands.ReplayCommand;
 import gg.alexandre.replay.components.DummyViewerSystem;
@@ -25,10 +26,10 @@ public class ReplayPlugin extends JavaPlugin {
     private static ReplayPlugin instance;
 
     private final ReplayProtocol protocol = new ReplayProtocol();
-    private final ReplayRepository repository = new ReplayRepository();
+    private final ReplayRepository repository = new ReplayRepository(getDataDirectory());
 
-    private final ReplayRecorder recorder = new ReplayRecorder(protocol);
-    private final ReplayPlayer player = new ReplayPlayer(protocol);
+    private final ReplayRecorder recorder = new ReplayRecorder(protocol, repository);
+    private final ReplayPlayer player = new ReplayPlayer(protocol, repository);
 
     public ReplayPlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -40,7 +41,7 @@ public class ReplayPlugin extends JavaPlugin {
         ComponentRegistryProxy<EntityStore> entityStoreRegistry = getEntityStoreRegistry();
 
         getCommandRegistry().registerCommand(new ReplayCommand("replay", "Replay commands"));
-        getEventRegistry().registerGlobal(PlayerReadyEvent.class, ExampleEvent::onPlayerReady);
+        getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, ExampleEvent::onPlayerDisconnect);
 
         entityStoreRegistry.registerSystem(player);
         entityStoreRegistry.registerSystem(recorder);
@@ -57,21 +58,25 @@ public class ReplayPlugin extends JavaPlugin {
         ));
     }
 
-    public void startRecording() {
-        player.stop().thenRun(recorder::start);
+    public void startRecording(PlayerRef playerRef) {
+        if (player.isPlaying(playerRef)) {
+            return;
+        }
+
+        recorder.start(playerRef);
     }
 
-    public void stopRecording() {
-        recorder.stop();
+    public void stopRecording(PlayerRef playerRef) {
+        recorder.stop(playerRef);
     }
 
-    public void startReplaying() {
-        recorder.stop();
-        player.start();
+    public void startReplaying(PlayerRef playerRef, String name) {
+        recorder.stop(playerRef);
+        player.start(playerRef, name);
     }
 
-    public void stopReplaying() {
-        player.stop();
+    public void stopReplaying(PlayerRef playerRef) {
+        player.stop(playerRef);
     }
 
     public ReplayRecorder getRecorder() {
