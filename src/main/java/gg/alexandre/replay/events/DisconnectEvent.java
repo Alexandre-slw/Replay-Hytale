@@ -10,6 +10,7 @@ public class DisconnectEvent {
 
     public static void onPlayerDisconnect(@Nonnull PlayerDisconnectEvent event) {
         PlayerRef player = event.getPlayerRef();
+        ReplayPlugin.get().stopRecording(player);
         ReplayPlugin.get().stopReplaying(player);
     }
 

@@ -31,13 +31,13 @@ import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.repository.ReplayRepository;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class ReplayPlayer extends TickingSystem<EntityStore> {
@@ -45,9 +45,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
     private final ReplayProtocol protocol;
     private final ReplayRepository repository;
 
-    private ReplayState state = new ReplayState();
-
-    private ReplayInputFile inputFile;
+    private final Map<UUID, ReplayState> states = new HashMap<>();
 
     private final HytaleLogger logger = HytaleLogger.forEnclosingClass();
 
@@ -58,14 +56,18 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         this.repository = repository;
 
         PacketAdapters.registerInbound((PacketFilter) (handler, packet) -> {
-            if (state.playerUuid == null ||
-                    handler.getAuth() == null ||
-                    !state.playerUuid.equals(handler.getAuth().getUuid())) {
+            ReplayState state = getState(handler);
+            if (state == null) {
+                return false;
+            }
+
+            assert handler.getAuth() != null;
+            if (state.playerUuid == null || !state.playerUuid.equals(handler.getAuth().getUuid())) {
                 return false;
             }
 
             if (packet instanceof RequestAssets) {
-                inputFile.consumeConfigPhase((replayPacket) -> replayPacket.handle(handler, state));
+                state.file.consumeConfigPhase((replayPacket) -> replayPacket.handle(handler, state));
                 handler.tryFlush();
 
                 try {
@@ -93,7 +95,12 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             return false;
         });
 
-        PacketAdapters.registerOutbound((PacketFilter) (_, packet) -> {
+        PacketAdapters.registerOutbound((PacketFilter) (handler, packet) -> {
+            ReplayState state = getState(handler);
+            if (state == null) {
+                return false;
+            }
+
             if (packet instanceof Ping) {
                 return false;
             }
@@ -107,57 +114,72 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         });
     }
 
+    @Nullable
+    private ReplayState getState(@Nonnull PacketHandler packetHandler) {
+        if (packetHandler.getAuth() == null) {
+            return null;
+        }
+
+        return states.get(packetHandler.getAuth().getUuid());
+    }
+
     private void clearWorld(@Nonnull PlayerRef playerRef) {
         Ref<EntityStore> ref = playerRef.getReference();
+        assert ref != null;
         Store<EntityStore> store = ref.getStore();
 
         Player player = ref.getStore().getComponent(ref, Player.getComponentType());
-        if (player != null) {
-            ChunkTracker tracker = store.getComponent(ref, ChunkTracker.getComponentType());
-            if (tracker != null) {
-                tracker.unloadAll(playerRef);
-            }
-
-            EntityTrackerSystems.EntityViewer viewer = store.getComponent(ref, EntityTrackerSystems.EntityViewer.getComponentType());
-            if (viewer != null) {
-                EntityUpdates entityUpdates = new EntityUpdates();
-
-                List<Integer> visibleEntities = viewer.visible.stream()
-                        .map(entity -> entity.getStore().getComponent(entity, NetworkId.getComponentType()))
-                        .filter(Objects::nonNull)
-                        .map(NetworkId::getId)
-                        .toList();
-
-                entityUpdates.removed = new int[visibleEntities.size()];
-                for (int i = 0; i < visibleEntities.size(); i++) {
-                    entityUpdates.removed[i] = visibleEntities.get(i);
-                }
-
-                playerRef.getPacketHandler().write(entityUpdates);
-            }
+        if (player == null) {
+            return;
         }
+
+        ChunkTracker tracker = store.getComponent(ref, ChunkTracker.getComponentType());
+        if (tracker != null) {
+            tracker.unloadAll(playerRef);
+        }
+
+        EntityTrackerSystems.EntityViewer viewer = store.getComponent(ref, EntityTrackerSystems.EntityViewer.getComponentType());
+        if (viewer != null) {
+            EntityUpdates entityUpdates = new EntityUpdates();
+
+            List<Integer> visibleEntities = viewer.visible.stream()
+                    .map(entity -> entity.getStore().getComponent(entity, NetworkId.getComponentType()))
+                    .filter(Objects::nonNull)
+                    .map(NetworkId::getId)
+                    .toList();
+
+            entityUpdates.removed = new int[visibleEntities.size()];
+            for (int i = 0; i < visibleEntities.size(); i++) {
+                entityUpdates.removed[i] = visibleEntities.get(i);
+            }
+
+            playerRef.getPacketHandler().write(entityUpdates);
+        }
+
+        playerRef.getPacketHandler().tryFlush();
     }
 
     public boolean isPlaying(@Nonnull PlayerRef playerRef) {
-        // TODO: state by player
-        return state.isPlaying;
+        ReplayState state = states.get(playerRef.getUuid());
+        return state != null;
     }
 
     public void start(@Nonnull PlayerRef playerRef, @Nonnull String name) {
+        ReplayState state = new ReplayState();
+        state.playerUuid = playerRef.getUuid();
+
         try {
-            // TODO: use repository
-            inputFile = new ReplayInputFile(repository.getReplay(playerRef, name), protocol);
+            state.file = new ReplayInputFile(repository.getReplay(playerRef, name), protocol);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        state = new ReplayState();
-        state.playerUuid = playerRef.getUuid();
+        states.put(playerRef.getUuid(), state);
 
         try {
             // Some plugins might want to know that this is a replay
             JsonObject referral = new JsonObject();
-            referral.addProperty("replay",  true);
+            referral.addProperty("replay", true);
 
             InetSocketAddress publicAddress = ServerManager.get().getPublicAddress();
             assert publicAddress != null;
@@ -172,48 +194,40 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
-    @Nonnull
-    public CompletableFuture<Void> stop(@Nonnull PlayerRef playerRef) {
-        // TODO: check replaying based on player
-        if (!state.hasStarted) {
-            return CompletableFuture.completedFuture(null);
+    public void stop(@Nonnull PlayerRef playerRef) {
+        ReplayState state = states.get(playerRef.getUuid());
+        if (state == null || !state.hasStarted) {
+            return;
         }
 
-        if (inputFile == null) {
-            return CompletableFuture.completedFuture(null);
-        }
+        states.remove(playerRef.getUuid());
 
         try {
-            inputFile.close();
+            state.file.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         logger.atInfo().log("Stopped replaying");
 
-        CompletableFuture<Void> future = new CompletableFuture<>();
-
-        if (playerRef != null && playerRef.isValid()) {
+        if (playerRef.isValid()) {
             // TODO: transfer back?
             World world = playerRef.getReference().getStore().getExternalData().getWorld();
             world.execute(() -> {
                 playerRef.removeFromStore();
-                CompletableFuture<PlayerRef> playerFuture = world.addPlayer(
-                        playerRef, null, true, false
-                );
-                if (playerFuture != null) {
-                    playerFuture.thenRun(() -> future.complete(null));
-                }
+                world.addPlayer(playerRef, null, true, false);
             });
         }
-
-        state = new ReplayState();
-
-        return future;
     }
 
     @Override
     public void tick(float v, int i, @Nonnull Store<EntityStore> store) {
+        for (ReplayState state : states.values()) {
+            tick(state);
+        }
+    }
+
+    private void tick(@Nonnull ReplayState state) {
         if (!state.isPlaying) {
             return;
         }
@@ -230,27 +244,27 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             if (!state.clearedWorld) {
                 clearWorld(playerRef);
                 state.clearedWorld = true;
+            } else {
+                while (canProcessPackets(state, packetHandler) && state.file.read(state.tick)) {
+                    state.file.consumePacket().handle(packetHandler, state);
+                }
             }
 
-            while (canProcessPackets(packetHandler) && inputFile.read(state.tick)) {
-                inputFile.consumePacket().handle(packetHandler, state);
-            }
-
-            if (inputFile.isEndOfFile()) {
+            if (state.file.isEndOfFile()) {
                 stop(playerRef);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.atWarning().withCause(e).log("Error while processing replay packets");
         } finally {
             state.isProcessingPackets = false;
         }
 
-        if (canProcessPackets(packetHandler)) {
+        if (canProcessPackets(state, packetHandler)) {
             state.tick++;
         }
     }
 
-    private boolean canProcessPackets(@Nonnull PacketHandler packetHandler) {
+    private boolean canProcessPackets(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler) {
         if (!state.sentJoinWorld) {
             return true;
         }

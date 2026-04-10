@@ -1,8 +1,12 @@
 package gg.alexandre.replay.replay.state;
 
+import gg.alexandre.replay.file.ReplayInputFile;
+
 import java.util.UUID;
 
 public class ReplayState {
+
+    public ReplayInputFile file;
 
     public int tick;
     public boolean hasStarted;

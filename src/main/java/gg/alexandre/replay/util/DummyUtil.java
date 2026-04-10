@@ -4,6 +4,7 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.NetworkChannel;
 import com.hypixel.hytale.protocol.io.netty.ProtocolUtil;
+import com.hypixel.hytale.server.core.auth.PlayerAuthentication;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.io.netty.NettyUtil;
 import com.hypixel.hytale.server.core.modules.entity.component.Intangible;
@@ -24,23 +25,25 @@ import java.util.concurrent.CompletableFuture;
 
 public class DummyUtil {
 
+    public static String NAME_PREFIX = "ReplayRecorder_";
+
     @Nonnull
-    public static CompletableFuture<PlayerRef> spawnDummyWatcher(@Nonnull PlayerRef targetPlayer) {
+    public static CompletableFuture<PlayerRef> spawnDummyWatcher(@Nonnull PlayerRef targetPlayer, @Nonnull UUID uuid) {
         Player player = targetPlayer.getReference().getStore().getComponent(targetPlayer.getReference(), Player.getComponentType());
 
         EmbeddedChannel dummyChannel = new EmbeddedChannel();
         dummyChannel.attr(ProtocolUtil.STREAM_CHANNEL_KEY).set(NetworkChannel.Default);
         NettyUtil.TimeoutContext.init(dummyChannel, "play", "");
 
-        String name = "DummyPlayer_" + targetPlayer.getUsername();
+        String name = NAME_PREFIX + targetPlayer.getUsername();
 
         return Universe.get().addPlayer(
                 dummyChannel,
                 targetPlayer.getLanguage(),
                 targetPlayer.getPacketHandler().getProtocolVersion(),
-                UUID.randomUUID(),
+                uuid,
                 name,
-                targetPlayer.getPacketHandler().getAuth(),
+                new PlayerAuthentication(uuid, name),
                 player.getClientViewRadius(),
                 null
         ).thenApply(playerRef -> {

@@ -31,6 +31,7 @@ public class RecordCommand extends AbstractCommand {
         Store<EntityStore> store = ref.getStore();
         store.getExternalData().getWorld().execute(() -> {
             PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+            assert playerRef != null;
 
             if (runArg.get(context)) {
                 ReplayPlugin.get().startRecording(playerRef);

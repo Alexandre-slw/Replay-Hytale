@@ -31,10 +31,11 @@ public class PlayCommand extends AbstractCommand {
         Store<EntityStore> store = ref.getStore();
         store.getExternalData().getWorld().execute(() -> {
             PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+            assert playerRef != null;
 
             if (runArg.get(context)) {
                 // TODO: replay name
-                ReplayPlugin.get().startReplaying(playerRef, "Apr 10, 2026, 3-16-32 PM");
+                ReplayPlugin.get().startReplaying(playerRef, "Apr 10, 2026, 7-38-46 PM");
             } else {
                 ReplayPlugin.get().stopReplaying(playerRef);
             }
