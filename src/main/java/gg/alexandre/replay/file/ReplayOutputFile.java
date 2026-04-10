@@ -10,6 +10,7 @@ import gg.alexandre.replay.protocol.packets.TickReplayPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
+import javax.annotation.Nonnull;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,7 +35,7 @@ public class ReplayOutputFile {
 
     private final List<String> files = new ArrayList<>();
 
-    public ReplayOutputFile(Path savePath, ReplayProtocol protocol) throws IOException {
+    public ReplayOutputFile(@Nonnull Path savePath, @Nonnull ReplayProtocol protocol) throws IOException {
         this.savePath = savePath;
         this.protocol = protocol;
 
@@ -50,7 +51,7 @@ public class ReplayOutputFile {
         writeOutputStream = packetsOutputStream;
     }
 
-    private DataOutputStream createOutputStream(String name) {
+    private DataOutputStream createOutputStream(@Nonnull String name) {
         try {
             files.add(name);
             return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(
@@ -69,7 +70,7 @@ public class ReplayOutputFile {
         write(new EndSnapshotReplayPacket(), tick);
     }
 
-    public synchronized void configPhase(Runnable runnable) {
+    public synchronized void configPhase(@Nonnull Runnable runnable) {
         writeOutputStream = createOutputStream("config.dat");
         try {
             runnable.run();
@@ -81,7 +82,7 @@ public class ReplayOutputFile {
         }
     }
 
-    public synchronized void write(ReplayPacket packet, int tick) {
+    public synchronized void write(@Nonnull ReplayPacket packet, int tick) {
         if (this.tick != tick) {
             this.tick = tick;
             write(new TickReplayPacket(tick), tick);

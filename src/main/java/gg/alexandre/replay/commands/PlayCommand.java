@@ -18,7 +18,7 @@ public class PlayCommand extends AbstractCommand {
 
     private final RequiredArg<Boolean> runArg;
 
-    public PlayCommand(String name, String description) {
+    public PlayCommand(@Nullable String name, @Nullable String description) {
         super(name, description);
 
         runArg = withRequiredArg("run", "", ArgTypes.BOOLEAN);

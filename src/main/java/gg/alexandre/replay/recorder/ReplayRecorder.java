@@ -19,6 +19,7 @@ import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.AssetRegistryLoader;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
+import com.hypixel.hytale.server.core.io.adapter.PacketWatcher;
 import com.hypixel.hytale.server.core.io.handlers.game.GamePacketHandler;
 import com.hypixel.hytale.server.core.modules.i18n.I18nModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -52,14 +53,14 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
 
     private Map<PlayerRef, Ref<EntityStore>> watchers = new HashMap<>();
 
-    public ReplayRecorder(ReplayProtocol protocol, ReplayRepository repository) {
+    public ReplayRecorder(@Nonnull ReplayProtocol protocol, @Nonnull ReplayRepository repository) {
         this.protocol = protocol;
         this.repository = repository;
 
         registerPacketsListener();
     }
 
-    public void start(PlayerRef playerRef) {
+    public void start(@Nonnull PlayerRef playerRef) {
         stop(playerRef);
 
         try {
@@ -100,7 +101,7 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
                 }));
     }
 
-    public void stop(PlayerRef playerRef) {
+    public void stop(@Nonnull PlayerRef playerRef) {
         if (!recording) {
             return;
         }
@@ -139,7 +140,7 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
 
     public void registerPacketsListener() {
         // TODO: record based on player
-        PacketAdapters.registerOutbound((PacketHandler handler, Packet packet) -> {
+        PacketAdapters.registerOutbound((PacketWatcher) (handler, packet) -> {
             if (!recording) {
                 return;
             }
@@ -178,7 +179,7 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
         });
     }
 
-    private ReplayPacket toReplayPacket(Packet packet) {
+    private ReplayPacket toReplayPacket(@Nonnull Packet packet) {
         ByteBuf buffer = Unpooled.buffer(packet.computeSize() + 256);
 
         Class<? extends Packet> type = packet.getClass();

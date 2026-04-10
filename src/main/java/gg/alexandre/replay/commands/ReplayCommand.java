@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class ReplayCommand extends AbstractCommand {
 
-    public ReplayCommand(String name, String description) {
+    public ReplayCommand(@Nullable String name, @Nullable String description) {
         super(name, description);
 
         addSubCommand(new RecordCommand("record", ""));

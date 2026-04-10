@@ -18,7 +18,7 @@ public class RecordCommand extends AbstractCommand {
 
     private final RequiredArg<Boolean> runArg;
 
-    public RecordCommand(String name, String description) {
+    public RecordCommand(@Nullable String name, @Nullable String description) {
         super(name, description);
 
         runArg = withRequiredArg("run", "", ArgTypes.BOOLEAN);

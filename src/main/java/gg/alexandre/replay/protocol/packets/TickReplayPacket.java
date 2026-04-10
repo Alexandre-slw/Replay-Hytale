@@ -6,6 +6,8 @@ import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.replay.state.ReplayState;
 import io.netty.buffer.ByteBuf;
 
+import javax.annotation.Nonnull;
+
 public class TickReplayPacket implements ReplayPacket {
 
     private int tick;
@@ -18,17 +20,17 @@ public class TickReplayPacket implements ReplayPacket {
     }
 
     @Override
-    public void deserialize(ByteBuf buffer) {
+    public void deserialize(@Nonnull ByteBuf buffer) {
         tick = VarInt.read(buffer);
     }
 
     @Override
-    public void serialize(ByteBuf buffer) {
+    public void serialize(@Nonnull ByteBuf buffer) {
         VarInt.write(buffer, tick);
     }
 
     @Override
-    public void handle(PacketHandler packetHandler, ReplayState state) {
+    public void handle(@Nonnull PacketHandler packetHandler, @Nonnull ReplayState state) {
 
     }
 

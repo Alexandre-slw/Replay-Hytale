@@ -18,12 +18,13 @@ import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.components.TargetWatcherTag;
 import io.netty.channel.embedded.EmbeddedChannel;
 
+import javax.annotation.Nonnull;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class DummyUtil {
 
-    public static CompletableFuture<PlayerRef> spawnDummyWatcher(PlayerRef targetPlayer) {
+    public static CompletableFuture<PlayerRef> spawnDummyWatcher(@Nonnull PlayerRef targetPlayer) {
         Player player = targetPlayer.getReference().getStore().getComponent(targetPlayer.getReference(), Player.getComponentType());
 
         EmbeddedChannel dummyChannel = new EmbeddedChannel();
@@ -51,7 +52,7 @@ public class DummyUtil {
         });
     }
 
-    public static void makeGhost(Store<EntityStore> store, Ref<EntityStore> playerRef) {
+    public static void makeGhost(@Nonnull Store<EntityStore> store, @Nonnull Ref<EntityStore> playerRef) {
         store.tryRemoveComponent(playerRef, ModelComponent.getComponentType());
         store.tryRemoveComponent(playerRef, PlayerSkinComponent.getComponentType());
         store.tryRemoveComponent(playerRef, HitboxCollision.getComponentType());

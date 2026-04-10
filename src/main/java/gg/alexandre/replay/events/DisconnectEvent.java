@@ -4,9 +4,11 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import gg.alexandre.replay.ReplayPlugin;
 
-public class ExampleEvent {
+import javax.annotation.Nonnull;
 
-    public static void onPlayerDisconnect(PlayerDisconnectEvent event) {
+public class DisconnectEvent {
+
+    public static void onPlayerDisconnect(@Nonnull PlayerDisconnectEvent event) {
         PlayerRef player = event.getPlayerRef();
         ReplayPlugin.get().stopReplaying(player);
     }

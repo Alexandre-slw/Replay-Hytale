@@ -13,6 +13,8 @@ import gg.alexandre.replay.replay.state.ReplayState;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
+import javax.annotation.Nonnull;
+
 public class HytaleReplayPacket implements ReplayPacket {
 
     private ByteBuf data;
@@ -20,23 +22,23 @@ public class HytaleReplayPacket implements ReplayPacket {
     public HytaleReplayPacket() {
     }
 
-    public HytaleReplayPacket(ByteBuf data) {
+    public HytaleReplayPacket(@Nonnull ByteBuf data) {
         this.data = data;
     }
 
     @Override
-    public void deserialize(ByteBuf buffer) {
+    public void deserialize(@Nonnull ByteBuf buffer) {
         data = Unpooled.buffer(buffer.readableBytes());
         data.writeBytes(buffer, buffer.readerIndex(), buffer.readableBytes());
     }
 
     @Override
-    public void serialize(ByteBuf buffer) {
+    public void serialize(@Nonnull ByteBuf buffer) {
         buffer.writeBytes(data, data.readerIndex(), data.readableBytes());
     }
 
     @Override
-    public void handle(PacketHandler packetHandler, ReplayState state) {
+    public void handle(@Nonnull PacketHandler packetHandler, @Nonnull ReplayState state) {
         int length = data.readIntLE();
         int packetId = data.readIntLE();
         PacketRegistry.PacketInfo info = PacketRegistry.getToClientPacketById(packetId);

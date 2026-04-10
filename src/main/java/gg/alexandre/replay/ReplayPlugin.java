@@ -11,7 +11,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import gg.alexandre.replay.commands.ReplayCommand;
 import gg.alexandre.replay.components.DummyViewerSystem;
 import gg.alexandre.replay.components.TargetWatcherTag;
-import gg.alexandre.replay.events.ExampleEvent;
+import gg.alexandre.replay.events.DisconnectEvent;
 import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.recorder.ReplayRecorder;
 import gg.alexandre.replay.replay.ReplayPlayer;
@@ -41,7 +41,7 @@ public class ReplayPlugin extends JavaPlugin {
         ComponentRegistryProxy<EntityStore> entityStoreRegistry = getEntityStoreRegistry();
 
         getCommandRegistry().registerCommand(new ReplayCommand("replay", "Replay commands"));
-        getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, ExampleEvent::onPlayerDisconnect);
+        getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, DisconnectEvent::onPlayerDisconnect);
 
         entityStoreRegistry.registerSystem(player);
         entityStoreRegistry.registerSystem(recorder);
@@ -58,7 +58,7 @@ public class ReplayPlugin extends JavaPlugin {
         ));
     }
 
-    public void startRecording(PlayerRef playerRef) {
+    public void startRecording(@Nonnull PlayerRef playerRef) {
         if (player.isPlaying(playerRef)) {
             return;
         }
@@ -66,33 +66,17 @@ public class ReplayPlugin extends JavaPlugin {
         recorder.start(playerRef);
     }
 
-    public void stopRecording(PlayerRef playerRef) {
+    public void stopRecording(@Nonnull PlayerRef playerRef) {
         recorder.stop(playerRef);
     }
 
-    public void startReplaying(PlayerRef playerRef, String name) {
+    public void startReplaying(@Nonnull PlayerRef playerRef, @Nonnull String name) {
         recorder.stop(playerRef);
         player.start(playerRef, name);
     }
 
-    public void stopReplaying(PlayerRef playerRef) {
+    public void stopReplaying(@Nonnull PlayerRef playerRef) {
         player.stop(playerRef);
-    }
-
-    public ReplayRecorder getRecorder() {
-        return recorder;
-    }
-
-    public ReplayPlayer getPlayer() {
-        return player;
-    }
-
-    public ReplayRepository getRepository() {
-        return repository;
-    }
-
-    public ReplayProtocol getProtocol() {
-        return protocol;
     }
 
     public static ReplayPlugin get() {

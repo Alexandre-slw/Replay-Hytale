@@ -29,13 +29,15 @@ public class DummyViewerSystem extends EntityTickingSystem<EntityStore> {
     private final Query<EntityStore> query;
 
     public DummyViewerSystem(
-            ComponentType<EntityStore, EntityTrackerSystems.EntityViewer> viewerType,
-            ComponentType<EntityStore, TargetWatcherTag> tagType) {
+            @Nonnull ComponentType<EntityStore, EntityTrackerSystems.EntityViewer> viewerType,
+            @Nonnull ComponentType<EntityStore, TargetWatcherTag> tagType
+    ) {
         this.viewerType = viewerType;
         this.tagType = tagType;
         this.query = Query.and(viewerType, tagType);
     }
 
+    @Nonnull
     @Override
     public Set<Dependency<EntityStore>> getDependencies() {
         return DEPENDENCIES;

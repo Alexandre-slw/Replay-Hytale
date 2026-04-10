@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
 public class TargetWatcherTag implements Component<EntityStore> {
     public Ref<EntityStore> target;
 
-    public TargetWatcherTag(Ref<EntityStore> target) {
+    public TargetWatcherTag(@Nonnull Ref<EntityStore> target) {
         this.target = target;
     }
 

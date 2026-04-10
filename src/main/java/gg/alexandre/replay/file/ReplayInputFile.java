@@ -6,6 +6,7 @@ import gg.alexandre.replay.protocol.packets.TickReplayPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -23,7 +24,7 @@ public class ReplayInputFile {
 
     private ReplayPacket packet;
 
-    public ReplayInputFile(Path path, ReplayProtocol protocol) throws IOException {
+    public ReplayInputFile(@Nonnull Path path, @Nonnull ReplayProtocol protocol) throws IOException {
         this.protocol = protocol;
 
         zipFile = new ZipFile(path.toFile());
@@ -31,7 +32,7 @@ public class ReplayInputFile {
         packetsInputStream = createInputStream("packets.dat");
     }
 
-    private DataInputStream createInputStream(String name) {
+    private DataInputStream createInputStream(@Nonnull String name) {
         try {
             return new DataInputStream(new BufferedInputStream(zipFile.getInputStream(zipFile.getEntry(name))));
         } catch (IOException e) {
@@ -39,7 +40,7 @@ public class ReplayInputFile {
         }
     }
 
-    public synchronized void consumeConfigPhase(Consumer<ReplayPacket> consumer) {
+    public synchronized void consumeConfigPhase(@Nonnull Consumer<ReplayPacket> consumer) {
         DataInputStream stream = createInputStream("config.dat");
         try {
             Optional<ReplayPacket> packet;
@@ -79,7 +80,7 @@ public class ReplayInputFile {
         }
     }
 
-    private synchronized Optional<ReplayPacket> read(DataInputStream stream) throws IOException {
+    private synchronized Optional<ReplayPacket> read(@Nonnull DataInputStream stream) throws IOException {
         ByteBuf in;
         int packetId;
         try {

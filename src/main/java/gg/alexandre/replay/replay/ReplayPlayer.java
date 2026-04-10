@@ -53,7 +53,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
     private final Gson gson = new Gson();
 
-    public ReplayPlayer(ReplayProtocol protocol, ReplayRepository repository) {
+    public ReplayPlayer(@Nonnull ReplayProtocol protocol, @Nonnull ReplayRepository repository) {
         this.protocol = protocol;
         this.repository = repository;
 
@@ -107,7 +107,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         });
     }
 
-    private void clearWorld(PlayerRef playerRef) {
+    private void clearWorld(@Nonnull PlayerRef playerRef) {
         Ref<EntityStore> ref = playerRef.getReference();
         Store<EntityStore> store = ref.getStore();
 
@@ -138,12 +138,12 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
-    public boolean isPlaying(PlayerRef playerRef) {
+    public boolean isPlaying(@Nonnull PlayerRef playerRef) {
         // TODO: state by player
         return state.isPlaying;
     }
 
-    public void start(PlayerRef playerRef, String name) {
+    public void start(@Nonnull PlayerRef playerRef, @Nonnull String name) {
         try {
             // TODO: use repository
             inputFile = new ReplayInputFile(repository.getReplay(playerRef, name), protocol);
@@ -172,7 +172,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
-    public CompletableFuture<Void> stop(PlayerRef playerRef) {
+    public CompletableFuture<Void> stop(@Nonnull PlayerRef playerRef) {
         // TODO: check replaying based on player
         if (!state.hasStarted) {
             return CompletableFuture.completedFuture(null);
@@ -249,7 +249,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
-    private boolean canProcessPackets(PacketHandler packetHandler) {
+    private boolean canProcessPackets(@Nonnull PacketHandler packetHandler) {
         if (!state.sentJoinWorld) {
             return true;
         }

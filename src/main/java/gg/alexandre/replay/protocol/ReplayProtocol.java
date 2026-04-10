@@ -5,6 +5,7 @@ import gg.alexandre.replay.protocol.packets.HytaleReplayPacket;
 import gg.alexandre.replay.protocol.packets.StartSnapshotReplayPacket;
 import gg.alexandre.replay.protocol.packets.TickReplayPacket;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 public class ReplayProtocol {
@@ -20,7 +21,7 @@ public class ReplayProtocol {
         );
     }
 
-    public int getId(ReplayPacket packet) {
+    public int getId(@Nonnull ReplayPacket packet) {
         return packets.indexOf(packet.getClass());
     }
 

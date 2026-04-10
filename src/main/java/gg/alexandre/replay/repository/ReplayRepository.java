@@ -2,6 +2,7 @@ package gg.alexandre.replay.repository;
 
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.nio.file.Path;
 import java.text.DateFormat;
@@ -14,11 +15,11 @@ public class ReplayRepository {
 
     public final Path replayDirectory;
 
-    public ReplayRepository(Path dataDirectory) {
+    public ReplayRepository(@Nonnull Path dataDirectory) {
         replayDirectory = dataDirectory.resolve("replays");
     }
 
-    public Path newReplay(PlayerRef playerRef) {
+    public Path newReplay(@Nonnull PlayerRef playerRef) {
         Path dir = replayDirectory.resolve(playerRef.getUuid().toString());
 
         File directoryFile = dir.toFile();
@@ -36,7 +37,7 @@ public class ReplayRepository {
         return dir.resolve(name + REPLAY_EXTENSION);
     }
 
-    public List<Path> getReplays(PlayerRef playerRef) {
+    public List<Path> getReplays(@Nonnull PlayerRef playerRef) {
         File directory = replayDirectory.resolve(playerRef.getUuid().toString()).toFile();
         if (!directory.exists()) {
             return List.of();
@@ -52,7 +53,7 @@ public class ReplayRepository {
         ).map(File::toPath).toList();
     }
 
-    public Path getReplay(PlayerRef playerRef, String name) {
+    public Path getReplay(@Nonnull PlayerRef playerRef, @Nonnull String name) {
         if (!name.endsWith(REPLAY_EXTENSION)) {
             name += REPLAY_EXTENSION;
         }
