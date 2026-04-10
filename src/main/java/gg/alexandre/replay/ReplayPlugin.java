@@ -79,6 +79,7 @@ public class ReplayPlugin extends JavaPlugin {
         player.stop(playerRef);
     }
 
+    @Nonnull
     public static ReplayPlugin get() {
         return instance;
     }

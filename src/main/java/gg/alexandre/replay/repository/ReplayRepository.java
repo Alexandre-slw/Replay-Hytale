@@ -19,6 +19,7 @@ public class ReplayRepository {
         replayDirectory = dataDirectory.resolve("replays");
     }
 
+    @Nonnull
     public Path newReplay(@Nonnull PlayerRef playerRef) {
         Path dir = replayDirectory.resolve(playerRef.getUuid().toString());
 
@@ -37,6 +38,7 @@ public class ReplayRepository {
         return dir.resolve(name + REPLAY_EXTENSION);
     }
 
+    @Nonnull
     public List<Path> getReplays(@Nonnull PlayerRef playerRef) {
         File directory = replayDirectory.resolve(playerRef.getUuid().toString()).toFile();
         if (!directory.exists()) {
@@ -53,6 +55,7 @@ public class ReplayRepository {
         ).map(File::toPath).toList();
     }
 
+    @Nonnull
     public Path getReplay(@Nonnull PlayerRef playerRef, @Nonnull String name) {
         if (!name.endsWith(REPLAY_EXTENSION)) {
             name += REPLAY_EXTENSION;

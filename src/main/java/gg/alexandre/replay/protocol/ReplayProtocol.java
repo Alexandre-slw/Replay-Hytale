@@ -25,6 +25,7 @@ public class ReplayProtocol {
         return packets.indexOf(packet.getClass());
     }
 
+    @Nonnull
     public ReplayPacket getInstance(int id) {
         try {
             return packets.get(id).getConstructor().newInstance();

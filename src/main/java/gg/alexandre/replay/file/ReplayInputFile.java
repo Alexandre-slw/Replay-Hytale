@@ -32,6 +32,7 @@ public class ReplayInputFile {
         packetsInputStream = createInputStream("packets.dat");
     }
 
+    @Nonnull
     private DataInputStream createInputStream(@Nonnull String name) {
         try {
             return new DataInputStream(new BufferedInputStream(zipFile.getInputStream(zipFile.getEntry(name))));
@@ -80,6 +81,7 @@ public class ReplayInputFile {
         }
     }
 
+    @Nonnull
     private synchronized Optional<ReplayPacket> read(@Nonnull DataInputStream stream) throws IOException {
         ByteBuf in;
         int packetId;

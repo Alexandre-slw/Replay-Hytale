@@ -172,6 +172,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
+    @Nonnull
     public CompletableFuture<Void> stop(@Nonnull PlayerRef playerRef) {
         // TODO: check replaying based on player
         if (!state.hasStarted) {

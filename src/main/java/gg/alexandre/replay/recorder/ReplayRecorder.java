@@ -179,6 +179,7 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
         });
     }
 
+    @Nonnull
     private ReplayPacket toReplayPacket(@Nonnull Packet packet) {
         ByteBuf buffer = Unpooled.buffer(packet.computeSize() + 256);
 

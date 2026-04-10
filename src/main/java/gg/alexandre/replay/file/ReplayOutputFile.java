@@ -51,6 +51,7 @@ public class ReplayOutputFile {
         writeOutputStream = packetsOutputStream;
     }
 
+    @Nonnull
     private DataOutputStream createOutputStream(@Nonnull String name) {
         try {
             files.add(name);

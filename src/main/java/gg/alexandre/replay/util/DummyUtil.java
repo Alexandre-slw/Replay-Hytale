@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class DummyUtil {
 
+    @Nonnull
     public static CompletableFuture<PlayerRef> spawnDummyWatcher(@Nonnull PlayerRef targetPlayer) {
         Player player = targetPlayer.getReference().getStore().getComponent(targetPlayer.getReference(), Player.getComponentType());
 
