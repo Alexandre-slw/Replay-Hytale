@@ -1,0 +1,57 @@
+package gg.alexandre.replay.ui;
+
+import com.hypixel.hytale.codec.builder.BuilderCodec;
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
+import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
+import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
+import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import gg.alexandre.replay.ui.event.UIEventConsumer;
+import gg.alexandre.replay.ui.event.UIEventContext;
+import gg.alexandre.replay.ui.event.UIEventHandler;
+import gg.alexandre.replay.ui.event.UIEventIdData;
+
+import javax.annotation.Nonnull;
+
+public abstract class BaseUI<T extends UIEventIdData> extends InteractiveCustomUIPage<T> implements UIEventConsumer<T> {
+
+    private final UIEventHandler<T> eventHandler;
+
+    public BaseUI(@Nonnull PlayerRef playerRef, @Nonnull CustomPageLifetime lifetime,
+                  @Nonnull BuilderCodec.Builder<T> dataBuilder) {
+        UIEventHandler<T> eventHandler = new UIEventHandler<>();
+        BuilderCodec.Builder<T> codec = eventHandler.prepare(dataBuilder);
+
+        super(playerRef, lifetime, codec.build());
+
+        this.eventHandler = eventHandler;
+    }
+
+    abstract public void init(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull UIEventBuilder uiEventBuilder,
+                              @Nonnull UIEventHandler<T> eventHandler);
+
+    @Override
+    public void build(@Nonnull Ref<EntityStore> ref, @Nonnull UICommandBuilder uiCommandBuilder,
+                      @Nonnull UIEventBuilder uiEventBuilder, @Nonnull Store<EntityStore> store) {
+        eventHandler.bind(uiEventBuilder);
+        init(uiCommandBuilder, uiEventBuilder, eventHandler);
+        eventHandler.bind(null);
+    }
+
+    @Override
+    public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull T data) {
+        super.handleDataEvent(ref, store, data);
+
+        UICommandBuilder uiCommandBuilder = new UICommandBuilder();
+        UIEventContext<T> eventContext = new UIEventContext<>(ref, store, data, uiCommandBuilder);
+
+        eventHandler.handleEvent(eventContext);
+        handleEvent(eventContext);
+
+        sendUpdate(uiCommandBuilder, false);
+    }
+
+}

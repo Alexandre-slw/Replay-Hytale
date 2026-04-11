@@ -2,6 +2,7 @@ package gg.alexandre.replay.commands;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
@@ -27,6 +28,11 @@ public class RecordCommand extends AbstractCommand {
     @Nullable
     @Override
     protected CompletableFuture<Void> execute(@Nonnull CommandContext context) {
+        if (!context.isPlayer()) {
+            context.sendMessage(Message.raw("This command can only be used by players."));
+            return CompletableFuture.completedFuture(null);
+        }
+
         Ref<EntityStore> ref = context.senderAsPlayerRef();
         Store<EntityStore> store = ref.getStore();
         store.getExternalData().getWorld().execute(() -> {
