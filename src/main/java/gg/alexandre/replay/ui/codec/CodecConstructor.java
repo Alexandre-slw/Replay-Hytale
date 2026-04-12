@@ -12,7 +12,8 @@ import java.util.function.Supplier;
 public class CodecConstructor {
 
     @Nonnull
-    public static <T extends UIEventIdData> BuilderCodec<T> create(@Nonnull Class<T> type, @Nonnull Supplier<T> supplier) {
+    public static <T extends UIEventIdData> BuilderCodec<T> create(@Nonnull Class<T> type,
+                                                                   @Nonnull Supplier<T> supplier) {
         BuilderCodec.Builder<T> builder = BuilderCodec.builder(type, supplier);
 
         for (Field field : type.getDeclaredFields()) {
@@ -52,6 +53,7 @@ public class CodecConstructor {
         return builder.build();
     }
 
+    @Nonnull
     private static <T> Codec<T> codecForField(@Nonnull Class<T> fieldType) {
         if (fieldType == String.class) {
             return (Codec<T>) Codec.STRING;

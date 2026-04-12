@@ -17,6 +17,7 @@ import com.hypixel.hytale.protocol.packets.setup.WorldLoadProgress;
 import com.hypixel.hytale.protocol.packets.world.SpawnParticleSystem;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.AssetRegistryLoader;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PacketWatcher;
@@ -30,6 +31,7 @@ import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.protocol.packets.HytaleReplayPacket;
 import gg.alexandre.replay.repository.ReplayRepository;
+import gg.alexandre.replay.ui.SaveUI;
 import gg.alexandre.replay.util.DummyUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -125,6 +127,12 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
 
         try {
             data.file.close();
+
+            world.execute(() -> {
+                Player player = store.getComponent(ref, Player.getComponentType());
+                assert player != null;
+                player.getPageManager().openCustomPage(ref, store, new SaveUI(playerRef, data.file.getSavePath()));
+            });
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

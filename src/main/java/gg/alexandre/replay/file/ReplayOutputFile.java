@@ -126,4 +126,9 @@ public class ReplayOutputFile {
         FileUtil.deleteDirectory(recordPath);
     }
 
+    @Nonnull
+    public Path getSavePath() {
+        return savePath;
+    }
+
 }
