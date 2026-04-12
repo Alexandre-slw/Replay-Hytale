@@ -2,11 +2,17 @@ package gg.alexandre.replay.ui.event;
 
 import javax.annotation.Nullable;
 
-public interface UIEventIdData {
+public class UIEventIdData {
+
+    private String eventId;
 
     @Nullable
-    String getEventId();
+    public String getEventId() {
+        return eventId;
+    }
 
-    void setEventId(@Nullable String id);
+    public void setEventId(@Nullable String eventId) {
+        this.eventId = eventId;
+    }
 
 }

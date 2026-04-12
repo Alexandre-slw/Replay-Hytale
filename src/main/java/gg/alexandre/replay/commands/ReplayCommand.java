@@ -12,6 +12,7 @@ import gg.alexandre.replay.ui.SaveUI;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 
 public class ReplayCommand extends AbstractCommand {
@@ -39,7 +40,7 @@ public class ReplayCommand extends AbstractCommand {
             PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
             assert playerRef != null;
 
-            player.getPageManager().openCustomPage(ref, store, new SaveUI(playerRef));
+            player.getPageManager().openCustomPage(ref, store, new SaveUI(playerRef, Path.of("test.replay")));
         });
 
         return CompletableFuture.completedFuture(null);

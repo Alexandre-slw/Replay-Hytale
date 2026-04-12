@@ -20,24 +20,23 @@ public abstract class BaseUI<T extends UIEventIdData> extends InteractiveCustomU
 
     private final UIEventHandler<T> eventHandler;
 
-    public BaseUI(@Nonnull PlayerRef playerRef, @Nonnull CustomPageLifetime lifetime,
-                  @Nonnull BuilderCodec.Builder<T> dataBuilder) {
-        UIEventHandler<T> eventHandler = new UIEventHandler<>();
-        BuilderCodec.Builder<T> codec = eventHandler.prepare(dataBuilder);
+    public BaseUI(@Nonnull PlayerRef playerRef, @Nonnull CustomPageLifetime lifetime, @Nonnull BuilderCodec<T> codec) {
+        super(playerRef, lifetime, codec);
 
-        super(playerRef, lifetime, codec.build());
-
-        this.eventHandler = eventHandler;
+        this.eventHandler = new UIEventHandler<>();
     }
 
-    abstract public void init(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull UIEventBuilder uiEventBuilder,
-                              @Nonnull UIEventHandler<T> eventHandler);
+    abstract public void init(@Nonnull UICommandBuilder uiCommandBuilder);
+
+    abstract public void register(@Nonnull UIEventBuilder uiEventBuilder, @Nonnull UIEventHandler<T> eventHandler);
 
     @Override
     public void build(@Nonnull Ref<EntityStore> ref, @Nonnull UICommandBuilder uiCommandBuilder,
                       @Nonnull UIEventBuilder uiEventBuilder, @Nonnull Store<EntityStore> store) {
+        init(uiCommandBuilder);
+
         eventHandler.bind(uiEventBuilder);
-        init(uiCommandBuilder, uiEventBuilder, eventHandler);
+        register(uiEventBuilder, eventHandler);
         eventHandler.bind(null);
     }
 
@@ -52,6 +51,11 @@ public abstract class BaseUI<T extends UIEventIdData> extends InteractiveCustomU
         handleEvent(eventContext);
 
         sendUpdate(uiCommandBuilder, false);
+    }
+
+    @Override
+    public void handleEvent(@Nonnull UIEventContext<T> context) {
+
     }
 
 }

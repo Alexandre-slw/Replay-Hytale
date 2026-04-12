@@ -1,8 +1,5 @@
 package gg.alexandre.replay.ui.event;
 
-import com.hypixel.hytale.codec.Codec;
-import com.hypixel.hytale.codec.KeyedCodec;
-import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
@@ -17,14 +14,6 @@ public class UIEventHandler<T extends UIEventIdData> implements UIEventConsumer<
     private final HashMap<String, UIEventConsumer<T>> eventConsumers = new HashMap<>();
 
     private UIEventBuilder eventBuilder;
-
-    @Nonnull
-    public BuilderCodec.Builder<T> prepare(@Nonnull BuilderCodec.Builder<T> builder) {
-        return builder.append(
-                new KeyedCodec<>("EventId", Codec.STRING),
-                UIEventIdData::setEventId, UIEventIdData::getEventId
-        ).add();
-    }
 
     public void bind(@Nullable UIEventBuilder eventBuilder) {
         this.eventBuilder = eventBuilder;
