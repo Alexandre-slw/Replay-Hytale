@@ -108,7 +108,7 @@ public class SaveUI extends BaseUI<SaveUI.Data> {
     }
 
     private boolean isInvalidPath(@Nonnull String value) {
-        if (value.equals(savePath.getFileName().toString())) {
+        if ((value + ReplayRepository.REPLAY_EXTENSION).equals(savePath.getFileName().toString())) {
             return false;
         }
 
