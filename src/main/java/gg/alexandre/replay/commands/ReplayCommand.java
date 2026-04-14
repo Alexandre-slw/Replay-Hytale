@@ -8,11 +8,11 @@ import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import gg.alexandre.replay.ui.SaveUI;
+import gg.alexandre.replay.ReplayPlugin;
+import gg.alexandre.replay.ui.ReplayUI;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 
 public class ReplayCommand extends AbstractCommand {
@@ -40,7 +40,9 @@ public class ReplayCommand extends AbstractCommand {
             PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
             assert playerRef != null;
 
-            player.getPageManager().openCustomPage(ref, store, new SaveUI(playerRef, Path.of("test.replay")));
+            player.getPageManager().openCustomPage(
+                    ref, store, new ReplayUI(playerRef, ReplayPlugin.get().getRepository())
+            );
         });
 
         return CompletableFuture.completedFuture(null);

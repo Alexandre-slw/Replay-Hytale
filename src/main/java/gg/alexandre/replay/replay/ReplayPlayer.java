@@ -28,7 +28,6 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import gg.alexandre.replay.file.ReplayInputFile;
 import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.replay.state.ReplayState;
-import gg.alexandre.replay.repository.ReplayRepository;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -37,13 +36,13 @@ import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class ReplayPlayer extends TickingSystem<EntityStore> {
 
     private final ReplayProtocol protocol;
-    private final ReplayRepository repository;
 
     private final Map<UUID, ReplayState> states = new HashMap<>();
 
@@ -51,9 +50,8 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
     private final Gson gson = new Gson();
 
-    public ReplayPlayer(@Nonnull ReplayProtocol protocol, @Nonnull ReplayRepository repository) {
+    public ReplayPlayer(@Nonnull ReplayProtocol protocol) {
         this.protocol = protocol;
-        this.repository = repository;
 
         PacketAdapters.registerInbound((PacketFilter) (handler, packet) -> {
             ReplayState state = getState(handler);
@@ -164,12 +162,12 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         return state != null;
     }
 
-    public void start(@Nonnull PlayerRef playerRef, @Nonnull String name) {
+    public void start(@Nonnull PlayerRef playerRef, @Nonnull Path replayPath) {
         ReplayState state = new ReplayState();
         state.playerUuid = playerRef.getUuid();
 
         try {
-            state.file = new ReplayInputFile(repository.getReplay(playerRef, name), protocol);
+            state.file = new ReplayInputFile(replayPath, protocol);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

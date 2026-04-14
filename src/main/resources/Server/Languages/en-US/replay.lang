@@ -1,4 +1,10 @@
+replayTitle=Replay
+record=Record
+replay=Replay
 saveReplay=Save Replay
 replayName=Replay name:
 save=Save
 discard=Discard
+startRecording=Start Recording
+stopRecording=Stop Recording
+pauseRecording=Pause Recording

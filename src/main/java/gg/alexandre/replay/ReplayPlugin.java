@@ -18,6 +18,7 @@ import gg.alexandre.replay.replay.ReplayPlayer;
 import gg.alexandre.replay.repository.ReplayRepository;
 
 import javax.annotation.Nonnull;
+import java.nio.file.Path;
 
 public class ReplayPlugin extends JavaPlugin {
 
@@ -29,7 +30,7 @@ public class ReplayPlugin extends JavaPlugin {
     private final ReplayRepository repository = new ReplayRepository(getDataDirectory());
 
     private final ReplayRecorder recorder = new ReplayRecorder(protocol, repository);
-    private final ReplayPlayer player = new ReplayPlayer(protocol, repository);
+    private final ReplayPlayer player = new ReplayPlayer(protocol);
 
     public ReplayPlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -70,9 +71,9 @@ public class ReplayPlugin extends JavaPlugin {
         recorder.stop(playerRef);
     }
 
-    public void startReplaying(@Nonnull PlayerRef playerRef, @Nonnull String name) {
+    public void startReplaying(@Nonnull PlayerRef playerRef, @Nonnull Path replayPath) {
         recorder.stop(playerRef);
-        player.start(playerRef, name);
+        player.start(playerRef, replayPath);
     }
 
     public void stopReplaying(@Nonnull PlayerRef playerRef) {
@@ -82,5 +83,10 @@ public class ReplayPlugin extends JavaPlugin {
     @Nonnull
     public static ReplayPlugin get() {
         return instance;
+    }
+
+    @Nonnull
+    public ReplayRepository getRepository() {
+        return repository;
     }
 }

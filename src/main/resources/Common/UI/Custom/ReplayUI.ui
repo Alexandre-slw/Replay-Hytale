@@ -1,0 +1,36 @@
+$C = "Common.ui";
+
+Group {
+  LayoutMode: MiddleCenter;
+
+  $C.@DecoratedContainer {
+    Anchor: (Width: 800);
+
+    #Title {
+      $C.@Title { @Text = %replay.replayTitle; }
+    }
+
+    #Content {
+      LayoutMode: Top;
+      Padding: (Full: 30);
+
+      $C.@PanelTitle {
+        @Text = %replay.record;
+        
+        $C.@TextButton #Record {
+          @Text = %replay.startRecording;
+          FlexWeight: 1;
+        }
+      }
+
+      $C.@PanelTitle {
+        @Text = %replay.replay;
+        Anchor: (Top: 20);
+        
+        Group #List {
+          LayoutMode: Top;
+        }
+      }
+    }
+  }
+}

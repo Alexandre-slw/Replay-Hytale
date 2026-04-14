@@ -39,9 +39,7 @@ public class RecordCommand extends AbstractCommand {
             PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
             assert playerRef != null;
 
-            if (runArg.get(context)) {
-                ReplayPlugin.get().startRecording(playerRef);
-            } else {
+            if (!runArg.get(context)) {
                 ReplayPlugin.get().stopRecording(playerRef);
             }
         });

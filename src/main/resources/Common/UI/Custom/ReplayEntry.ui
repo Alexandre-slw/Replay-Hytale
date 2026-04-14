@@ -1,0 +1,6 @@
+$C = "Common.ui";
+
+$C.@TextButton {
+  @Text = "Name";
+  FlexWeight: 1;
+}

@@ -39,10 +39,7 @@ public class PlayCommand extends AbstractCommand {
             PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
             assert playerRef != null;
 
-            if (runArg.get(context)) {
-                // TODO: replay name
-                ReplayPlugin.get().startReplaying(playerRef, "Apr 10, 2026, 7-38-46 PM");
-            } else {
+            if (!runArg.get(context)) {
                 ReplayPlugin.get().stopReplaying(playerRef);
             }
         });
