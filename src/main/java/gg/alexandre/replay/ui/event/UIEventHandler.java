@@ -51,7 +51,7 @@ public class UIEventHandler<T extends UIEventIdData> implements UIEventConsumer<
 
     @Override
     public void handleEvent(@Nonnull UIEventContext<T> context) {
-        String clickId = context.data().getEventId();
+        String clickId = context.data.getEventId();
         if (clickId == null) {
             return;
         }
@@ -61,7 +61,7 @@ public class UIEventHandler<T extends UIEventIdData> implements UIEventConsumer<
             consumer.handleEvent(context);
         }
 
-        context.data().setEventId(null);
+        context.data.setEventId(null);
     }
 
 }

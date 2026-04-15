@@ -70,10 +70,10 @@ public class SaveUI extends BaseUI<SaveUI.Data> {
     }
 
     private void onInputChange(@Nonnull UIEventContext<Data> context) {
-        String value = context.data().value;
+        String value = context.data.value;
         if (value != null) {
             value = value.trim();
-            context.uiCommandBuilder().set("#Save.Disabled", isInvalidPath(value));
+            context.uiCommandBuilder.set("#Save.Disabled", isInvalidPath(value));
         }
     }
 
@@ -83,11 +83,11 @@ public class SaveUI extends BaseUI<SaveUI.Data> {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        close();
+        context.close();
     }
 
     private void onSave(@Nonnull UIEventContext<Data> context) {
-        String value = context.data().value;
+        String value = context.data.value;
         if (value == null) {
             return;
         }
@@ -104,17 +104,17 @@ public class SaveUI extends BaseUI<SaveUI.Data> {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        close();
+        context.close();
     }
 
     private boolean isInvalidPath(@Nonnull String value) {
-        if ((value + ReplayRepository.REPLAY_EXTENSION).equals(savePath.getFileName().toString())) {
+        String fileName = value + ReplayRepository.REPLAY_EXTENSION;
+        if (fileName.equals(savePath.getFileName().toString())) {
             return false;
         }
 
         return !PathUtil.isValidName(value) ||
-                (savePath.getParent() != null &&
-                        Files.exists(savePath.getParent().resolve(value + ReplayRepository.REPLAY_EXTENSION)));
+                (savePath.getParent() != null && Files.exists(savePath.getParent().resolve(fileName)));
     }
 
 }

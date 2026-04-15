@@ -59,13 +59,11 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     private void onPlayhead(@Nonnull UIEventContext<Data> context) {
         player.restart(playerRef);
-        state.tick = context.data().playhead;
-        close();
+        state.tick = context.data.playhead;
     }
 
     private void onPause(@Nonnull UIEventContext<Data> context) {
         state.isPlaying = !state.isPlaying;
-        close();
     }
 
 }

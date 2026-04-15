@@ -62,9 +62,9 @@ public class ReplayUI extends BaseUI<ReplayUI.Data> {
             Path replay = replays.get(i);
             eventHandler.handle(CustomUIEventBindingType.Activating,
                     "#List[" + i + "]",
-                    _ -> {
+                    context -> {
                         ReplayPlugin.get().startReplaying(playerRef, replay);
-                        close();
+                        context.close();
                     }
             );
         }
@@ -73,11 +73,7 @@ public class ReplayUI extends BaseUI<ReplayUI.Data> {
     private void onRecord(@Nonnull UIEventContext<Data> context) {
         // TODO: stop recording
         ReplayPlugin.get().startRecording(playerRef);
-        close();
-    }
-
-    private void onClose(@Nonnull UIEventContext<Data> context) {
-        close();
+        context.close();
     }
 
 }

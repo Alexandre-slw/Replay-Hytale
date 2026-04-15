@@ -50,7 +50,11 @@ public abstract class BaseUI<T extends UIEventIdData> extends InteractiveCustomU
         eventHandler.handleEvent(eventContext);
         handleEvent(eventContext);
 
-        sendUpdate(uiCommandBuilder, false);
+        if (eventContext.isClosed()) {
+            close();
+        } else {
+            sendUpdate(uiCommandBuilder, false);
+        }
     }
 
     @Override
