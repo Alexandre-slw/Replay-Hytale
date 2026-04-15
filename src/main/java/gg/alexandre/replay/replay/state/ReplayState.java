@@ -19,4 +19,7 @@ public class ReplayState {
     public boolean clearedWorld;
     public UUID playerUuid;
 
+    public String lang;
+    public boolean sentTranslations;
+
 }

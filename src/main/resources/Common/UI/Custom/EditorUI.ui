@@ -8,32 +8,51 @@ Group {
     Anchor: (Left: 10, Right: 10, Bottom: 10);
 
     #Title {
+      ActionButton #Pause {
+        Anchor: (Left: 20);
+        ActionName: %replay.pause;
+        KeyBindingLabel: "Esc";
+      }
+
       $C.@Title { @Text = %replay.replay; }
     }
 
     #Content {
-      LayoutMode: Top;
-      Padding: (Full: 30);
+      LayoutMode: Full;
 
-      $C.@TextButton #Pause {
-        @Text = %replay.pause;
-        FlexWeight: 1;
+      Group {
+        Anchor: (Full: 0);
+        LayoutMode: Top;
+        Padding: (Full: 30);
+        
+        $C.@Slider #Playhead {
+          Anchor: (Top: 20, Height: 6);
+          Value: 50;
+          Min: 0;
+          Max: 100;
+          Style: SliderStyle(
+            Background: (TexturePath: "Common/SliderBackground.png", Border: 2),
+            Handle: "Common/SliderHandle.png",
+            HandleWidth: 16,
+            HandleHeight: 16,
+            Sounds: (
+              MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+            )
+          );
+        }
       }
 
-      $C.@Slider #Playhead {
-        Anchor: (Top: 20, Height: 6);
-        Value: 50;
-        Min: 0;
-        Max: 100;
-        Style: SliderStyle(
-          Background: (TexturePath: "Common/SliderBackground.png", Border: 2),
-          Handle: "Common/SliderHandle.png",
-          HandleWidth: 16,
-          HandleHeight: 16,
-          Sounds: (
-            MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
-          )
-        );
+      AssetImage #Mask {
+        Background: PatchStyle(TexturePath: "Assets/Mask.png", Color: #1b2430(0.7));
+        HitTestVisible: true;
+
+        Group {
+          LayoutMode: MiddleCenter;
+
+          Label {
+            Text: %replay.cannotEditWhilePlaying;
+          }
+        }
       }
     }
   }

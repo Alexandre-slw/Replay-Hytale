@@ -9,3 +9,6 @@ startRecording=Start Recording
 stopRecording=Stop Recording
 pauseRecording=Pause Recording
 pause=Pause
+play=Play
+cannotEditWhilePlaying=Cannot edit while replaying
+pressEscToPausePlay=Press ESC to pause/play!

@@ -45,7 +45,8 @@ public class UIEventHandler<T extends UIEventIdData> implements UIEventConsumer<
         eventBuilder.addEventBinding(
                 type,
                 selector,
-                data
+                data,
+                false
         );
     }
 
@@ -60,8 +61,6 @@ public class UIEventHandler<T extends UIEventIdData> implements UIEventConsumer<
         if (consumer != null) {
             consumer.handleEvent(context);
         }
-
-        context.data.setEventId(null);
     }
 
 }
