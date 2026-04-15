@@ -26,6 +26,7 @@ import com.hypixel.hytale.server.core.modules.i18n.I18nModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import gg.alexandre.replay.file.ReplayMetadata;
 import gg.alexandre.replay.file.ReplayOutputFile;
 import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.protocol.ReplayProtocol;
@@ -38,6 +39,7 @@ import io.netty.buffer.Unpooled;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -126,7 +128,12 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
         });
 
         try {
-            data.file.close();
+            ReplayMetadata metadata = new ReplayMetadata(
+                    data.start.until(Instant.now()).toMillis(),
+                    data.tick
+            );
+
+            data.file.close(metadata);
 
             world.execute(() -> {
                 Player player = store.getComponent(ref, Player.getComponentType());

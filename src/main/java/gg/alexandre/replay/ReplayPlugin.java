@@ -1,5 +1,6 @@
 package gg.alexandre.replay;
 
+import com.google.gson.Gson;
 import com.hypixel.hytale.component.ComponentRegistryProxy;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
@@ -31,6 +32,8 @@ public class ReplayPlugin extends JavaPlugin {
 
     private final ReplayRecorder recorder = new ReplayRecorder(protocol, repository);
     private final ReplayPlayer player = new ReplayPlayer(protocol);
+
+    private final Gson gson = new Gson();
 
     public ReplayPlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -88,5 +91,10 @@ public class ReplayPlugin extends JavaPlugin {
     @Nonnull
     public ReplayRepository getRepository() {
         return repository;
+    }
+
+    @Nonnull
+    public Gson getGson() {
+        return gson;
     }
 }

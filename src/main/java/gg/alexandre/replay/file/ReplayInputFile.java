@@ -1,5 +1,6 @@
 package gg.alexandre.replay.file;
 
+import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.protocol.packets.TickReplayPacket;
@@ -10,6 +11,7 @@ import javax.annotation.Nonnull;
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -22,6 +24,8 @@ public class ReplayInputFile {
     private final ZipFile zipFile;
     private final DataInputStream packetsInputStream;
 
+    private final ReplayMetadata metadata;
+
     private ReplayPacket packet;
 
     public ReplayInputFile(@Nonnull Path path, @Nonnull ReplayProtocol protocol) throws IOException {
@@ -30,6 +34,11 @@ public class ReplayInputFile {
         zipFile = new ZipFile(path.toFile());
 
         packetsInputStream = createInputStream("packets.dat");
+
+        try (InputStream inputStream = zipFile.getInputStream(zipFile.getEntry("metadata.json"))) {
+            String metadataString = new String(inputStream.readAllBytes());
+            metadata = ReplayPlugin.get().getGson().fromJson(metadataString, ReplayMetadata.class);
+        }
     }
 
     @Nonnull
@@ -116,4 +125,8 @@ public class ReplayInputFile {
         zipFile.close();
     }
 
+    @Nonnull
+    public ReplayMetadata getMetadata() {
+        return metadata;
+    }
 }

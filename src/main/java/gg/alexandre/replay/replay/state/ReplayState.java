@@ -2,10 +2,12 @@ package gg.alexandre.replay.replay.state;
 
 import gg.alexandre.replay.file.ReplayInputFile;
 
+import java.nio.file.Path;
 import java.util.UUID;
 
 public class ReplayState {
 
+    public Path replayPath;
     public ReplayInputFile file;
 
     public int tick;

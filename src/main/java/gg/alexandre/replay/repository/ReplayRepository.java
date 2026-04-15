@@ -6,6 +6,7 @@ import javax.annotation.Nonnull;
 import java.io.File;
 import java.nio.file.Path;
 import java.text.DateFormat;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -51,8 +52,11 @@ public class ReplayRepository {
         }
 
         return Stream.of(
-                values
-        ).map(File::toPath).toList();
+                        values
+                )
+                .sorted(Comparator.comparingLong(File::lastModified).reversed())
+                .map(File::toPath)
+                .toList();
     }
 
     @Nonnull

@@ -1,0 +1,40 @@
+$C = "Common.ui";
+$Sounds = "Sounds.ui";
+
+Group {
+  LayoutMode: Bottom;
+
+  $C.@DecoratedContainer {
+    Anchor: (Left: 10, Right: 10, Bottom: 10);
+
+    #Title {
+      $C.@Title { @Text = %replay.replay; }
+    }
+
+    #Content {
+      LayoutMode: Top;
+      Padding: (Full: 30);
+
+      $C.@TextButton #Pause {
+        @Text = %replay.pause;
+        FlexWeight: 1;
+      }
+
+      $C.@Slider #Playhead {
+        Anchor: (Top: 20, Height: 6);
+        Value: 50;
+        Min: 0;
+        Max: 100;
+        Style: SliderStyle(
+          Background: (TexturePath: "Common/SliderBackground.png", Border: 2),
+          Handle: "Common/SliderHandle.png",
+          HandleWidth: 16,
+          HandleHeight: 16,
+          Sounds: (
+            MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+          )
+        );
+      }
+    }
+  }
+}

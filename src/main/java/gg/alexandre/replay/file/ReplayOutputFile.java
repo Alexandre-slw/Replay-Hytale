@@ -12,6 +12,7 @@ import io.netty.buffer.Unpooled;
 
 import javax.annotation.Nonnull;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -101,7 +102,7 @@ public class ReplayOutputFile {
         }
     }
 
-    public synchronized void close() throws IOException {
+    public synchronized void close(ReplayMetadata metadata) throws IOException {
         writeOutputStream.close();
         if (writeOutputStream != packetsOutputStream) {
             packetsOutputStream.close();
@@ -121,6 +122,11 @@ public class ReplayOutputFile {
                 zipOutputStream.closeEntry();
                 fileInputStream.close();
             }
+
+            String metadataString = ReplayPlugin.get().getGson().toJson(metadata);
+            zipOutputStream.putNextEntry(new ZipEntry("metadata.json"));
+            zipOutputStream.write(metadataString.getBytes(StandardCharsets.UTF_8));
+            zipOutputStream.closeEntry();
         }
 
         FileUtil.deleteDirectory(recordPath);
