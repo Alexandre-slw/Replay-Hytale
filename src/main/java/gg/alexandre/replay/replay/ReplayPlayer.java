@@ -23,7 +23,6 @@ import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystem
 import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
-import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.file.ReplayInputFile;
@@ -171,10 +170,19 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         states.put(playerRef.getUuid(), state);
 
+        transfer(playerRef, true);
+    }
+
+    private static void transfer(@Nonnull PlayerRef playerRef, boolean replay) {
         try {
-            // Some plugins might want to know that this is a replay
-            JsonObject referral = new JsonObject();
-            referral.addProperty("replay", true);
+            byte[] referralData = null;
+            if (replay) {
+                // Some plugins might want to know that this is a replay
+                JsonObject referral = new JsonObject();
+                referral.addProperty("replay", true);
+
+                referralData = ReplayPlugin.get().getGson().toJson(referral).getBytes(StandardCharsets.UTF_8);
+            }
 
             InetSocketAddress publicAddress = ServerManager.get().getPublicAddress();
             assert publicAddress != null;
@@ -182,7 +190,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             playerRef.referToServer(
                     publicAddress.getHostName(),
                     publicAddress.getPort(),
-                    ReplayPlugin.get().getGson().toJson(referral).getBytes(StandardCharsets.UTF_8)
+                    referralData
             );
         } catch (SocketException e) {
             throw new RuntimeException(e);
@@ -227,16 +235,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         logger.atInfo().log("Stopped replaying");
 
         if (playerRef.isValid()) {
-            // TODO: transfer back?
-            Ref<EntityStore> reference = playerRef.getReference();
-            assert reference != null;
-            World world = reference.getStore().getExternalData().getWorld();
-            world.execute(() -> {
-                if (playerRef.isValid()) {
-                    playerRef.removeFromStore();
-                    world.addPlayer(playerRef, null, true, false);
-                }
-            });
+            transfer(playerRef, false);
         }
     }
 
