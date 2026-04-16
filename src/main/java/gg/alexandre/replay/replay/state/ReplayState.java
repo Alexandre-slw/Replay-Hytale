@@ -3,6 +3,8 @@ package gg.alexandre.replay.replay.state;
 import gg.alexandre.replay.file.ReplayInputFile;
 
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public class ReplayState {
@@ -26,5 +28,7 @@ public class ReplayState {
     public boolean sentEscHint;
 
     public float zoom = 1.0f;
+
+    public Set<Integer> entityIds = new HashSet<>();
 
 }

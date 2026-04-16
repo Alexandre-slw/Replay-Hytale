@@ -5,6 +5,7 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.protocol.EntityUpdate;
 import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.protocol.packets.assets.UpdateTranslations;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
@@ -26,8 +27,6 @@ import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
 import com.hypixel.hytale.server.core.io.handlers.SetupPacketHandler;
 import com.hypixel.hytale.server.core.modules.entity.player.ChunkTracker;
-import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
-import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.modules.i18n.I18nModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
@@ -47,7 +46,9 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class ReplayPlayer extends TickingSystem<EntityStore> {
@@ -124,6 +125,20 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 return false;
             }
 
+            if (packet instanceof EntityUpdates entityUpdates) {
+                if (entityUpdates.removed != null) {
+                    for (int id : entityUpdates.removed) {
+                        state.entityIds.remove(id);
+                    }
+                }
+
+                if (entityUpdates.updates != null) {
+                    for (EntityUpdate update : entityUpdates.updates) {
+                        state.entityIds.add(update.networkId);
+                    }
+                }
+            }
+
             return state.isFilteringPackets && !state.isProcessingPackets;
         });
     }
@@ -174,7 +189,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         return states.get(packetHandler.getAuth().getUuid());
     }
 
-    private void clearWorld(@Nonnull PlayerRef playerRef) {
+    private void clearWorld(@Nonnull PlayerRef playerRef, @Nonnull ReplayState state) {
         Ref<EntityStore> ref = playerRef.getReference();
         assert ref != null;
         Store<EntityStore> store = ref.getStore();
@@ -189,23 +204,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             tracker.unloadAll(playerRef);
         }
 
-        EntityTrackerSystems.EntityViewer viewer = store.getComponent(ref, EntityTrackerSystems.EntityViewer.getComponentType());
-        if (viewer != null) {
-            EntityUpdates entityUpdates = new EntityUpdates();
-
-            List<Integer> visibleEntities = viewer.visible.stream()
-                    .map(entity -> entity.getStore().getComponent(entity, NetworkId.getComponentType()))
-                    .filter(Objects::nonNull)
-                    .map(NetworkId::getId)
-                    .toList();
-
-            entityUpdates.removed = new int[visibleEntities.size()];
-            for (int i = 0; i < visibleEntities.size(); i++) {
-                entityUpdates.removed[i] = visibleEntities.get(i);
-            }
-
-            playerRef.getPacketHandler().write(entityUpdates);
-        }
+        EntityUpdates entityUpdates = new EntityUpdates();
+        entityUpdates.removed = state.entityIds.stream().mapToInt(Integer::intValue).toArray();
+        playerRef.getPacketHandler().write(entityUpdates);
+        state.entityIds.clear();
 
         playerRef.getPacketHandler().tryFlush();
     }
@@ -234,7 +236,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         transfer(playerRef, true);
     }
 
-    private static void transfer(@Nonnull PlayerRef playerRef, boolean replay) {
+    private void transfer(@Nonnull PlayerRef playerRef, boolean replay) {
         try {
             byte[] referralData = null;
             if (replay) {
@@ -324,7 +326,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             state.isProcessingPackets = true;
 
             if (!state.clearedWorld) {
-                clearWorld(playerRef);
+                clearWorld(playerRef, state);
                 state.clearedWorld = true;
             } else {
                 while (canProcessPackets(state, packetHandler) && state.file.read(state.tick)) {
