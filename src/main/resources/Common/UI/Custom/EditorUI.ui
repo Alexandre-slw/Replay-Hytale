@@ -27,6 +27,16 @@ Group {
             ActionName: "";
             KeyBindingLabel: %replay.pause;
           }
+
+          ActionButton #ZoomOut {
+            ActionName: "";
+            KeyBindingLabel: %replay.zoomOut;
+          }
+
+          ActionButton #ZoomIn {
+            ActionName: "";
+            KeyBindingLabel: %replay.zoomIn;
+          }
         }
 
         $C.@Title { @Text = %replay.replay; }
@@ -37,23 +47,28 @@ Group {
 
         Group {
           Anchor: (Full: 0);
-          LayoutMode: Top;
-          Padding: (Full: 30);
           
-          $C.@Slider #Playhead {
-            Anchor: (Top: 20, Height: 6);
-            Value: 50;
-            Min: 0;
-            Max: 100;
-            Style: SliderStyle(
-              Background: (TexturePath: "Common/SliderBackground.png", Border: 2),
-              Handle: "Common/SliderHandle.png",
-              HandleWidth: 16,
-              HandleHeight: 16,
-              Sounds: (
-                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
-              )
-            );
+          LayoutMode: LeftScrolling;
+          ScrollbarStyle: $C.@DefaultScrollbarStyle;
+          
+          Group {
+            LayoutMode: Top;
+            Padding: (Full: 30);
+
+            $C.@Slider #Playhead {
+              Value: 50;
+              Min: 0;
+              Max: 100;
+              Style: SliderStyle(
+                Background: (TexturePath: "Common/SliderBackground.png", Border: 2),
+                Handle: "Common/SliderHandle.png",
+                HandleWidth: 16,
+                HandleHeight: 16,
+                Sounds: (
+                  MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+                )
+              );
+            }
           }
         }
       }

@@ -220,8 +220,8 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         state.replayPath = replayPath;
         state.playerUuid = playerRef.getUuid();
         state.lang = playerRef.getLanguage();
-        // Start with a few ticks in so we don't see a blank world
-        state.tick = 10;
+        // Run the first second so we don't see a blank world
+        state.tick = 30;
 
         try {
             state.file = new ReplayInputFile(replayPath, protocol);

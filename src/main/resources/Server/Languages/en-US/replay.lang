@@ -13,3 +13,5 @@ play=Play
 cannotEditWhilePlaying=Cannot edit while replaying
 moveCamera=Move Camera
 leftClickToReopenEditor=Left click to reopen the Editor.
+zoomOut=Zoom Out
+zoomIn=Zoom In

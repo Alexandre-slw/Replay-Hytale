@@ -52,8 +52,8 @@ public abstract class BaseUI<T extends UIEventIdData> extends InteractiveCustomU
 
         if (eventContext.isClosed()) {
             close();
-        } else {
-            sendUpdate(uiCommandBuilder, false);
+        } else if (uiCommandBuilder.getCommands().length > 0) {
+            sendUpdate(uiCommandBuilder);
         }
     }
 

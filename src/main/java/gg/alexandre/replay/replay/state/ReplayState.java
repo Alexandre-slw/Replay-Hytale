@@ -25,4 +25,6 @@ public class ReplayState {
     public boolean controlGame;
     public boolean sentEscHint;
 
+    public float zoom = 1.0f;
+
 }

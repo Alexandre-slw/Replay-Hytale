@@ -6,6 +6,8 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.ui.Anchor;
+import com.hypixel.hytale.server.core.ui.Value;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -23,10 +25,12 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 public class EditorUI extends BaseUI<EditorUI.Data> {
 
     private static final BuilderCodec<Data> CODEC = CodecConstructor.create(Data.class, Data::new);
+    private static final int WIDTH = 800;
 
     public static class Data extends UIEventIdData {
         @UIKey("@Playhead")
@@ -42,6 +46,10 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     private final Map<String, Object> cachedData = new HashMap<>();
 
+    private final Map<String, Function<Integer, Anchor>> elementsAnchor = Map.of(
+            "#Playhead", (width) -> anchor(0, 20, width, 6)
+    );
+
     public EditorUI(@Nonnull PlayerRef playerRef, ReplayPlayer player, ReplayState state) {
         super(playerRef, CustomPageLifetime.CanDismissOrCloseThroughInteraction, CODEC);
         this.player = player;
@@ -55,6 +63,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         ReplayMetadata metadata = state.file.getMetadata();
         uiCommandBuilder.set("#Playhead.Max", metadata.ticks);
 
+        layout(uiCommandBuilder);
         tick(uiCommandBuilder);
     }
 
@@ -85,6 +94,16 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         eventHandler.handle(CustomUIEventBindingType.Activating,
                 "#Pause",
                 this::onPause
+        );
+
+        eventHandler.handle(CustomUIEventBindingType.Activating,
+                "#ZoomOut",
+                this::onZoomOut
+        );
+
+        eventHandler.handle(CustomUIEventBindingType.Activating,
+                "#ZoomIn",
+                this::onZoomIn
         );
     }
 
@@ -118,11 +137,36 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     private void onEsc(@Nonnull UIEventContext<Data> context) {
         state.controlGame = true;
-        close();
+        context.close();
     }
 
     private void onPause(@Nonnull UIEventContext<Data> context) {
         state.isPlaying = !state.isPlaying;
+    }
+
+    private void onZoomOut(@Nonnull UIEventContext<Data> context) {
+        if (state.zoom <= 0.45f) {
+            return;
+        }
+
+        state.zoom /= 1.5f;
+        layout(context.uiCommandBuilder);
+    }
+
+    private void onZoomIn(@Nonnull UIEventContext<Data> context) {
+        if (state.zoom >= 4f) {
+            return;
+        }
+
+        state.zoom *= 1.5f;
+        layout(context.uiCommandBuilder);
+    }
+
+    public void layout(@Nonnull UICommandBuilder uiCommandBuilder) {
+        int width = (int) (WIDTH * state.zoom);
+        for (Map.Entry<String, Function<Integer, Anchor>> entry : elementsAnchor.entrySet()) {
+            uiCommandBuilder.setObject(entry.getKey() + ".Anchor", entry.getValue().apply(width));
+        }
     }
 
     public void tick() {
@@ -189,5 +233,15 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
                     )
             );
         }
+    }
+
+    @Nonnull
+    private Anchor anchor(int left, int top, int width, int height) {
+        Anchor anchor = new Anchor();
+        anchor.setLeft(Value.of(left));
+        anchor.setTop(Value.of(top));
+        anchor.setWidth(Value.of(width));
+        anchor.setHeight(Value.of(height));
+        return anchor;
     }
 }
