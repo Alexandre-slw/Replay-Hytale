@@ -22,4 +22,7 @@ public class ReplayState {
     public String lang;
     public boolean sentTranslations;
 
+    public boolean controlGame;
+    public boolean sentEscHint;
+
 }

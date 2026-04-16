@@ -5,9 +5,13 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.protocol.packets.assets.UpdateTranslations;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.protocol.packets.entities.EntityUpdates;
+import com.hypixel.hytale.protocol.packets.interaction.CancelInteractionChain;
+import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
+import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPage;
 import com.hypixel.hytale.protocol.packets.interface_.ResetUserInterfaceState;
 import com.hypixel.hytale.protocol.packets.interface_.SetPage;
@@ -88,6 +92,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 state.hasStarted = clientReady.readyForGameplay;
             }
 
+            if (packet instanceof SyncInteractionChains syncInteractionChains) {
+                return handleInteractionChains(handler, state, syncInteractionChains);
+            }
+
             return false;
         });
 
@@ -118,6 +126,43 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
             return state.isFilteringPackets && !state.isProcessingPackets;
         });
+    }
+
+    private boolean handleInteractionChains(@Nonnull PacketHandler handler, @Nonnull ReplayState state,
+                                            @Nonnull SyncInteractionChains syncInteractionChains) {
+        SyncInteractionChain interactionChain = null;
+        int indexToRemove = -1;
+
+        for (int i = 0; i < syncInteractionChains.updates.length; i++) {
+            SyncInteractionChain chain = syncInteractionChains.updates[i];
+            if (chain.interactionType == InteractionType.Primary && chain.initial) {
+                interactionChain = chain;
+                indexToRemove = i;
+                break;
+            }
+        }
+
+        if (interactionChain == null) {
+            return false;
+        }
+
+        SyncInteractionChain chain = interactionChain;
+        bypassFilter(state, () ->
+                handler.writeNoCache(new CancelInteractionChain(chain.chainId, chain.forkedId))
+        );
+        state.controlGame = false;
+
+        if (syncInteractionChains.updates.length == 1) {
+            return true;
+        }
+
+        SyncInteractionChain[] updates = new SyncInteractionChain[syncInteractionChains.updates.length - 1];
+        System.arraycopy(syncInteractionChains.updates, 0, updates, 0, indexToRemove);
+        System.arraycopy(syncInteractionChains.updates, indexToRemove + 1, updates, indexToRemove,
+                syncInteractionChains.updates.length - indexToRemove - 1);
+
+        syncInteractionChains.updates = updates;
+        return false;
     }
 
     @Nullable
@@ -175,6 +220,8 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         state.replayPath = replayPath;
         state.playerUuid = playerRef.getUuid();
         state.lang = playerRef.getLanguage();
+        // Start with a few ticks in so we don't see a blank world
+        state.tick = 10;
 
         try {
             state.file = new ReplayInputFile(replayPath, protocol);
@@ -300,6 +347,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
     }
 
     private void handlePage(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
+        if (state.controlGame) {
+            return;
+        }
+
         Ref<EntityStore> ref = playerRef.getReference();
         if (ref == null) {
             return;
@@ -346,13 +397,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         return clientReadyForChunksFuture == null || clientReadyForChunksFuture.isDone();
     }
 
-    public void bypassFilter(@Nonnull PlayerRef playerRef, @Nonnull Runnable runnable) {
-        ReplayState state = states.get(playerRef.getUuid());
-        if (state == null) {
-            runnable.run();
-            return;
-        }
-
+    public void bypassFilter(@Nonnull ReplayState state, @Nonnull Runnable runnable) {
         if (!state.isFilteringPackets) {
             runnable.run();
             return;

@@ -11,4 +11,5 @@ pauseRecording=Pause Recording
 pause=Pause
 play=Play
 cannotEditWhilePlaying=Cannot edit while replaying
-pressEscToPausePlay=Press ESC to pause/play!
+moveCamera=Move Camera
+leftClickToReopenEditor=Left click to reopen the Editor.

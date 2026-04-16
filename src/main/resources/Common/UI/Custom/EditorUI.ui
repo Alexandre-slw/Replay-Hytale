@@ -2,55 +2,58 @@ $C = "Common.ui";
 $Sounds = "Sounds.ui";
 
 Group {
-  LayoutMode: Bottom;
+  LayoutMode: Full;
 
-  $C.@DecoratedContainer {
-    Anchor: (Left: 10, Right: 10, Bottom: 10);
+  Slider #Esc {
+    Value: 50;
+    Min: 0;
+    Max: 100;
+    Style: SliderStyle();
+  }
 
-    #Title {
-      ActionButton #Pause {
-        Anchor: (Left: 20);
-        ActionName: %replay.pause;
-        KeyBindingLabel: "Esc";
-      }
+  Group {
+    LayoutMode: Bottom;
 
-      $C.@Title { @Text = %replay.replay; }
-    }
+    $C.@DecoratedContainer {
+      Anchor: (Left: 10, Right: 10, Bottom: 10);
+      HitTestVisible: true;
 
-    #Content {
-      LayoutMode: Full;
+      #Title {
+        Group {
+          Anchor: (Left: 20);
+          LayoutMode: Left;
 
-      Group {
-        Anchor: (Full: 0);
-        LayoutMode: Top;
-        Padding: (Full: 30);
-        
-        $C.@Slider #Playhead {
-          Anchor: (Top: 20, Height: 6);
-          Value: 50;
-          Min: 0;
-          Max: 100;
-          Style: SliderStyle(
-            Background: (TexturePath: "Common/SliderBackground.png", Border: 2),
-            Handle: "Common/SliderHandle.png",
-            HandleWidth: 16,
-            HandleHeight: 16,
-            Sounds: (
-              MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
-            )
-          );
+          ActionButton #Pause {
+            ActionName: "";
+            KeyBindingLabel: %replay.pause;
+          }
         }
+
+        $C.@Title { @Text = %replay.replay; }
       }
 
-      AssetImage #Mask {
-        Background: PatchStyle(TexturePath: "Assets/Mask.png", Color: #1b2430(0.7));
-        HitTestVisible: true;
+      #Content {
+        LayoutMode: Full;
 
         Group {
-          LayoutMode: MiddleCenter;
-
-          Label {
-            Text: %replay.cannotEditWhilePlaying;
+          Anchor: (Full: 0);
+          LayoutMode: Top;
+          Padding: (Full: 30);
+          
+          $C.@Slider #Playhead {
+            Anchor: (Top: 20, Height: 6);
+            Value: 50;
+            Min: 0;
+            Max: 100;
+            Style: SliderStyle(
+              Background: (TexturePath: "Common/SliderBackground.png", Border: 2),
+              Handle: "Common/SliderHandle.png",
+              HandleWidth: 16,
+              HandleHeight: 16,
+              Sounds: (
+                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+              )
+            );
           }
         }
       }

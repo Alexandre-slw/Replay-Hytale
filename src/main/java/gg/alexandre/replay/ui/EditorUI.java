@@ -20,6 +20,7 @@ import gg.alexandre.replay.ui.event.UIEventHandler;
 import gg.alexandre.replay.ui.event.UIEventIdData;
 
 import javax.annotation.Nonnull;
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,6 +72,16 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
                 this::onPlayheadRelease
         );
 
+        eventHandler.handle(CustomUIEventBindingType.ValueChanged,
+                "#Esc",
+                this::onEsc
+        );
+
+        eventHandler.handle(CustomUIEventBindingType.MouseButtonReleased,
+                "#Esc",
+                this::onEsc
+        );
+
         eventHandler.handle(CustomUIEventBindingType.Activating,
                 "#Pause",
                 this::onPause
@@ -105,6 +116,11 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         pauseUpdates = false;
     }
 
+    private void onEsc(@Nonnull UIEventContext<Data> context) {
+        state.controlGame = true;
+        close();
+    }
+
     private void onPause(@Nonnull UIEventContext<Data> context) {
         state.isPlaying = !state.isPlaying;
     }
@@ -125,7 +141,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     }
 
     public void tick(@Nonnull UICommandBuilder uiCommandBuilder) {
-        update(uiCommandBuilder,"#Pause.ActionName",
+        update(uiCommandBuilder,"#Pause.KeyBindingLabel",
                 Message.translation(state.isPlaying ? "replay.pause" : "replay.play"));
 //        update(uiCommandBuilder,"#Mask.Visible", state.isPlaying);
         update(uiCommandBuilder, "#Playhead.Value", state.tick);
@@ -162,6 +178,16 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     @Override
     public void onDismiss(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
-        // TODO: exit prompt
+        if (!state.controlGame) {
+            // TODO: exit prompt
+        } else if (!state.sentEscHint) {
+            state.sentEscHint = true;
+
+            player.bypassFilter(state, () ->
+                    playerRef.sendMessage(
+                            Message.translation("replay.leftClickToReopenEditor").color(Color.CYAN)
+                    )
+            );
+        }
     }
 }
