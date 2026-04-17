@@ -1,6 +1,7 @@
 package gg.alexandre.replay.replay.state;
 
 import gg.alexandre.replay.file.ReplayInputFile;
+import gg.alexandre.replay.replay.editor.EditorState;
 
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -30,5 +31,7 @@ public class ReplayState {
     public float zoom = 1.0f;
 
     public Set<Integer> entityIds = new HashSet<>();
+
+    public EditorState editorState = new EditorState();
 
 }

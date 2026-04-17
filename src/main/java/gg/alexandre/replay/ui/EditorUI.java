@@ -30,7 +30,7 @@ import java.util.function.Function;
 public class EditorUI extends BaseUI<EditorUI.Data> {
 
     private static final BuilderCodec<Data> CODEC = CodecConstructor.create(Data.class, Data::new);
-    private static final int WIDTH = 800;
+    private static final int WIDTH = 1200;
 
     public static class Data extends UIEventIdData {
         @UIKey("@Playhead")
@@ -47,7 +47,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     private final Map<String, Object> cachedData = new HashMap<>();
 
     private final Map<String, Function<Integer, Anchor>> elementsAnchor = Map.of(
-            "#Playhead", (width) -> anchor(0, 20, width, 6)
+            "#Playhead", (width) -> anchor(0, 0, width, 16)
     );
 
     public EditorUI(@Nonnull PlayerRef playerRef, ReplayPlayer player, ReplayState state) {
