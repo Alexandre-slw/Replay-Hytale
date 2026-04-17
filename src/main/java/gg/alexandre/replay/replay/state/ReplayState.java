@@ -1,37 +1,79 @@
 package gg.alexandre.replay.replay.state;
 
+import com.google.gson.Gson;
+import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.file.ReplayInputFile;
-import gg.alexandre.replay.replay.editor.EditorState;
 
+import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Stream;
 
 public class ReplayState {
 
     public Path replayPath;
     public ReplayInputFile file;
 
-    public int tick;
-    public boolean hasStarted;
-    public boolean isPlaying;
-    public boolean isFilteringPackets;
-    public boolean isProcessingPackets;
-    public boolean sentJoinWorld;
-    public boolean clearedWorld;
+    public int currentTick;
+    public double targetTick;
+
     public UUID playerUuid;
-
     public String lang;
-    public boolean sentTranslations;
-
-    public boolean controlGame;
-    public boolean sentEscHint;
-
-    public float zoom = 1.0f;
 
     public Set<Integer> entityIds = new HashSet<>();
 
-    public EditorState editorState = new EditorState();
+    public EditState edit = new EditState();
+    public ReplayStageState stage = new ReplayStageState();
+    public UIState ui = new UIState();
+    public TimelineState timeline = new TimelineState();
+
+    public String selectedTimeline;
+    public List<String> timelines = new ArrayList<>();
+
+    public void loadTimelines() throws IOException {
+        Path dir = TimelineState.EDITS_DIRECTORY.resolve(file.getMetadata().uuid.toString());
+        List<String> timelines;
+
+        if (Files.isDirectory(dir)) {
+            try (Stream<Path> stream = Files.list(dir)) {
+                timelines = stream
+                        .map(path -> path.getFileName().toString())
+                        .filter(path -> path.toLowerCase(Locale.ROOT).endsWith(".json"))
+                        .map(path -> path.substring(0, path.length() - 5))
+                        .toList();
+            }
+        } else {
+            timelines = List.of(TimelineState.DEFAULT_TIMELINE_NAME);
+        }
+
+        this.timelines.addAll(timelines);
+
+        if (this.timelines.isEmpty() || this.timelines.contains(TimelineState.DEFAULT_TIMELINE_NAME)) {
+            loadTimeline(TimelineState.DEFAULT_TIMELINE_NAME);
+        } else {
+            loadTimeline(this.timelines.getFirst());
+        }
+    }
+
+    public void loadTimeline(@Nonnull String name) {
+        Path path = TimelineState.getTimelinePath(file.getMetadata().uuid, name);
+        if (!Files.exists(path)) {
+            timeline = new TimelineState();
+            selectedTimeline = name;
+            timeline.save(file.getMetadata().uuid, name);
+            return;
+        }
+
+        Gson gson = ReplayPlugin.get().getGson();
+        try {
+            String json = Files.readString(path);
+            timeline = gson.fromJson(json, TimelineState.class);
+            selectedTimeline = name;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 }

@@ -31,7 +31,7 @@ public class TickReplayPacket implements ReplayPacket {
 
     @Override
     public void handle(@Nonnull PacketHandler packetHandler, @Nonnull ReplayState state) {
-
+        state.currentTick = tick;
     }
 
     public int getTick() {

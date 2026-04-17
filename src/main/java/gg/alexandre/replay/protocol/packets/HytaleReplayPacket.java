@@ -50,11 +50,11 @@ public class HytaleReplayPacket implements ReplayPacket {
         Packet packet = PacketIO.readFramedPacketWithInfo(data, length, info, PacketStatsRecorder.NOOP);
 
         if (packet instanceof JoinWorld) {
-            if (state.sentJoinWorld) {
+            if (state.stage.sentJoinWorld) {
                 return;
             }
 
-            state.sentJoinWorld = true;
+            state.stage.sentJoinWorld = true;
         }
 
         packetHandler.write((ToClientPacket) packet);

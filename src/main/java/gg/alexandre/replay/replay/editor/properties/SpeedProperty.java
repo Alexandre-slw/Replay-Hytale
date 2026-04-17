@@ -13,7 +13,12 @@ public class SpeedProperty extends DoubleProperty {
 
     @Override
     public void handle(@Nonnull ReplayState state, int tick) {
-        // TODO: implement
+        Double value = getValue(tick);
+        if (value == null) {
+            return;
+        }
+
+        state.edit.speed = value;
     }
 
     @Nonnull

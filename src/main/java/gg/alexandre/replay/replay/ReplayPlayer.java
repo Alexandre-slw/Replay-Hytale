@@ -33,7 +33,10 @@ import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.file.ReplayInputFile;
+import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.protocol.ReplayProtocol;
+import gg.alexandre.replay.protocol.packets.TickReplayPacket;
+import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.EditorUI;
 import gg.alexandre.replay.ui.manager.RealtimePageManager;
@@ -46,6 +49,8 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -71,7 +76,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 return false;
             }
 
-            if (packet instanceof RequestAssets && !state.isFilteringPackets) {
+            if (packet instanceof RequestAssets && !state.stage.isFilteringPackets) {
                 state.file.consumeConfigPhase((replayPacket) -> replayPacket.handle(handler, state));
                 handler.tryFlush();
 
@@ -83,14 +88,14 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                     throw new RuntimeException(e);
                 }
 
-                state.isFilteringPackets = true;
+                state.stage.isFilteringPackets = true;
 
                 return true;
             }
 
             if (packet instanceof ClientReady clientReady) {
-                state.isProcessingPackets = clientReady.readyForChunks;
-                state.hasStarted = clientReady.readyForGameplay;
+                state.stage.isProcessingPackets = clientReady.readyForChunks;
+                state.stage.hasStarted = clientReady.readyForGameplay;
             }
 
             if (packet instanceof SyncInteractionChains syncInteractionChains) {
@@ -114,14 +119,14 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 return false;
             }
 
-            if (packet instanceof UpdateTranslations && !state.sentTranslations) {
-                state.sentTranslations = true;
+            if (packet instanceof UpdateTranslations && !state.stage.sentTranslations) {
+                state.stage.sentTranslations = true;
                 I18nModule.get().sendTranslations(handler, state.lang);
                 return true;
             }
 
-            if (packet instanceof JoinWorld && !state.sentJoinWorld) {
-                state.sentJoinWorld = true;
+            if (packet instanceof JoinWorld && !state.stage.sentJoinWorld) {
+                state.stage.sentJoinWorld = true;
                 return false;
             }
 
@@ -139,7 +144,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 }
             }
 
-            return state.isFilteringPackets && !state.isProcessingPackets;
+            return state.stage.isFilteringPackets && !state.stage.isProcessingPackets;
         });
     }
 
@@ -165,7 +170,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         bypassFilter(state, () ->
                 handler.writeNoCache(new CancelInteractionChain(chain.chainId, chain.forkedId))
         );
-        state.controlGame = false;
+        state.ui.controlGame = false;
 
         if (syncInteractionChains.updates.length == 1) {
             return true;
@@ -223,7 +228,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         state.playerUuid = playerRef.getUuid();
         state.lang = playerRef.getLanguage();
         // Run the first second so we don't see a blank world
-        state.tick = 30;
+        state.targetTick = 30;
 
         try {
             state.file = new ReplayInputFile(replayPath, protocol);
@@ -232,6 +237,12 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
 
         states.put(playerRef.getUuid(), state);
+
+        try {
+            state.loadTimelines();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         transfer(playerRef, true);
     }
@@ -262,7 +273,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
     public void restart(@Nonnull PlayerRef playerRef) {
         ReplayState state = states.get(playerRef.getUuid());
-        if (state == null || !state.hasStarted) {
+        if (state == null || !state.stage.hasStarted) {
             return;
         }
 
@@ -278,18 +289,21 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             throw new RuntimeException(e);
         }
 
-        state.clearedWorld = false;
+        state.stage.clearedWorld = false;
+        state.currentTick = 0;
     }
 
     public void stop(@Nonnull PlayerRef playerRef) {
         ReplayState state = states.get(playerRef.getUuid());
-        if (state == null || !state.hasStarted) {
+        if (state == null || !state.stage.hasStarted) {
             return;
         }
 
         states.remove(playerRef.getUuid());
 
         try {
+            state.timeline.save(state.file.getMetadata().uuid, state.selectedTimeline);
+
             state.file.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -306,11 +320,12 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
     public void tick(float v, int i, @Nonnull Store<EntityStore> store) {
         for (ReplayState state : states.values()) {
             tick(state);
+            tickEditor(state);
         }
     }
 
     private void tick(@Nonnull ReplayState state) {
-        if (!state.hasStarted) {
+        if (!state.stage.hasStarted) {
             return;
         }
 
@@ -323,14 +338,23 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         PacketHandler packetHandler = playerRef.getPacketHandler();
         try {
-            state.isProcessingPackets = true;
+            state.stage.isProcessingPackets = true;
 
-            if (!state.clearedWorld) {
+            if (!state.stage.clearedWorld) {
                 clearWorld(playerRef, state);
-                state.clearedWorld = true;
+                state.stage.clearedWorld = true;
             } else {
-                while (canProcessPackets(state, packetHandler) && state.file.read(state.tick)) {
-                    state.file.consumePacket().handle(packetHandler, state);
+                int processedTicks = 0;
+                while (canProcessPackets(state, packetHandler) &&
+                       state.file.read((int) state.targetTick) &&
+                       processedTicks < 500) { // TODO: investigate if necessary, and what value
+                    ReplayPacket replayPacket = state.file.consumePacket();
+                    replayPacket.handle(packetHandler, state);
+
+                    if (replayPacket instanceof TickReplayPacket) {
+                        tickEditor(state);
+                        processedTicks++;
+                    }
                 }
             }
 
@@ -340,16 +364,26 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         } catch (Exception e) {
             logger.atWarning().withCause(e).log("Error while processing replay packets");
         } finally {
-            state.isProcessingPackets = false;
+            state.stage.isProcessingPackets = false;
         }
 
-        if ((!state.sentJoinWorld || state.isPlaying) && canProcessPackets(state, packetHandler)) {
-            state.tick++;
+        if ((!state.stage.sentJoinWorld || state.stage.isPlaying) && canProcessPackets(state, packetHandler)) {
+            state.targetTick += state.edit.speed;
+        }
+    }
+
+    private void tickEditor(@Nonnull ReplayState state) {
+        if (state.timeline.getLastSaved().plus(5, ChronoUnit.MINUTES).isBefore(Instant.now())) {
+            state.timeline.save(state.file.getMetadata().uuid, state.selectedTimeline);
+        }
+
+        for (BaseProperty<?> property : state.timeline.getProperties()) {
+            property.handle(state, state.currentTick);
         }
     }
 
     private void handlePage(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
-        if (state.controlGame) {
+        if (state.ui.controlGame) {
             return;
         }
 
@@ -391,7 +425,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
     }
 
     private boolean canProcessPackets(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler) {
-        if (!state.sentJoinWorld) {
+        if (!state.stage.sentJoinWorld) {
             return true;
         }
 
@@ -400,16 +434,16 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
     }
 
     public void bypassFilter(@Nonnull ReplayState state, @Nonnull Runnable runnable) {
-        if (!state.isFilteringPackets) {
+        if (!state.stage.isFilteringPackets) {
             runnable.run();
             return;
         }
 
-        state.isFilteringPackets = false;
+        state.stage.isFilteringPackets = false;
         try {
             runnable.run();
         } finally {
-            state.isFilteringPackets = true;
+            state.stage.isFilteringPackets = true;
         }
     }
 

@@ -108,12 +108,12 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     }
 
     private void onPlayhead(@Nonnull UIEventContext<Data> context) {
-        if (context.data.playhead > state.tick) {
-            state.tick = context.data.playhead;
+        if (context.data.playhead > state.targetTick) {
+            state.targetTick = context.data.playhead;
         }
 
-        if (state.isPlaying) {
-            state.isPlaying = false;
+        if (state.stage.isPlaying) {
+            state.stage.isPlaying = false;
             needToResume = true;
         }
 
@@ -121,14 +121,14 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     }
 
     private void onPlayheadRelease(@Nonnull UIEventContext<Data> context) {
-        if (context.data.playhead < state.tick) {
+        if (context.data.playhead < state.targetTick) {
             player.restart(playerRef);
         }
 
-        state.tick = context.data.playhead;
+        state.targetTick = context.data.playhead;
 
         if (needToResume) {
-            state.isPlaying = true;
+            state.stage.isPlaying = true;
             needToResume = false;
         }
 
@@ -136,34 +136,34 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     }
 
     private void onEsc(@Nonnull UIEventContext<Data> context) {
-        state.controlGame = true;
+        state.ui.controlGame = true;
         context.close();
     }
 
     private void onPause(@Nonnull UIEventContext<Data> context) {
-        state.isPlaying = !state.isPlaying;
+        state.stage.isPlaying = !state.stage.isPlaying;
     }
 
     private void onZoomOut(@Nonnull UIEventContext<Data> context) {
-        if (state.zoom <= 0.45f) {
+        if (state.ui.timelineZoom <= 0.45f) {
             return;
         }
 
-        state.zoom /= 1.5f;
+        state.ui.timelineZoom /= 1.5f;
         layout(context.uiCommandBuilder);
     }
 
     private void onZoomIn(@Nonnull UIEventContext<Data> context) {
-        if (state.zoom >= 4f) {
+        if (state.ui.timelineZoom >= 4f) {
             return;
         }
 
-        state.zoom *= 1.5f;
+        state.ui.timelineZoom *= 1.5f;
         layout(context.uiCommandBuilder);
     }
 
     public void layout(@Nonnull UICommandBuilder uiCommandBuilder) {
-        int width = (int) (WIDTH * state.zoom);
+        int width = (int) (WIDTH * state.ui.timelineZoom);
         for (Map.Entry<String, Function<Integer, Anchor>> entry : elementsAnchor.entrySet()) {
             uiCommandBuilder.setObject(entry.getKey() + ".Anchor", entry.getValue().apply(width));
         }
@@ -186,9 +186,9 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     public void tick(@Nonnull UICommandBuilder uiCommandBuilder) {
         update(uiCommandBuilder,"#Pause.KeyBindingLabel",
-                Message.translation(state.isPlaying ? "replay.pause" : "replay.play"));
+                Message.translation(state.stage.isPlaying ? "replay.pause" : "replay.play"));
 //        update(uiCommandBuilder,"#Mask.Visible", state.isPlaying);
-        update(uiCommandBuilder, "#Playhead.Value", state.tick);
+        update(uiCommandBuilder, "#Playhead.Value", (int) state.targetTick);
     }
 
     private void update(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull String selector, @Nonnull Object value) {
@@ -211,6 +211,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
         switch (value) {
             case Integer v -> uiCommandBuilder.set(selector, v);
+            case Double v -> uiCommandBuilder.set(selector, v);
             case String v -> uiCommandBuilder.set(selector, v);
             case Boolean v -> uiCommandBuilder.set(selector, v);
             case Message v -> uiCommandBuilder.set(selector, v);
@@ -222,10 +223,10 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     @Override
     public void onDismiss(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
-        if (!state.controlGame) {
+        if (!state.ui.controlGame) {
             // TODO: exit prompt
-        } else if (!state.sentEscHint) {
-            state.sentEscHint = true;
+        } else if (!state.ui.sentEscHint) {
+            state.ui.sentEscHint = true;
 
             player.bypassFilter(state, () ->
                     playerRef.sendMessage(

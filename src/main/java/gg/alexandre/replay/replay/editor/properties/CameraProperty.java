@@ -22,7 +22,7 @@ public class CameraProperty extends BaseProperty<Position> {
             return;
         }
 
-        // TODO: implement
+        state.edit.cameraPosition = cameraPosition;
     }
 
     @NullableDecl

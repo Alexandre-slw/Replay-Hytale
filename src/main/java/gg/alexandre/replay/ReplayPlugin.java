@@ -1,6 +1,7 @@
 package gg.alexandre.replay;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.hypixel.hytale.component.ComponentRegistryProxy;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
@@ -13,10 +14,15 @@ import gg.alexandre.replay.commands.ReplayCommand;
 import gg.alexandre.replay.components.DummyViewerSystem;
 import gg.alexandre.replay.components.TargetWatcherTag;
 import gg.alexandre.replay.events.DisconnectEvent;
+import gg.alexandre.replay.gson.BasePropertyAdapter;
+import gg.alexandre.replay.gson.PositionAdapter;
+import gg.alexandre.replay.gson.SerializedNameOnlyStrategy;
 import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.recorder.ReplayRecorder;
 import gg.alexandre.replay.replay.ReplayPlayer;
+import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.repository.ReplayRepository;
+import gg.alexandre.replay.util.Position;
 
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
@@ -33,7 +39,12 @@ public class ReplayPlugin extends JavaPlugin {
     private final ReplayRecorder recorder = new ReplayRecorder(protocol, repository);
     private final ReplayPlayer player = new ReplayPlayer(protocol);
 
-    private final Gson gson = new Gson();
+    private final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(Position.class, new PositionAdapter())
+            .registerTypeAdapter(BaseProperty.class, new BasePropertyAdapter())
+            .addDeserializationExclusionStrategy(new SerializedNameOnlyStrategy())
+            .addSerializationExclusionStrategy(new SerializedNameOnlyStrategy())
+            .create();
 
     public ReplayPlugin(@Nonnull JavaPluginInit init) {
         super(init);
