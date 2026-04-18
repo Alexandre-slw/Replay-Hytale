@@ -6,6 +6,7 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.ui.Anchor;
 import com.hypixel.hytale.server.core.ui.Value;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
@@ -17,13 +18,16 @@ import gg.alexandre.replay.replay.ReplayPlayer;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.codec.CodecConstructor;
 import gg.alexandre.replay.ui.codec.UIKey;
+import gg.alexandre.replay.ui.common.CommonUI;
 import gg.alexandre.replay.ui.event.UIEventContext;
 import gg.alexandre.replay.ui.event.UIEventHandler;
 import gg.alexandre.replay.ui.event.UIEventIdData;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -35,6 +39,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     public static class Data extends UIEventIdData {
         @UIKey("@Playhead")
         int playhead;
+        @UIKey("@Timeline")
+        String timeline;
     }
 
     private final ReplayPlayer player;
@@ -45,6 +51,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     private boolean pauseUpdates = false;
 
     private final Map<String, Object> cachedData = new HashMap<>();
+    private List<String> cachedTimelines = new ArrayList<>();
 
     private final Map<String, Function<Integer, Anchor>> elementsAnchor = Map.of(
             "#Playhead", (width) -> anchor(0, 0, width, 16)
@@ -58,7 +65,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     @Override
     public void init(@Nonnull UICommandBuilder uiCommandBuilder) {
-        uiCommandBuilder.append("EditorUI.ui");
+        uiCommandBuilder.append("Editor.ui");
 
         ReplayMetadata metadata = state.file.getMetadata();
         uiCommandBuilder.set("#Playhead.Max", metadata.ticks);
@@ -104,6 +111,12 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         eventHandler.handle(CustomUIEventBindingType.Activating,
                 "#ZoomIn",
                 this::onZoomIn
+        );
+
+        eventHandler.handle(CustomUIEventBindingType.ValueChanged,
+                "#Timelines",
+                data -> data.append("@Timeline", "#Timelines.Value"),
+                this::onTimelineSelected
         );
     }
 
@@ -162,6 +175,24 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         layout(context.uiCommandBuilder);
     }
 
+    private void onTimelineSelected(@Nonnull UIEventContext<Data> context) {
+        String selected = context.data.timeline;
+        if (selected.equals(state.selectedTimeline)) {
+            return;
+        }
+
+        if (selected.equals("/newTimeline")) {
+            Ref<EntityStore> ref = context.ref;
+            Store<EntityStore> store = context.store;
+            Player playerComponent = store.getComponent(ref, Player.getComponentType());
+            assert playerComponent != null;
+            playerComponent.getPageManager().openCustomPage(ref, store, new NewTimelineUI(playerRef, state));
+        } else {
+            state.loadTimeline(selected);
+            context.close();
+        }
+    }
+
     public void layout(@Nonnull UICommandBuilder uiCommandBuilder) {
         int width = (int) (WIDTH * state.ui.timelineZoom);
         for (Map.Entry<String, Function<Integer, Anchor>> entry : elementsAnchor.entrySet()) {
@@ -185,10 +216,47 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     }
 
     public void tick(@Nonnull UICommandBuilder uiCommandBuilder) {
-        update(uiCommandBuilder,"#Pause.KeyBindingLabel",
+        update(uiCommandBuilder, "#Pause.KeyBindingLabel",
                 Message.translation(state.stage.isPlaying ? "replay.pause" : "replay.play"));
-//        update(uiCommandBuilder,"#Mask.Visible", state.isPlaying);
+        update(uiCommandBuilder, "#Timelines.Value", state.selectedTimeline);
         update(uiCommandBuilder, "#Playhead.Value", (int) state.targetTick);
+
+        updateTimelinesDropdown(uiCommandBuilder);
+    }
+
+    private void updateTimelinesDropdown(@Nonnull UICommandBuilder uiCommandBuilder) {
+        if (cachedTimelines.size() != state.timelines.size()) {
+            StringBuilder dropdown = new StringBuilder(CommonUI.DEFAULT_DROPDOWN_STYLE);
+
+            dropdown.append(String.format("""
+                    DropdownBox #Timelines {
+                      Anchor: (Width: 150, Height: 26);
+                      Style: (...@DefaultDropdownBoxStyle, EntriesInViewport: 4, ArrowWidth: 0);
+                      Value: "%s";
+                    """, state.selectedTimeline));
+
+            for (String timeline : state.timelines) {
+                dropdown.append(String.format("""
+                        DropdownEntry {
+                          Value: "%s";
+                          Text: "%s";
+                        }
+                        """, timeline, timeline));
+            }
+
+            dropdown.append("""
+                      DropdownEntry {
+                        Value: "/newTimeline";
+                        Text: %replay.plusNewTimeline;
+                      }
+                    }
+                    """);
+
+            uiCommandBuilder.remove("#Timelines");
+            uiCommandBuilder.appendInline("#TimelinesContainer", dropdown.toString());
+
+            cachedTimelines = new ArrayList<>(state.timelines);
+        }
     }
 
     private void update(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull String selector, @Nonnull Object value) {

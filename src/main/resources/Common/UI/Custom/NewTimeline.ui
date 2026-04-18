@@ -2,29 +2,28 @@ $C = "Common.ui";
 
 Group {
   LayoutMode: MiddleCenter;
-
+  
   $C.@DecoratedContainer {
+    @PlaceholderText = %replay.namePlaceholder;
+    @Title = %replay.newTimeline;
+    @Text = %replay.timelineName;
+    @CancelText = %replay.cancel;
+    @SaveText = %replay.save;
+
     Anchor: (Width: 800);
 
     #Title {
-      $C.@Title { @Text = %replay.saveReplay; }
     }
 
     #Content {
       LayoutMode: Top;
       Padding: (Full: 30);
 
-      Label {
-        Style: (FontSize: 20);
-        Text: %replay.replayName;
-      }
-
       TextField #Input {
-        Style: $C.@DefaultInputFieldStyle;
         Background: $C.@InputBoxBackground;
         Anchor: (Top: 5, Left: 0, Right: 0, Height: 50);
         Padding: (Full: 10);
-        PlaceholderText: "Name...";
+        PlaceholderText: @PlaceholderText;
       }
 
       Group {
@@ -32,7 +31,7 @@ Group {
         Anchor: (Top: 30);
 
         $C.@CancelTextButton #Discard {
-          @Text = %replay.discard;
+          @Text = @CancelText;
           FlexWeight: 1;
         }
 
@@ -41,7 +40,7 @@ Group {
         }
 
         $C.@TextButton #Save {
-          @Text = %replay.save;
+          @Text = @SaveText;
           FlexWeight: 1;
         }
       }

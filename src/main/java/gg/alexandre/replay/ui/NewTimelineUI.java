@@ -7,7 +7,7 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
-import gg.alexandre.replay.repository.ReplayRepository;
+import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.codec.CodecConstructor;
 import gg.alexandre.replay.ui.codec.UIKey;
 import gg.alexandre.replay.ui.event.UIEventContext;
@@ -15,13 +15,10 @@ import gg.alexandre.replay.ui.event.UIEventHandler;
 import gg.alexandre.replay.ui.event.UIEventIdData;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
-public class SaveUI extends BaseUI<SaveUI.Data> {
+public class NewTimelineUI extends BaseUI<NewTimelineUI.Data> {
 
-    private final Path savePath;
+    private final ReplayState state;
 
     private static final BuilderCodec<Data> CODEC = CodecConstructor.create(Data.class, Data::new);
 
@@ -30,20 +27,23 @@ public class SaveUI extends BaseUI<SaveUI.Data> {
         private String value;
     }
 
-    public SaveUI(@Nonnull PlayerRef playerRef, @Nonnull Path savePath) {
+    public NewTimelineUI(@Nonnull PlayerRef playerRef, @Nonnull ReplayState state) {
         super(playerRef, CustomPageLifetime.CanDismissOrCloseThroughInteraction, CODEC);
 
-        this.savePath = savePath;
+        this.state = state;
     }
 
     @Override
     public void init(@Nonnull UICommandBuilder uiCommandBuilder) {
-        uiCommandBuilder.append("SaveRecording.ui");
+        uiCommandBuilder.append("NewTimeline.ui");
 
-        String name = savePath.getFileName().toString();
-        if (name.endsWith(ReplayRepository.REPLAY_EXTENSION)) {
-            name = name.substring(0, name.length() - ReplayRepository.REPLAY_EXTENSION.length());
+        String name = "Unnamed";
+        int i = 1;
+        while (state.timelines.contains(name)) {
+            name = "Unnamed " + i;
+            i++;
         }
+
         uiCommandBuilder.set("#Input.Value", name);
     }
 
@@ -78,11 +78,6 @@ public class SaveUI extends BaseUI<SaveUI.Data> {
     }
 
     private void onDiscard(@Nonnull UIEventContext<Data> context) {
-        try {
-            Files.delete(savePath);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
         context.close();
     }
 
@@ -97,24 +92,12 @@ public class SaveUI extends BaseUI<SaveUI.Data> {
             return;
         }
 
-        String name = value + ReplayRepository.REPLAY_EXTENSION;
-        Path path = savePath.getParent() != null ? savePath.getParent().resolve(name) : Path.of(name);
-        try {
-            Files.move(savePath, path);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        state.loadTimeline(value);
         context.close();
     }
 
     private boolean isInvalidPath(@Nonnull String value) {
-        String fileName = value + ReplayRepository.REPLAY_EXTENSION;
-        if (fileName.equals(savePath.getFileName().toString())) {
-            return false;
-        }
-
-        return !PathUtil.isValidName(value) ||
-                (savePath.getParent() != null && Files.exists(savePath.getParent().resolve(fileName)));
+        return !PathUtil.isValidName(value) || state.timelines.contains(value);
     }
 
 }

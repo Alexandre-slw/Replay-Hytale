@@ -35,7 +35,7 @@ public class ReplayUI extends BaseUI<ReplayUI.Data> {
 
     @Override
     public void init(@Nonnull UICommandBuilder uiCommandBuilder) {
-        uiCommandBuilder.append("ReplayUI.ui");
+        uiCommandBuilder.append("Replay.ui");
 
         List<Path> replays = replayRepository.getReplays(playerRef);
         for (int i = 0; i < replays.size(); i++) {

@@ -8,6 +8,7 @@ import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.EntityUpdate;
 import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.protocol.packets.assets.UpdateTranslations;
+import com.hypixel.hytale.protocol.packets.connection.ClientDisconnect;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.protocol.packets.entities.EntityUpdates;
 import com.hypixel.hytale.protocol.packets.interaction.CancelInteractionChain;
@@ -21,6 +22,7 @@ import com.hypixel.hytale.protocol.packets.player.ClientReady;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
 import com.hypixel.hytale.protocol.packets.setup.RequestAssets;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.ServerManager;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
@@ -100,6 +102,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
             if (packet instanceof SyncInteractionChains syncInteractionChains) {
                 return handleInteractionChains(handler, state, syncInteractionChains);
+            }
+
+            if (state.stage.isFilteringPackets && packet instanceof ClientDisconnect) {
+                stop(state);
             }
 
             return false;
@@ -299,7 +305,15 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             return;
         }
 
-        states.remove(playerRef.getUuid());
+        stop(state);
+
+        if (playerRef.isValid()) {
+            transfer(playerRef, false);
+        }
+    }
+
+    public void stop(@Nonnull ReplayState state) {
+        states.remove(state.playerUuid);
 
         try {
             state.timeline.save(state.file.getMetadata().uuid, state.selectedTimeline);
@@ -310,10 +324,6 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
 
         logger.atInfo().log("Stopped replaying");
-
-        if (playerRef.isValid()) {
-            transfer(playerRef, false);
-        }
     }
 
     @Override
@@ -399,11 +409,15 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         replacePageManager(playerRef, player);
 
         EditorUI editorUI;
-        if (player.getPageManager().getCustomPage() instanceof EditorUI ui) {
+
+        CustomUIPage customPage = player.getPageManager().getCustomPage();
+        if (customPage instanceof EditorUI ui) {
             editorUI = ui;
-        } else {
+        } else if (customPage == null) {
             editorUI = new EditorUI(playerRef, this, state);
             player.getPageManager().openCustomPage(ref, store, editorUI);
+        } else {
+            return;
         }
 
         editorUI.tick();

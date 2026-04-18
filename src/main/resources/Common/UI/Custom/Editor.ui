@@ -23,23 +23,37 @@ Group {
           Anchor: (Left: 20);
           LayoutMode: Left;
 
+          Group #TimelinesContainer {
+            DropdownBox #Timelines {
+            }
+          }
+
           ActionButton #Pause {
-            ActionName: "";
+            Anchor: (Left: 10);
             KeyBindingLabel: %replay.pause;
           }
 
           ActionButton #ZoomOut {
-            ActionName: "";
+            Anchor: (Left: 10);
             KeyBindingLabel: %replay.zoomOut;
           }
 
           ActionButton #ZoomIn {
-            ActionName: "";
+            Anchor: (Left: 10);
             KeyBindingLabel: %replay.zoomIn;
           }
         }
 
         $C.@Title { @Text = %replay.replay; }
+        
+        Group {
+          Anchor: (Right: 20);
+          LayoutMode: Right;
+
+          ActionButton #Close {
+            KeyBindingLabel: %replay.close;
+          }
+        }
       }
 
       #Content {

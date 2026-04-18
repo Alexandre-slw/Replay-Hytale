@@ -58,21 +58,28 @@ public class ReplayState {
     }
 
     public void loadTimeline(@Nonnull String name) {
-        Path path = TimelineState.getTimelinePath(file.getMetadata().uuid, name);
-        if (!Files.exists(path)) {
-            timeline = new TimelineState();
-            selectedTimeline = name;
-            timeline.save(file.getMetadata().uuid, name);
-            return;
+        if (selectedTimeline != null) {
+            timeline.save(file.getMetadata().uuid, selectedTimeline);
         }
 
-        Gson gson = ReplayPlugin.get().getGson();
-        try {
-            String json = Files.readString(path);
-            timeline = gson.fromJson(json, TimelineState.class);
-            selectedTimeline = name;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        Path path = TimelineState.getTimelinePath(file.getMetadata().uuid, name);
+
+        if (!Files.exists(path)) {
+            timeline = new TimelineState();
+            timeline.save(file.getMetadata().uuid, name);
+        } else {
+            Gson gson = ReplayPlugin.get().getGson();
+            try {
+                String json = Files.readString(path);
+                timeline = gson.fromJson(json, TimelineState.class);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        selectedTimeline = name;
+        if (!timelines.contains(name)) {
+            timelines.add(name);
         }
     }
 
