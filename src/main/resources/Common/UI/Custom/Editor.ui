@@ -69,6 +69,22 @@ Group {
             LayoutMode: Top;
             Padding: (Full: 30);
 
+            Group #Timestamps {
+              Anchor: (Left: -18);
+              LayoutMode: Full;
+
+              Label {
+                Anchor: (Left: 0);
+                Text: "00:00";
+                
+                Style: (FontSize: 14, TextColor: #96a9be);
+              }
+            }
+
+            Group #Ticks {
+              LayoutMode: Full;
+            }
+
             $C.@Slider #Playhead {
               Value: 50;
               Min: 0;

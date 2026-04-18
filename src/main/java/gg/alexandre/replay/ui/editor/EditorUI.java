@@ -1,4 +1,4 @@
-package gg.alexandre.replay.ui;
+package gg.alexandre.replay.ui.editor;
 
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.component.Ref;
@@ -7,8 +7,6 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.ui.Anchor;
-import com.hypixel.hytale.server.core.ui.Value;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -16,9 +14,15 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import gg.alexandre.replay.file.ReplayMetadata;
 import gg.alexandre.replay.replay.ReplayPlayer;
 import gg.alexandre.replay.replay.state.ReplayState;
+import gg.alexandre.replay.ui.BaseUI;
+import gg.alexandre.replay.ui.CloseUI;
+import gg.alexandre.replay.ui.NewTimelineUI;
 import gg.alexandre.replay.ui.codec.CodecConstructor;
 import gg.alexandre.replay.ui.codec.UIKey;
 import gg.alexandre.replay.ui.common.CommonUI;
+import gg.alexandre.replay.ui.editor.renderers.BaseRenderer;
+import gg.alexandre.replay.ui.editor.renderers.PlayheadRenderer;
+import gg.alexandre.replay.ui.editor.renderers.TimeScaleRenderer;
 import gg.alexandre.replay.ui.event.UIEventContext;
 import gg.alexandre.replay.ui.event.UIEventHandler;
 import gg.alexandre.replay.ui.event.UIEventIdData;
@@ -29,7 +33,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 public class EditorUI extends BaseUI<EditorUI.Data> {
 
@@ -53,8 +56,9 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     private final Map<String, Object> cachedData = new HashMap<>();
     private List<String> cachedTimelines = new ArrayList<>();
 
-    private final Map<String, Function<Integer, Anchor>> elementsAnchor = Map.of(
-            "#Playhead", (width) -> anchor(0, 0, width, 16)
+    private final List<BaseRenderer> renderers = List.of(
+                new PlayheadRenderer(),
+                new TimeScaleRenderer()
     );
 
     public EditorUI(@Nonnull PlayerRef playerRef, ReplayPlayer player, ReplayState state) {
@@ -208,8 +212,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     public void layout(@Nonnull UICommandBuilder uiCommandBuilder) {
         int width = (int) (WIDTH * state.ui.timelineZoom);
-        for (Map.Entry<String, Function<Integer, Anchor>> entry : elementsAnchor.entrySet()) {
-            uiCommandBuilder.setObject(entry.getKey() + ".Anchor", entry.getValue().apply(width));
+        for (BaseRenderer renderer : renderers) {
+            renderer.layout(uiCommandBuilder, state, width);
         }
     }
 
@@ -315,13 +319,4 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         }
     }
 
-    @Nonnull
-    private Anchor anchor(int left, int top, int width, int height) {
-        Anchor anchor = new Anchor();
-        anchor.setLeft(Value.of(left));
-        anchor.setTop(Value.of(top));
-        anchor.setWidth(Value.of(width));
-        anchor.setHeight(Value.of(height));
-        return anchor;
-    }
 }

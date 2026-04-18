@@ -40,7 +40,7 @@ import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.protocol.packets.TickReplayPacket;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
-import gg.alexandre.replay.ui.EditorUI;
+import gg.alexandre.replay.ui.editor.EditorUI;
 import gg.alexandre.replay.ui.manager.RealtimePageManager;
 
 import javax.annotation.Nonnull;
@@ -366,10 +366,6 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                         processedTicks++;
                     }
                 }
-            }
-
-            if (state.file.isEndOfFile()) {
-                stop(playerRef);
             }
         } catch (Exception e) {
             logger.atWarning().withCause(e).log("Error while processing replay packets");
