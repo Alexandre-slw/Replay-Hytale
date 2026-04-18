@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
 
 public abstract class BaseRenderer {
 
-    public abstract void layout(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull ReplayState state, int width);
+    public abstract void render(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull ReplayState state, int width);
 
     @Nonnull
     protected Anchor anchor(int left, int top, int width, int height) {

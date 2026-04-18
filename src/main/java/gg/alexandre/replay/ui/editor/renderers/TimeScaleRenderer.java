@@ -18,7 +18,7 @@ public class TimeScaleRenderer extends BaseRenderer {
     };
 
     @Override
-    public void layout(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull ReplayState state, int width) {
+    public void render(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull ReplayState state, int width) {
         uiCommandBuilder.clear("#Timestamps");
         uiCommandBuilder.clear("#Ticks");
 

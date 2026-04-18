@@ -19,17 +19,16 @@ import gg.alexandre.replay.ui.CloseUI;
 import gg.alexandre.replay.ui.NewTimelineUI;
 import gg.alexandre.replay.ui.codec.CodecConstructor;
 import gg.alexandre.replay.ui.codec.UIKey;
-import gg.alexandre.replay.ui.common.CommonUI;
 import gg.alexandre.replay.ui.editor.renderers.BaseRenderer;
-import gg.alexandre.replay.ui.editor.renderers.PlayheadRenderer;
+import gg.alexandre.replay.ui.editor.renderers.PlayheadLayoutRenderer;
 import gg.alexandre.replay.ui.editor.renderers.TimeScaleRenderer;
+import gg.alexandre.replay.ui.editor.renderers.TimelinesDropdownRenderer;
 import gg.alexandre.replay.ui.event.UIEventContext;
 import gg.alexandre.replay.ui.event.UIEventHandler;
 import gg.alexandre.replay.ui.event.UIEventIdData;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,11 +53,14 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     private boolean pauseUpdates = false;
 
     private final Map<String, Object> cachedData = new HashMap<>();
-    private List<String> cachedTimelines = new ArrayList<>();
 
-    private final List<BaseRenderer> renderers = List.of(
-                new PlayheadRenderer(),
-                new TimeScaleRenderer()
+    private final List<BaseRenderer> layoutRenderers = List.of(
+            new PlayheadLayoutRenderer(),
+            new TimeScaleRenderer()
+    );
+
+    private final List<BaseRenderer> tickRenderers = List.of(
+            new TimelinesDropdownRenderer()
     );
 
     public EditorUI(@Nonnull PlayerRef playerRef, ReplayPlayer player, ReplayState state) {
@@ -212,8 +214,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     public void layout(@Nonnull UICommandBuilder uiCommandBuilder) {
         int width = (int) (WIDTH * state.ui.timelineZoom);
-        for (BaseRenderer renderer : renderers) {
-            renderer.layout(uiCommandBuilder, state, width);
+        for (BaseRenderer renderer : layoutRenderers) {
+            renderer.render(uiCommandBuilder, state, width);
         }
     }
 
@@ -238,41 +240,9 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         update(uiCommandBuilder, "#Timelines.Value", state.selectedTimeline);
         update(uiCommandBuilder, "#Playhead.Value", (int) state.targetTick);
 
-        updateTimelinesDropdown(uiCommandBuilder);
-    }
-
-    private void updateTimelinesDropdown(@Nonnull UICommandBuilder uiCommandBuilder) {
-        if (cachedTimelines.size() != state.timelines.size()) {
-            StringBuilder dropdown = new StringBuilder(CommonUI.DEFAULT_DROPDOWN_STYLE);
-
-            dropdown.append(String.format("""
-                    DropdownBox #Timelines {
-                      Anchor: (Width: 150, Height: 26);
-                      Style: (...@DefaultDropdownBoxStyle, EntriesInViewport: 4, ArrowWidth: 0);
-                      Value: "%s";
-                    """, state.selectedTimeline));
-
-            for (String timeline : state.timelines) {
-                dropdown.append(String.format("""
-                        DropdownEntry {
-                          Value: "%s";
-                          Text: "%s";
-                        }
-                        """, timeline, timeline));
-            }
-
-            dropdown.append("""
-                      DropdownEntry {
-                        Value: "/newTimeline";
-                        Text: %replay.plusNewTimeline;
-                      }
-                    }
-                    """);
-
-            uiCommandBuilder.remove("#Timelines");
-            uiCommandBuilder.appendInline("#TimelinesContainer", dropdown.toString());
-
-            cachedTimelines = new ArrayList<>(state.timelines);
+        int width = (int) (WIDTH * state.ui.timelineZoom);
+        for (BaseRenderer renderer : tickRenderers) {
+            renderer.render(uiCommandBuilder, state, width);
         }
     }
 
