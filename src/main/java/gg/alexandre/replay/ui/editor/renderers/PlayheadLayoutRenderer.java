@@ -9,7 +9,7 @@ public class PlayheadLayoutRenderer extends BaseRenderer {
 
     @Override
     public void render(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull ReplayState state, int width) {
-        uiCommandBuilder.setObject("#Playhead.Anchor", anchor(0, 0, width, 16));
+        uiCommandBuilder.setObject("#Playhead.Anchor", anchor(0, -20, width, 20));
     }
 
 }

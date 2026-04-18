@@ -40,21 +40,21 @@ public class TimeScaleRenderer extends BaseRenderer {
             boolean isMajorTick = tickMs % majorTickIntervalMs == 0;
 
             uiCommandBuilder.appendInline("#Ticks", String.format("""
-            AssetImage {
-              Anchor: (Left: %d, Top: %d, Height: %d, Width: 1);
-              Background: PatchStyle(TexturePath: "Assets/Mask.png", Color: #96a9be%s);
-            }
-            """, x, isMajorTick ? 0 : 4, isMajorTick ? 14 : 10, isMajorTick ? "" : "(0.4)"));
+                    Group {
+                      Anchor: (Left: %d, Top: %d, Height: %d, Width: 1);
+                      Background: PatchStyle(TexturePath: "Assets/Mask.png", Color: #96a9be%s);
+                    }
+                    """, x, isMajorTick ? 0 : 4, isMajorTick ? 14 : 10, isMajorTick ? "" : "(0.4)"));
 
             if (isMajorTick) {
                 String labelText = formatDuration(Duration.ofMillis(tickMs));
                 uiCommandBuilder.appendInline("#Timestamps", String.format("""
-                Label {
-                  Anchor: (Left: %d);
-                  Text: "%s";
-                  Style: (FontSize: 14, TextColor: #96a9be);
-                }
-                """, x + 2, labelText));
+                        Label {
+                          Anchor: (Left: %d);
+                          Text: "%s";
+                          Style: (FontSize: 14, TextColor: #96a9be);
+                        }
+                        """, x + 2, labelText));
             }
         }
     }

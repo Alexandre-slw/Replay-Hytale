@@ -19,10 +19,7 @@ import gg.alexandre.replay.ui.CloseUI;
 import gg.alexandre.replay.ui.NewTimelineUI;
 import gg.alexandre.replay.ui.codec.CodecConstructor;
 import gg.alexandre.replay.ui.codec.UIKey;
-import gg.alexandre.replay.ui.editor.renderers.BaseRenderer;
-import gg.alexandre.replay.ui.editor.renderers.PlayheadLayoutRenderer;
-import gg.alexandre.replay.ui.editor.renderers.TimeScaleRenderer;
-import gg.alexandre.replay.ui.editor.renderers.TimelinesDropdownRenderer;
+import gg.alexandre.replay.ui.editor.renderers.*;
 import gg.alexandre.replay.ui.event.UIEventContext;
 import gg.alexandre.replay.ui.event.UIEventHandler;
 import gg.alexandre.replay.ui.event.UIEventIdData;
@@ -50,8 +47,6 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     private boolean needToResume = false;
 
-    private boolean pauseUpdates = false;
-
     private final Map<String, Object> cachedData = new HashMap<>();
 
     private final List<BaseRenderer> layoutRenderers = List.of(
@@ -60,7 +55,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     );
 
     private final List<BaseRenderer> tickRenderers = List.of(
-            new TimelinesDropdownRenderer()
+            new TimelinesDropdownRenderer(),
+            new PlaytailRenderer()
     );
 
     public EditorUI(@Nonnull PlayerRef playerRef, ReplayPlayer player, ReplayState state) {
@@ -71,6 +67,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     @Override
     public void init(@Nonnull UICommandBuilder uiCommandBuilder) {
+        state.ui.dragging = false;
+
         uiCommandBuilder.append("Editor.ui");
 
         ReplayMetadata metadata = state.file.getMetadata();
@@ -141,7 +139,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
             needToResume = true;
         }
 
-        pauseUpdates = true;
+        state.ui.draggingTick = context.data.playhead;
+        state.ui.dragging = true;
     }
 
     private void onPlayheadRelease(@Nonnull UIEventContext<Data> context) {
@@ -156,7 +155,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
             needToResume = false;
         }
 
-        pauseUpdates = false;
+        state.ui.draggingTick = context.data.playhead;
+        state.ui.dragging = false;
     }
 
     private void onEsc(@Nonnull UIEventContext<Data> context) {
@@ -220,10 +220,6 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     }
 
     public void tick() {
-        if (pauseUpdates) {
-            return;
-        }
-
         UICommandBuilder uiCommandBuilder = new UICommandBuilder();
         tick(uiCommandBuilder);
 
@@ -237,8 +233,13 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     public void tick(@Nonnull UICommandBuilder uiCommandBuilder) {
         update(uiCommandBuilder, "#Pause.KeyBindingLabel",
                 Message.translation(state.stage.isPlaying ? "replay.pause" : "replay.play"));
+
+        if (!state.ui.dragging) {
+            update(uiCommandBuilder, "#Playhead.Value", (int) state.targetTick);
+            state.ui.draggingTick = (int) state.targetTick;
+        }
+
         update(uiCommandBuilder, "#Timelines.Value", state.selectedTimeline);
-        update(uiCommandBuilder, "#Playhead.Value", (int) state.targetTick);
 
         int width = (int) (WIDTH * state.ui.timelineZoom);
         for (BaseRenderer renderer : tickRenderers) {

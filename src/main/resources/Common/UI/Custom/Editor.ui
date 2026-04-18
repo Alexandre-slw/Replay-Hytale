@@ -28,11 +28,6 @@ Group {
             }
           }
 
-          ActionButton #Pause {
-            Anchor: (Left: 10);
-            KeyBindingLabel: %replay.pause;
-          }
-
           ActionButton #ZoomOut {
             Anchor: (Left: 10);
             KeyBindingLabel: %replay.zoomOut;
@@ -44,7 +39,14 @@ Group {
           }
         }
 
-        $C.@Title { @Text = %replay.replay; }
+        Group {
+          Anchor: (Full: 0);
+          LayoutMode: Center;
+
+          ActionButton #Pause {
+            KeyBindingLabel: %replay.pause;
+          }
+        }
         
         Group {
           Anchor: (Right: 20);
@@ -67,15 +69,19 @@ Group {
           
           Group {
             LayoutMode: Top;
-            Padding: (Full: 30);
+            Padding: (Horizontal: 30, Top: 10, Bottom: 20);
 
-            Group #Timestamps {
-              Anchor: (Left: -18);
-              LayoutMode: Full;
-            }
+            Group {
+              LayoutMode: Top;
 
-            Group #Ticks {
-              LayoutMode: Full;
+              Group #Timestamps {
+                Anchor: (Left: -18);
+                LayoutMode: Full;
+              }
+
+              Group #Ticks {
+                LayoutMode: Full;
+              }
             }
 
             $C.@Slider #Playhead {
@@ -83,14 +89,41 @@ Group {
               Min: 0;
               Max: 100;
               Style: SliderStyle(
-                Background: (TexturePath: "Common/SliderBackground.png", Border: 2),
-                Handle: "Common/SliderHandle.png",
+                Handle: "Assets/Playhead.png",
                 HandleWidth: 16,
                 HandleHeight: 16,
                 Sounds: (
                   MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
                 )
               );
+            }
+
+            Group #Properties {
+              LayoutMode: Top;
+
+              $C.@Slider {
+                Anchor: (Height: 24, Top: 5);
+                Value: 50;
+                Min: 0;
+                Max: 100;
+                Style: SliderStyle(
+                  Background: (TexturePath: "Common/SliderBackground.png", Border: 2),
+                  Handle: "Common/SliderHandle.png",
+                  HandleWidth: 16,
+                  HandleHeight: 16,
+                  Sounds: (
+                    MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+                  )
+                );
+              }
+            }
+          }
+
+          Group #PlaytailLayout {
+            LayoutMode: Full;
+            
+            Group #Playtail {
+              Background: PatchStyle(TexturePath: "Assets/Mask.png", Color: #992f2b(0.8));
             }
           }
         }
