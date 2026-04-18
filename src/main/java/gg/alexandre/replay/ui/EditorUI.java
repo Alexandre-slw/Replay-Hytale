@@ -118,6 +118,11 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
                 data -> data.append("@Timeline", "#Timelines.Value"),
                 this::onTimelineSelected
         );
+
+        eventHandler.handle(CustomUIEventBindingType.Activating,
+                "#Close",
+                this::onClose
+        );
     }
 
     private void onPlayhead(@Nonnull UIEventContext<Data> context) {
@@ -191,6 +196,14 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
             state.loadTimeline(selected);
             context.close();
         }
+    }
+
+    private void onClose(@Nonnull UIEventContext<Data> context) {
+        context.store.getExternalData().getWorld().execute(() -> {
+            Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
+            assert playerComponent != null;
+            playerComponent.getPageManager().openCustomPage(context.ref, context.store, new CloseUI(playerRef));
+        });
     }
 
     public void layout(@Nonnull UICommandBuilder uiCommandBuilder) {
@@ -291,9 +304,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     @Override
     public void onDismiss(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
-        if (!state.ui.controlGame) {
-            // TODO: exit prompt
-        } else if (!state.ui.sentEscHint) {
+        if (state.ui.controlGame && !state.ui.sentEscHint) {
             state.ui.sentEscHint = true;
 
             player.bypassFilter(state, () ->

@@ -5,10 +5,10 @@ Group {
   
   $C.@DecoratedContainer {
     @PlaceholderText = %replay.namePlaceholder;
-    @Title = %replay.saveReplay;
-    @Text = %replay.replayName;
-    @CancelText = %replay.discard;
-    @SaveText = %replay.save;
+    @Title = %replay.close;
+    @Text = %replay.exitReplayMessage;
+    @CancelText = %replay.cancel;
+    @SaveText = %replay.saveAndExit;
 
     Anchor: (Width: 800);
 
@@ -23,13 +23,6 @@ Group {
       Label {
         Style: (FontSize: 20);
         Text: @Text;
-      }
-
-      TextField #Input {
-        Background: $C.@InputBoxBackground;
-        Anchor: (Top: 5, Left: 0, Right: 0, Height: 50);
-        Padding: (Full: 10);
-        PlaceholderText: @PlaceholderText;
       }
 
       Group {

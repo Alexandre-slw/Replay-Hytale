@@ -13,11 +13,17 @@ Group {
     Anchor: (Width: 800);
 
     #Title {
+      $C.@Title { @Text = @Title; }
     }
 
     #Content {
       LayoutMode: Top;
       Padding: (Full: 30);
+
+      Label {
+        Style: (FontSize: 20);
+        Text: @Text;
+      }
 
       TextField #Input {
         Background: $C.@InputBoxBackground;

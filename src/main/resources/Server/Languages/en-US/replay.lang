@@ -21,3 +21,5 @@ namePlaceholder=Name...
 newTimeline=New Timeline
 timelineName=Timeline Name
 cancel=Cancel
+exitReplayMessage=Are you sure you want to exit the replay?
+saveAndExit=Save and Exit
