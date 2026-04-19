@@ -4,7 +4,6 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
-import gg.alexandre.replay.ui.common.CommonUI;
 import gg.alexandre.replay.ui.editor.EditorUI;
 import gg.alexandre.replay.ui.event.UIEventContext;
 import gg.alexandre.replay.ui.event.UIEventHandler;
@@ -27,7 +26,7 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
         }
         propertiesCount = state.timeline.getProperties().size();
 
-        StringBuilder headers = new StringBuilder(CommonUI.DEFAULT_DROPDOWN_STYLE);
+        StringBuilder headers = new StringBuilder();
 
         headers.append("""
                 @Container = Group {
@@ -124,6 +123,7 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
     private void onRemoveProperty(int propertyIndex) {
         // TODO: undo/redo
         state.timeline.getProperties().remove(propertyIndex);
+        state.ui.dirtyTimeline = true;
     }
 
     private void onAddKeyframe(@Nonnull UIEventContext<EditorUI.Data> context, int propertyIndex) {
@@ -132,6 +132,7 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
         // TODO: value
         // TODO: undo/redo
         property.getValues().put(context.data.playhead, property.getDefaultValue(state));
+        state.ui.dirtyTimeline = true;
     }
 
 }

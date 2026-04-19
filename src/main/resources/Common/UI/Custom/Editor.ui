@@ -151,47 +151,10 @@ Group {
               );
             }
 
-            Group #Properties {
+            Group #Keyframes {
               LayoutMode: Top;
 
-              Group {
-                Anchor: (Height: 30, Top: 5);
-
-                LayoutMode: Full;
-                Background: #0a0b0c(0.9);
-                
-                Button #Keyframe1 {
-                  Anchor: (Width: 16, Height: 16, Left: 60);
-
-                  Style: (
-                    Default: (
-                      Background: (TexturePath: "Assets/Keyframe.png"),
-                    ),
-                    Hovered: (
-                      Background: (TexturePath: "Assets/KeyframeHovered.png"),
-                    ),
-                    Pressed: (
-                      Background: (TexturePath: "Assets/KeyframePressed.png"),
-                    ),
-                  );
-                }
-                
-                Button #Keyframe2 {
-                  Anchor: (Width: 16, Height: 16, Left: 160);
-
-                  Style: (
-                    Default: (
-                      Background: (TexturePath: "Assets/Keyframe.png"),
-                    ),
-                    Hovered: (
-                      Background: (TexturePath: "Assets/KeyframeHovered.png"),
-                    ),
-                    Pressed: (
-                      Background: (TexturePath: "Assets/KeyframePressed.png"),
-                    ),
-                  );
-                }
-              }
+              // Rendered
             }
           }
 

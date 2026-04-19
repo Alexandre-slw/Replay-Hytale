@@ -67,6 +67,7 @@ public class PropertiesDropdownRenderer extends BaseRenderer<EditorUI.Data> {
     private void onAddProperty(@Nonnull UIEventContext<EditorUI.Data> context) {
         // TODO: undo/redo
         state.timeline.getProperties().add(PropertyRegistry.get().create(context.data.value));
+        state.ui.dirtyTimeline = true;
     }
 
 }

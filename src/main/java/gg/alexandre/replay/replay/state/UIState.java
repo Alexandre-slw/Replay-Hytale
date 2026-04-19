@@ -10,4 +10,6 @@ public class UIState {
     public boolean controlGame;
     public boolean sentEscHint;
 
+    public boolean dirtyTimeline;
+
 }

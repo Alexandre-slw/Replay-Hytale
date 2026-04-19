@@ -66,7 +66,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
                 new TimelinesDropdownRenderer(state),
                 new PlaytailRenderer(state),
                 new PropertiesDropdownRenderer(state),
-                new PropertiesHeaderRenderer(state)
+                new PropertiesHeaderRenderer(state),
+                new KeyframesRenderer(state)
         );
     }
 
