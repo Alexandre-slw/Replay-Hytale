@@ -19,19 +19,34 @@ public class UIEventHandler<T extends UIEventIdData> implements UIEventConsumer<
         this.eventBuilder = eventBuilder;
     }
 
+    public void unbind() {
+        eventBuilder = null;
+    }
+
     public void handle(@Nonnull CustomUIEventBindingType type, @Nonnull String selector,
                        @Nonnull UIEventConsumer<T> consumer) {
-        handle(type, selector, null, consumer);
+        handle(type, selector, null, consumer, false);
+    }
+
+    public void handle(@Nonnull CustomUIEventBindingType type, @Nonnull String selector,
+                       @Nonnull UIEventConsumer<T> consumer, boolean force) {
+        handle(type, selector, null, consumer, force);
     }
 
     public void handle(@Nonnull CustomUIEventBindingType type, @Nonnull String selector,
                        @Nullable Consumer<EventData> eventDataConsumer, @Nonnull UIEventConsumer<T> consumer) {
+        handle(type, selector, eventDataConsumer, consumer, false);
+    }
+
+    public void handle(@Nonnull CustomUIEventBindingType type, @Nonnull String selector,
+                       @Nullable Consumer<EventData> eventDataConsumer, @Nonnull UIEventConsumer<T> consumer,
+                       boolean force) {
         if (eventBuilder == null) {
             throw new IllegalStateException("Event builder not set");
         }
 
         String id = type + ":" + selector;
-        if (eventConsumers.containsKey(id)) {
+        if (!force && eventConsumers.containsKey(id)) {
             throw new IllegalStateException("Event already registered for " + id);
         }
 

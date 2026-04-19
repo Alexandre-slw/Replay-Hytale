@@ -18,7 +18,7 @@ import javax.annotation.Nonnull;
 
 public abstract class BaseUI<T extends UIEventIdData> extends InteractiveCustomUIPage<T> implements UIEventConsumer<T> {
 
-    private final UIEventHandler<T> eventHandler;
+    protected final UIEventHandler<T> eventHandler;
 
     public BaseUI(@Nonnull PlayerRef playerRef, @Nonnull CustomPageLifetime lifetime, @Nonnull BuilderCodec<T> codec) {
         super(playerRef, lifetime, codec);
@@ -33,11 +33,10 @@ public abstract class BaseUI<T extends UIEventIdData> extends InteractiveCustomU
     @Override
     public void build(@Nonnull Ref<EntityStore> ref, @Nonnull UICommandBuilder uiCommandBuilder,
                       @Nonnull UIEventBuilder uiEventBuilder, @Nonnull Store<EntityStore> store) {
-        init(uiCommandBuilder);
-
         eventHandler.bind(uiEventBuilder);
+        init(uiCommandBuilder);
         register(uiEventBuilder, eventHandler);
-        eventHandler.bind(null);
+        eventHandler.unbind();
     }
 
     @Override
@@ -45,15 +44,29 @@ public abstract class BaseUI<T extends UIEventIdData> extends InteractiveCustomU
         super.handleDataEvent(ref, store, data);
 
         UICommandBuilder uiCommandBuilder = new UICommandBuilder();
-        UIEventContext<T> eventContext = new UIEventContext<>(ref, store, data, uiCommandBuilder);
+        UIEventBuilder uiEventBuilder = new UIEventBuilder();
+        eventHandler.bind(uiEventBuilder);
+
+        UIEventContext<T> eventContext = new UIEventContext<>(
+                playerRef, ref, store, data, uiCommandBuilder, eventHandler
+        );
+
 
         eventHandler.handleEvent(eventContext);
         handleEvent(eventContext);
 
+        eventHandler.unbind();
+
         if (eventContext.isClosed()) {
             close();
         } else if (uiCommandBuilder.getCommands().length > 0) {
-            sendUpdate(uiCommandBuilder);
+            if (uiEventBuilder.getEvents().length > 0) {
+                sendUpdate(uiCommandBuilder, uiEventBuilder, false);
+            } else {
+                sendUpdate(uiCommandBuilder);
+            }
+        } else if (uiEventBuilder.getEvents().length > 0) {
+            sendUpdate(null, uiEventBuilder, false);
         }
     }
 

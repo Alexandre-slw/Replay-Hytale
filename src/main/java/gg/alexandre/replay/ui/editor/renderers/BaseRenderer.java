@@ -4,12 +4,21 @@ import com.hypixel.hytale.server.core.ui.Anchor;
 import com.hypixel.hytale.server.core.ui.Value;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import gg.alexandre.replay.replay.state.ReplayState;
+import gg.alexandre.replay.ui.event.UIEventHandler;
+import gg.alexandre.replay.ui.event.UIEventIdData;
 
 import javax.annotation.Nonnull;
 
-public abstract class BaseRenderer {
+public abstract class BaseRenderer<T extends UIEventIdData> {
 
-    public abstract void render(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull ReplayState state, int width);
+    protected final ReplayState state;
+
+    public BaseRenderer(ReplayState state) {
+        this.state = state;
+    }
+
+    public abstract void render(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull UIEventHandler<T> eventHandler,
+                                @Nonnull ReplayState state, int width);
 
     @Nonnull
     protected Anchor anchor(int left, int top, int width, int height) {

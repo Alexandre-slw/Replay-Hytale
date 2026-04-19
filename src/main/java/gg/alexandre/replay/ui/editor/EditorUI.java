@@ -16,7 +16,6 @@ import gg.alexandre.replay.replay.ReplayPlayer;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.BaseUI;
 import gg.alexandre.replay.ui.CloseUI;
-import gg.alexandre.replay.ui.NewTimelineUI;
 import gg.alexandre.replay.ui.codec.CodecConstructor;
 import gg.alexandre.replay.ui.codec.UIKey;
 import gg.alexandre.replay.ui.editor.renderers.*;
@@ -37,9 +36,10 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     public static class Data extends UIEventIdData {
         @UIKey("@Playhead")
-        int playhead;
-        @UIKey("@Timeline")
-        String timeline;
+        public int playhead;
+
+        @UIKey("@Value")
+        public String value;
     }
 
     private final ReplayPlayer player;
@@ -49,20 +49,25 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     private final Map<String, Object> cachedData = new HashMap<>();
 
-    private final List<BaseRenderer> layoutRenderers = List.of(
-            new PlayheadLayoutRenderer(),
-            new TimeScaleRenderer()
-    );
-
-    private final List<BaseRenderer> tickRenderers = List.of(
-            new TimelinesDropdownRenderer(),
-            new PlaytailRenderer()
-    );
+    private final List<BaseRenderer<Data>> layoutRenderers;
+    private final List<BaseRenderer<Data>> tickRenderers;
 
     public EditorUI(@Nonnull PlayerRef playerRef, ReplayPlayer player, ReplayState state) {
         super(playerRef, CustomPageLifetime.CanDismissOrCloseThroughInteraction, CODEC);
         this.player = player;
         this.state = state;
+
+        layoutRenderers = List.of(
+                new PlayheadLayoutRenderer(state),
+                new TimeScaleRenderer(state)
+        );
+
+        tickRenderers = List.of(
+                new TimelinesDropdownRenderer(state),
+                new PlaytailRenderer(state),
+                new PropertiesDropdownRenderer(state),
+                new PropertiesHeaderRenderer(state)
+        );
     }
 
     @Override
@@ -74,8 +79,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         ReplayMetadata metadata = state.file.getMetadata();
         uiCommandBuilder.set("#Playhead.Max", metadata.ticks);
 
-        layout(uiCommandBuilder);
-        tick(uiCommandBuilder);
+        layout(uiCommandBuilder, eventHandler);
+        tick(uiCommandBuilder, eventHandler);
     }
 
     @Override
@@ -115,12 +120,6 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         eventHandler.handle(CustomUIEventBindingType.Activating,
                 "#ZoomIn",
                 this::onZoomIn
-        );
-
-        eventHandler.handle(CustomUIEventBindingType.ValueChanged,
-                "#Timelines",
-                data -> data.append("@Timeline", "#Timelines.Value"),
-                this::onTimelineSelected
         );
 
         eventHandler.handle(CustomUIEventBindingType.Activating,
@@ -174,7 +173,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         }
 
         state.ui.timelineZoom /= 1.5f;
-        layout(context.uiCommandBuilder);
+
+        layout(context.uiCommandBuilder, eventHandler);
     }
 
     private void onZoomIn(@Nonnull UIEventContext<Data> context) {
@@ -183,25 +183,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         }
 
         state.ui.timelineZoom *= 1.5f;
-        layout(context.uiCommandBuilder);
-    }
 
-    private void onTimelineSelected(@Nonnull UIEventContext<Data> context) {
-        String selected = context.data.timeline;
-        if (selected.equals(state.selectedTimeline)) {
-            return;
-        }
-
-        if (selected.equals("/newTimeline")) {
-            Ref<EntityStore> ref = context.ref;
-            Store<EntityStore> store = context.store;
-            Player playerComponent = store.getComponent(ref, Player.getComponentType());
-            assert playerComponent != null;
-            playerComponent.getPageManager().openCustomPage(ref, store, new NewTimelineUI(playerRef, state));
-        } else {
-            state.loadTimeline(selected);
-            context.close();
-        }
+        layout(context.uiCommandBuilder, eventHandler);
     }
 
     private void onClose(@Nonnull UIEventContext<Data> context) {
@@ -212,25 +195,29 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         });
     }
 
-    public void layout(@Nonnull UICommandBuilder uiCommandBuilder) {
+    public void layout(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull UIEventHandler<Data> eventHandler) {
         int width = (int) (WIDTH * state.ui.timelineZoom);
-        for (BaseRenderer renderer : layoutRenderers) {
-            renderer.render(uiCommandBuilder, state, width);
+        for (BaseRenderer<Data> renderer : layoutRenderers) {
+            renderer.render(uiCommandBuilder, eventHandler, state, width);
         }
     }
 
     public void tick() {
         UICommandBuilder uiCommandBuilder = new UICommandBuilder();
-        tick(uiCommandBuilder);
+        UIEventBuilder uiEventBuilder = new UIEventBuilder();
 
-        if (uiCommandBuilder.getCommands().length == 0) {
+        eventHandler.bind(uiEventBuilder);
+        tick(uiCommandBuilder, eventHandler);
+        eventHandler.unbind();
+
+        if (uiCommandBuilder.getCommands().length == 0 && uiEventBuilder.getEvents().length == 0) {
             return;
         }
 
-        sendUpdate(uiCommandBuilder, false);
+        sendUpdate(uiCommandBuilder, uiEventBuilder, false);
     }
 
-    public void tick(@Nonnull UICommandBuilder uiCommandBuilder) {
+    public void tick(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull UIEventHandler<Data> eventHandler) {
         update(uiCommandBuilder, "#Pause.KeyBindingLabel",
                 Message.translation(state.stage.isPlaying ? "replay.pause" : "replay.play"));
 
@@ -242,8 +229,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         update(uiCommandBuilder, "#Timelines.Value", state.selectedTimeline);
 
         int width = (int) (WIDTH * state.ui.timelineZoom);
-        for (BaseRenderer renderer : tickRenderers) {
-            renderer.render(uiCommandBuilder, state, width);
+        for (BaseRenderer<Data> renderer : tickRenderers) {
+            renderer.render(uiCommandBuilder, eventHandler, state, width);
         }
     }
 

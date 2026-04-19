@@ -3,11 +3,13 @@ package gg.alexandre.replay.ui.editor.renderers;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import gg.alexandre.replay.file.ReplayMetadata;
 import gg.alexandre.replay.replay.state.ReplayState;
+import gg.alexandre.replay.ui.editor.EditorUI;
+import gg.alexandre.replay.ui.event.UIEventHandler;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
 
-public class TimeScaleRenderer extends BaseRenderer {
+public class TimeScaleRenderer extends BaseRenderer<EditorUI.Data> {
 
     private static final int[] STEPS_MS = {
             1, 2, 5, 10, 20, 50, 100, 200, 500,
@@ -17,8 +19,13 @@ public class TimeScaleRenderer extends BaseRenderer {
             86400000
     };
 
+    public TimeScaleRenderer(ReplayState state) {
+        super(state);
+    }
+
     @Override
-    public void render(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull ReplayState state, int width) {
+    public void render(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull UIEventHandler<EditorUI.Data> eventHandler,
+                       @Nonnull ReplayState state, int width) {
         uiCommandBuilder.clear("#Timestamps");
         uiCommandBuilder.clear("#Ticks");
 

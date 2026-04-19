@@ -17,7 +17,7 @@ public abstract class BaseProperty<T> {
 
     private final T defaultValue;
 
-    public BaseProperty(@Nullable T defaultValue) {
+    public BaseProperty(@Nonnull T defaultValue) {
         this.defaultValue = defaultValue;
     }
 
@@ -29,8 +29,8 @@ public abstract class BaseProperty<T> {
     @Nonnull
     public abstract String id();
 
-    @Nullable
-    public T getDefaultValue() {
+    @Nonnull
+    public T getDefaultValue(@Nonnull ReplayState state) {
         return defaultValue;
     }
 

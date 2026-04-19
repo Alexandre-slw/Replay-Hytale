@@ -4,15 +4,15 @@ import gg.alexandre.replay.replay.editor.interpolation.InterpolationUtil;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.util.Position;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Map;
 
 public class CameraProperty extends BaseProperty<Position> {
 
     public CameraProperty() {
-        super(null);
+        super(new Position(0, 0, 0, 0, 0));
     }
 
     @Override
@@ -25,7 +25,7 @@ public class CameraProperty extends BaseProperty<Position> {
         state.edit.cameraPosition = cameraPosition;
     }
 
-    @NullableDecl
+    @Nullable
     @Override
     public Position getValue(int tick) {
         Map.Entry<Integer, Position> previous = getValues().floorEntry(tick);
@@ -35,7 +35,7 @@ public class CameraProperty extends BaseProperty<Position> {
         Map.Entry<Integer, Position> p3Entry = getValues().higherEntry(next != null ? next.getKey() : tick);
 
         if (previous == null && next == null) {
-            return getDefaultValue();
+            return null;
         } else if (previous == null) {
             return next.getValue();
         } else if (next == null) {
@@ -64,5 +64,11 @@ public class CameraProperty extends BaseProperty<Position> {
     @Override
     public String id() {
         return "camera";
+    }
+
+    @Nonnull
+    @Override
+    public Position getDefaultValue(@Nonnull ReplayState state) {
+        return state.edit.cameraPosition;
     }
 }

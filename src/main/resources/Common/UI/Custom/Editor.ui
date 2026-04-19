@@ -26,6 +26,7 @@ Group {
 
           Group #TimelinesContainer {
             DropdownBox #Timelines {
+              // Rendered
             }
           }
 
@@ -83,25 +84,15 @@ Group {
         Group #PropertiesHeaderContainer {
           LayoutMode: Top;
           Anchor: (Width: 140);
+          Padding: (Bottom: 20);
           FlexWeight: 0;
           
           Group {
             LayoutMode: Full;
             Anchor: (Horizontal: 0, Height: 26, Top: 10);
 
-            DropdownBox #AddProperty {
-              Anchor: (Full: 0);
-              Value: "";
-              Style: (...$C.@DefaultDropdownBoxStyle, EntriesInViewport: 3, ArrowWidth: 0, LabelStyle: (TextColor: #000000(0)));
-
-              DropdownEntry {
-                Value: "camera";
-                Text: %replay.camera;
-              }
-
-              DropdownEntry {
-                Value: "speed";
-                Text: %replay.speed;
+            Group #PropertiesDropdownContainer {
+              DropdownBox #AddProperty {
               }
             }
 
@@ -115,57 +106,8 @@ Group {
           Group #PropertiesHeader {
             LayoutMode: Top;
             Anchor: (Top: 8);
-
-            Group {
-              Anchor: (Horizontal: 0, Height: 30, Top: 5);
-              LayoutMode: Left;
-
-              Button #Remove {
-                Anchor: (Width: 12, Height: 12, Top: 9);
-                TooltipText: %replay.removeProperty;
-                Style: (
-                  Default: (
-                    Background: (TexturePath: "Assets/Close.png"),
-                  ),
-                  Hovered: (
-                    Background: (TexturePath: "Assets/CloseHovered.png"),
-                  ),
-                  Pressed: (
-                    Background: (TexturePath: "Assets/ClosePressed.png"),
-                  ),
-                );
-              }
-
-              Group {
-                FlexWeight: 1;
-                Anchor: (Left: 6);
-                Background: (TexturePath: "Common/InputBinding.png", Border: 6);
-                LayoutMode: Left;
-
-                Label {
-                  FlexWeight: 1;
-                  Text: %replay.camera;
-                  Anchor: (Vertical: 0, Left: 6);
-                  Style: (FontSize: 14, TextColor: #ccd8e8, VerticalAlignment: Center);
-                }
-
-                Button #AddKeyframe {
-                  Anchor: (Width: 20, Height: 20, Right: 6, Top: 5);
-                  TooltipText: %replay.addKeyframe;
-                  Style: (
-                    Default: (
-                      Background: (TexturePath: "Assets/ButtonKeyframePlus.png"),
-                    ),
-                    Hovered: (
-                      Background: (TexturePath: "Assets/ButtonKeyframePlusHovered.png"),
-                    ),
-                    Pressed: (
-                      Background: (TexturePath: "Assets/ButtonKeyframePlusPressed.png"),
-                    ),
-                  );
-                }
-              }
-            }
+            
+            // Rendered
           }
         }
 
@@ -184,10 +126,14 @@ Group {
               Group #Timestamps {
                 Anchor: (Left: -18);
                 LayoutMode: Full;
+
+                // Rendered
               }
 
               Group #Ticks {
                 LayoutMode: Full;
+                
+                // Rendered
               }
             }
 
@@ -212,7 +158,7 @@ Group {
                 Anchor: (Height: 30, Top: 5);
 
                 LayoutMode: Full;
-                Background: #0a0b0c;
+                Background: #0a0b0c(0.9);
                 
                 Button #Keyframe1 {
                   Anchor: (Width: 16, Height: 16, Left: 60);

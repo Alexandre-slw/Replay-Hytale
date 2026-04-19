@@ -4,17 +4,24 @@ import com.hypixel.hytale.server.core.ui.Anchor;
 import com.hypixel.hytale.server.core.ui.Value;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import gg.alexandre.replay.replay.state.ReplayState;
+import gg.alexandre.replay.ui.editor.EditorUI;
+import gg.alexandre.replay.ui.event.UIEventHandler;
 
 import javax.annotation.Nonnull;
 
-public class PlaytailRenderer extends BaseRenderer {
+public class PlaytailRenderer extends BaseRenderer<EditorUI.Data> {
 
     private int lastTick = -1;
     private int lastWidth = -1;
     private boolean lastDragging;
 
+    public PlaytailRenderer(ReplayState state) {
+        super(state);
+    }
+
     @Override
-    public void render(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull ReplayState state, int width) {
+    public void render(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull UIEventHandler<EditorUI.Data> eventHandler,
+                       @Nonnull ReplayState state, int width) {
         if (lastTick == state.ui.draggingTick && lastWidth == width && lastDragging == state.ui.dragging) {
             return;
         }

@@ -3,6 +3,7 @@ package gg.alexandre.replay.replay.state;
 import com.google.gson.Gson;
 import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.file.ReplayInputFile;
+import gg.alexandre.replay.replay.editor.properties.CameraProperty;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -66,6 +67,7 @@ public class ReplayState {
 
         if (!Files.exists(path)) {
             timeline = new TimelineState();
+            timeline.getProperties().add(new CameraProperty());
             timeline.save(file.getMetadata().uuid, name);
         } else {
             Gson gson = ReplayPlugin.get().getGson();

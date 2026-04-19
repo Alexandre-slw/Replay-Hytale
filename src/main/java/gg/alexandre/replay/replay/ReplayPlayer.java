@@ -383,6 +383,8 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             state.timeline.save(state.file.getMetadata().uuid, state.selectedTimeline);
         }
 
+        state.edit.speed = 1.0;
+
         for (BaseProperty<?> property : state.timeline.getProperties()) {
             property.handle(state, state.currentTick);
         }

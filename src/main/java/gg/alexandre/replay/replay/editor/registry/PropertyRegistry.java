@@ -4,6 +4,7 @@ import gg.alexandre.replay.replay.editor.properties.CameraProperty;
 import gg.alexandre.replay.replay.editor.properties.SpeedProperty;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,8 +48,13 @@ public class PropertyRegistry {
         }
     }
 
+    @Nonnull
     public static PropertyRegistry get() {
         return INSTANCE;
     }
 
+    @Nonnull
+    public Map<String, Class<? extends BaseProperty<?>>> getRegistry() {
+        return registry;
+    }
 }

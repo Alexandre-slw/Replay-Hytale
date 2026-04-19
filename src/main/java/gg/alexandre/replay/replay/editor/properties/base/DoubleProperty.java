@@ -2,12 +2,13 @@ package gg.alexandre.replay.replay.editor.properties.base;
 
 import gg.alexandre.replay.replay.editor.interpolation.InterpolationUtil;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
 
 public abstract class DoubleProperty extends BaseProperty<Double> {
 
-    public DoubleProperty(@Nullable Double defaultValue) {
+    public DoubleProperty(@Nonnull Double defaultValue) {
         super(defaultValue);
     }
 
@@ -18,7 +19,7 @@ public abstract class DoubleProperty extends BaseProperty<Double> {
         Map.Entry<Integer, Double> next = getValues().ceilingEntry(tick);
 
         if (previous == null && next == null) {
-            return getDefaultValue();
+            return null;
         } else if (previous == null) {
             return next.getValue();
         } else if (next == null) {
