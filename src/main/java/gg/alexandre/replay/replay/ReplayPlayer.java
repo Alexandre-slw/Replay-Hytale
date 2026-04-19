@@ -380,7 +380,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
 
         if ((!state.stage.sentJoinWorld || state.stage.isPlaying) && canProcessPackets(state, packetHandler)) {
-            state.targetTick += state.edit.speed;
+            state.targetTick += Math.max(0.1, state.edit.speed);
         }
     }
 

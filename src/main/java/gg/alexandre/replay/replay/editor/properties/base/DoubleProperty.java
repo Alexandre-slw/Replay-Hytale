@@ -16,7 +16,7 @@ public abstract class DoubleProperty extends BaseProperty<Double> {
     @Override
     public Double getValue(int tick) {
         Map.Entry<Integer, Double> previous = getValues().floorEntry(tick);
-        Map.Entry<Integer, Double> next = getValues().ceilingEntry(tick);
+        Map.Entry<Integer, Double> next = getValues().higherEntry(tick);
 
         if (previous == null && next == null) {
             return null;

@@ -29,7 +29,7 @@ public class CameraProperty extends BaseProperty<Position> {
     @Override
     public Position getValue(int tick) {
         Map.Entry<Integer, Position> previous = getValues().floorEntry(tick);
-        Map.Entry<Integer, Position> next = getValues().ceilingEntry(tick);
+        Map.Entry<Integer, Position> next = getValues().higherEntry(tick);
 
         Map.Entry<Integer, Position> p0Entry = getValues().lowerEntry(previous != null ? previous.getKey() : tick);
         Map.Entry<Integer, Position> p3Entry = getValues().higherEntry(next != null ? next.getKey() : tick);

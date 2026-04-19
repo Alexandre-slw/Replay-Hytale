@@ -57,9 +57,12 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         this.player = player;
         this.state = state;
 
+        KeyframesRenderer keyframesRenderer = new KeyframesRenderer(state);
+
         layoutRenderers = List.of(
                 new PlayheadLayoutRenderer(state),
-                new TimeScaleRenderer(state)
+                new TimeScaleRenderer(state),
+                keyframesRenderer
         );
 
         tickRenderers = List.of(
@@ -67,7 +70,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
                 new PlaytailRenderer(state),
                 new PropertiesDropdownRenderer(state),
                 new PropertiesHeaderRenderer(state),
-                new KeyframesRenderer(state)
+                keyframesRenderer
         );
     }
 
