@@ -40,6 +40,9 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
         @UIKey("@Value")
         public String value;
+
+        @UIKey("@Tick")
+        public int tick;
     }
 
     private final ReplayPlayer player;
@@ -130,6 +133,16 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
                 "#CloseButton",
                 this::onClose
         );
+
+        eventHandler.handle(CustomUIEventBindingType.Activating,
+                "#Timeline",
+                this::onClickContentBackground
+        );
+
+        eventHandler.handle(CustomUIEventBindingType.RightClicking,
+                "#Timeline",
+                this::onClickContentBackground
+        );
     }
 
     private void onPlayhead(@Nonnull UIEventContext<Data> context) {
@@ -164,6 +177,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     private void onEsc(@Nonnull UIEventContext<Data> context) {
         state.ui.controlGame = true;
+        state.ui.selectedKeyframe = null;
         context.close();
     }
 
@@ -197,6 +211,11 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
             assert playerComponent != null;
             playerComponent.getPageManager().openCustomPage(context.ref, context.store, new CloseUI(playerRef));
         });
+    }
+
+    private void onClickContentBackground(@Nonnull UIEventContext<Data> context) {
+        state.ui.selectedKeyframe = null;
+        state.ui.dirtyTimeline = true;
     }
 
     public void layout(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull UIEventHandler<Data> eventHandler) {

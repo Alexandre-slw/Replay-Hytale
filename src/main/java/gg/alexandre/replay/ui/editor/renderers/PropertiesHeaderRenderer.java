@@ -47,6 +47,9 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
                     Pressed: (
                       Background: (TexturePath: "Assets/ClosePressed.png"),
                     ),
+                    Sounds: (
+                      MouseHover: (SoundPath: "Sounds/ButtonsLightHover.ogg", Volume: 6)
+                    )
                   );
                 };
                 
@@ -63,6 +66,9 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
                     Pressed: (
                       Background: (TexturePath: "Assets/ButtonKeyframePlusPressed.png"),
                     ),
+                    Sounds: (
+                      MouseHover: (SoundPath: "Sounds/ButtonsLightHover.ogg", Volume: 6)
+                    )
                   );
                 };
                 
@@ -123,6 +129,7 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
     private void onRemoveProperty(int propertyIndex) {
         // TODO: undo/redo
         state.timeline.getProperties().remove(propertyIndex);
+        state.ui.selectedKeyframe = null;
         state.ui.dirtyTimeline = true;
     }
 
@@ -132,6 +139,7 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
         // TODO: value
         // TODO: undo/redo
         property.getValues().put(context.data.playhead, property.getDefaultValue(state));
+        state.ui.selectedKeyframe = null;
         state.ui.dirtyTimeline = true;
     }
 

@@ -5,7 +5,9 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import gg.alexandre.replay.replay.ReplayPlayer;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
+import gg.alexandre.replay.replay.state.UIState;
 import gg.alexandre.replay.ui.editor.EditorUI;
+import gg.alexandre.replay.ui.event.UIEventContext;
 import gg.alexandre.replay.ui.event.UIEventHandler;
 
 import javax.annotation.Nonnull;
@@ -54,18 +56,59 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
                     Pressed: (
                       Background: (TexturePath: "Assets/KeyframePressed.png"),
                     ),
+                    Sounds: (
+                      MouseHover: (SoundPath: "Sounds/ButtonsLightHover.ogg", Volume: 6)
+                    )
                   );
                 };
                 """);
 
+        int ticks = state.file.getMetadata().ticks;
         for (int i = 0; i < state.timeline.getProperties().size(); i++) {
             BaseProperty<?> property = state.timeline.getProperties().get(i);
+            int index = i;
 
             headers.append("@Track {");
 
+            boolean hasSelectedKeyframe = state.ui.selectedKeyframe != null &&
+                                          state.ui.selectedKeyframe.propertyIndex() == i;
+
+            if (hasSelectedKeyframe) {
+                headers.append(String.format("""
+                        Slider #SelectedKeyframe {
+                          Anchor: (Height: 30);
+                          Value: %d;
+                          Min: 0;
+                          Max: %d;
+                          Style: (
+                            Handle: "Assets/SelectedKeyframe.png",
+                            HandleWidth: 16,
+                            HandleHeight: 16
+                          );
+                        }
+                        """, state.ui.selectedKeyframe.tick(), ticks));
+
+                eventHandler.handle(CustomUIEventBindingType.ValueChanged,
+                        "#SelectedKeyframe",
+                        (data) -> data.append("@Tick", "#SelectedKeyframe.Value"),
+                        this::onKeyframeMove,
+                        true
+                );
+
+                eventHandler.handle(CustomUIEventBindingType.MouseButtonReleased,
+                        "#SelectedKeyframe",
+                        (data) -> data.append("@Tick", "#SelectedKeyframe.Value"),
+                        this::onKeyframeRelease,
+                        true
+                );
+            }
+
             for (int tick : property.getValues().keySet()) {
-                int x = (int) ((tick / (double) state.file.getMetadata().ticks) * width) - 8;
-                int index = i;
+                if (hasSelectedKeyframe && state.ui.selectedKeyframe.tick() == tick) {
+                    continue;
+                }
+
+                int x = (int) ((tick / (double) ticks) * width) - 8;
 
                 headers.append(String.format("""
                         @Keyframe #KeyframeAt%dTick%d {
@@ -95,16 +138,19 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
         uiCommandBuilder.appendInline("#Keyframes", headers.toString());
     }
 
-    private void gotTo(int tick) {
+    private void select(int propertyIndex, int tick) {
         if (tick < state.targetTick) {
             player.restart(state);
         }
 
         state.targetTick = tick;
+
+        state.ui.selectedKeyframe = new UIState.Keyframe(propertyIndex, tick);
+        state.ui.dirtyTimeline = true;
     }
 
     private void onClickKeyframe(int propertyIndex, int tick) {
-        gotTo(tick);
+        select(propertyIndex, tick);
 
         BaseProperty<?> property = state.timeline.getProperties().get(propertyIndex);
         Object value = property.getValues().get(tick);
@@ -113,12 +159,42 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
     }
 
     private void onRightClickKeyframe(int propertyIndex, int tick) {
-        gotTo(tick);
+        select(propertyIndex, tick);
 
         BaseProperty<?> property = state.timeline.getProperties().get(propertyIndex);
         Object value = property.getValues().get(tick);
 
         System.out.println("Right clicked keyframe for property " + property.id() + " at tick " + tick + " with value " + value);
+    }
+
+    private void moveKeyframe(@Nonnull UIEventContext<EditorUI.Data> context, boolean overwrite) {
+        if (state.ui.selectedKeyframe == null) {
+            return;
+        }
+
+        int tick = context.data.tick;
+
+        BaseProperty property = state.timeline.getProperties().get(state.ui.selectedKeyframe.propertyIndex());
+
+        if (!overwrite && property.getValues().containsKey(tick)) {
+            return;
+        }
+
+        // TODO: undo/redo
+        Object value = property.getValues().remove(state.ui.selectedKeyframe.tick());
+        property.getValues().put(tick, value);
+
+        state.ui.selectedKeyframe = new UIState.Keyframe(state.ui.selectedKeyframe.propertyIndex(), tick);
+    }
+
+    private void onKeyframeMove(@Nonnull UIEventContext<EditorUI.Data> context) {
+        moveKeyframe(context, false);
+    }
+
+    private void onKeyframeRelease(@Nonnull UIEventContext<EditorUI.Data> context) {
+        moveKeyframe(context, true);
+        state.ui.selectedKeyframe = null;
+        state.ui.dirtyTimeline = true;
     }
 
 }

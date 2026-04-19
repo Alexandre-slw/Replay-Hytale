@@ -8,7 +8,7 @@ Group {
     Value: 50;
     Min: 0;
     Max: 100;
-    Style: SliderStyle();
+    Style: ();
   }
 
   Group {
@@ -43,6 +43,9 @@ Group {
               Pressed: (
                 Background: (TexturePath: "Assets/ZoomOutPressed.png"),
               ),
+              Sounds: (
+                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+              )
             );
           }
 
@@ -59,6 +62,9 @@ Group {
               Pressed: (
                 Background: (TexturePath: "Assets/ZoomInPressed.png"),
               ),
+              Sounds: (
+                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+              )
             );
           }
         }
@@ -116,7 +122,7 @@ Group {
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
           FlexWeight: 1;
           
-          Group #Timeline {
+          Button #Timeline {
             LayoutMode: Top;
             Padding: (Horizontal: 30, Top: 10, Bottom: 20);
 
@@ -141,13 +147,10 @@ Group {
               Value: 50;
               Min: 0;
               Max: 100;
-              Style: SliderStyle(
+              Style: (
                 Handle: "Assets/Playhead.png",
                 HandleWidth: 16,
-                HandleHeight: 16,
-                Sounds: (
-                  MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
-                )
+                HandleHeight: 16
               );
             }
 
