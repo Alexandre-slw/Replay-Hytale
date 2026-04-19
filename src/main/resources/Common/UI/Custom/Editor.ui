@@ -15,6 +15,7 @@ Group {
     LayoutMode: Bottom;
 
     $C.@DecoratedContainer {
+      @CloseButton = true;
       Anchor: (Left: 10, Right: 10, Bottom: 10);
       HitTestVisible: true;
 
@@ -28,14 +29,36 @@ Group {
             }
           }
 
-          ActionButton #ZoomOut {
-            Anchor: (Left: 10);
-            KeyBindingLabel: %replay.zoomOut;
+          Button #ZoomOut {
+            Anchor: (Width: 20, Height: 20, Left: 10);
+            TooltipText: %replay.zoomOut;
+            Style: (
+              Default: (
+                Background: (TexturePath: "Assets/ZoomOut.png"),
+              ),
+              Hovered: (
+                Background: (TexturePath: "Assets/ZoomOutHovered.png"),
+              ),
+              Pressed: (
+                Background: (TexturePath: "Assets/ZoomOutPressed.png"),
+              ),
+            );
           }
 
-          ActionButton #ZoomIn {
-            Anchor: (Left: 10);
-            KeyBindingLabel: %replay.zoomIn;
+          Button #ZoomIn {
+            Anchor: (Width: 20, Height: 20, Left: 10);
+            TooltipText: %replay.zoomIn;
+            Style: (
+              Default: (
+                Background: (TexturePath: "Assets/ZoomIn.png"),
+              ),
+              Hovered: (
+                Background: (TexturePath: "Assets/ZoomInHovered.png"),
+              ),
+              Pressed: (
+                Background: (TexturePath: "Assets/ZoomInPressed.png"),
+              ),
+            );
           }
         }
 
@@ -51,27 +74,111 @@ Group {
         Group {
           Anchor: (Right: 20);
           LayoutMode: Right;
-
-          ActionButton #Close {
-            KeyBindingLabel: %replay.close;
-          }
         }
       }
 
       #Content {
-        LayoutMode: Full;
+        LayoutMode: Left;
 
-        Group {
-          Anchor: (Full: 0);
-          
-          LayoutMode: LeftScrolling;
-          ScrollbarStyle: $C.@DefaultScrollbarStyle;
+        Group #PropertiesHeaderContainer {
+          LayoutMode: Top;
+          Anchor: (Width: 140);
+          FlexWeight: 0;
           
           Group {
+            LayoutMode: Full;
+            Anchor: (Horizontal: 0, Height: 26, Top: 10);
+
+            DropdownBox #AddProperty {
+              Anchor: (Full: 0);
+              Value: "";
+              Style: (...$C.@DefaultDropdownBoxStyle, EntriesInViewport: 3, ArrowWidth: 0, LabelStyle: (TextColor: #000000(0)));
+
+              DropdownEntry {
+                Value: "camera";
+                Text: %replay.camera;
+              }
+
+              DropdownEntry {
+                Value: "speed";
+                Text: %replay.speed;
+              }
+            }
+
+            Label {
+              Text: %replay.plusAddProperty;
+              Anchor: (Full: 0);
+              Style: (FontSize: 14, TextColor: #ccd8e8, Alignment: Center);
+            }
+          }
+
+          Group #PropertiesHeader {
+            LayoutMode: Top;
+            Anchor: (Top: 8);
+
+            Group {
+              Anchor: (Horizontal: 0, Height: 30, Top: 5);
+              LayoutMode: Left;
+
+              Button #Remove {
+                Anchor: (Width: 12, Height: 12, Top: 9);
+                TooltipText: %replay.removeProperty;
+                Style: (
+                  Default: (
+                    Background: (TexturePath: "Assets/Close.png"),
+                  ),
+                  Hovered: (
+                    Background: (TexturePath: "Assets/CloseHovered.png"),
+                  ),
+                  Pressed: (
+                    Background: (TexturePath: "Assets/ClosePressed.png"),
+                  ),
+                );
+              }
+
+              Group {
+                FlexWeight: 1;
+                Anchor: (Left: 6);
+                Background: (TexturePath: "Common/InputBinding.png", Border: 6);
+                LayoutMode: Left;
+
+                Label {
+                  FlexWeight: 1;
+                  Text: %replay.camera;
+                  Anchor: (Vertical: 0, Left: 6);
+                  Style: (FontSize: 14, TextColor: #ccd8e8, VerticalAlignment: Center);
+                }
+
+                Button #AddKeyframe {
+                  Anchor: (Width: 20, Height: 20, Right: 6, Top: 5);
+                  TooltipText: %replay.addKeyframe;
+                  Style: (
+                    Default: (
+                      Background: (TexturePath: "Assets/ButtonKeyframePlus.png"),
+                    ),
+                    Hovered: (
+                      Background: (TexturePath: "Assets/ButtonKeyframePlusHovered.png"),
+                    ),
+                    Pressed: (
+                      Background: (TexturePath: "Assets/ButtonKeyframePlusPressed.png"),
+                    ),
+                  );
+                }
+              }
+            }
+          }
+        }
+
+        Group #TimelineContainer {
+          LayoutMode: LeftScrolling;
+          ScrollbarStyle: $C.@DefaultScrollbarStyle;
+          FlexWeight: 1;
+          
+          Group #Timeline {
             LayoutMode: Top;
             Padding: (Horizontal: 30, Top: 10, Bottom: 20);
 
-            Group {
+            Group #TimeScale {
               LayoutMode: Top;
 
               Group #Timestamps {
@@ -102,12 +209,12 @@ Group {
               LayoutMode: Top;
 
               $C.@Slider {
-                Anchor: (Height: 24, Top: 5);
+                Anchor: (Height: 30, Top: 5);
                 Value: 50;
                 Min: 0;
                 Max: 100;
                 Style: SliderStyle(
-                  Background: (TexturePath: "Common/SliderBackground.png", Border: 2),
+                  Background: #0a0b0c,
                   Handle: "Common/SliderHandle.png",
                   HandleWidth: 16,
                   HandleHeight: 16,
@@ -123,7 +230,7 @@ Group {
             LayoutMode: Full;
             
             Group #Playtail {
-              Background: PatchStyle(TexturePath: "Assets/Mask.png", Color: #992f2b(0.8));
+              Background: #992f2b(0.8);
             }
           }
         }

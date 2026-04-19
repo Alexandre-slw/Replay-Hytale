@@ -124,7 +124,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         );
 
         eventHandler.handle(CustomUIEventBindingType.Activating,
-                "#Close",
+                "#CloseButton",
                 this::onClose
         );
     }

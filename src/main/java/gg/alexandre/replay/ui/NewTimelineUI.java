@@ -38,7 +38,7 @@ public class NewTimelineUI extends BaseUI<NewTimelineUI.Data> {
         uiCommandBuilder.append("NewTimeline.ui");
 
         String name = "Unnamed";
-        int i = 1;
+        int i = 2;
         while (state.timelines.contains(name)) {
             name = "Unnamed " + i;
             i++;

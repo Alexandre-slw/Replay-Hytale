@@ -25,7 +25,13 @@ public class TimelinesDropdownRenderer extends BaseRenderer {
         dropdown.append(String.format("""
                 DropdownBox #Timelines {
                   Anchor: (Width: 150, Height: 26);
-                  Style: (...@DefaultDropdownBoxStyle, EntriesInViewport: 4, ArrowWidth: 0);
+                  TooltipText: %%replay.selectedTimeline;
+                  Style: (
+                    ...@DefaultDropdownBoxStyle,
+                    EntriesInViewport: 4,
+                    ArrowWidth: 0,
+                    LabelStyle: (TextColor: #ccd8e8, Alignment: Center)
+                  );
                   Value: "%s";
                 """, state.selectedTimeline));
 

@@ -42,7 +42,7 @@ public class TimeScaleRenderer extends BaseRenderer {
             uiCommandBuilder.appendInline("#Ticks", String.format("""
                     Group {
                       Anchor: (Left: %d, Top: %d, Height: %d, Width: 1);
-                      Background: PatchStyle(TexturePath: "Assets/Mask.png", Color: #96a9be%s);
+                      Background: #96a9be%s;
                     }
                     """, x, isMajorTick ? 0 : 4, isMajorTick ? 14 : 10, isMajorTick ? "" : "(0.4)"));
 
