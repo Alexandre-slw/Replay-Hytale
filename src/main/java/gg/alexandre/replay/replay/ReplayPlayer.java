@@ -53,15 +53,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ReplayPlayer extends TickingSystem<EntityStore> {
 
     private final ReplayProtocol protocol;
-    private final Map<UUID, ReplayState> states = new HashMap<>();
+    private final Map<UUID, ReplayState> states = new ConcurrentHashMap<>();
     private final HytaleLogger logger = HytaleLogger.forEnclosingClass();
 
     public ReplayPlayer(@Nonnull ReplayProtocol protocol) {
@@ -324,6 +324,12 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
 
         logger.atInfo().log("Stopped replaying");
+    }
+
+    public void stopAll() {
+        for (ReplayState state : states.values()) {
+            stop(state);
+        }
     }
 
     @Override

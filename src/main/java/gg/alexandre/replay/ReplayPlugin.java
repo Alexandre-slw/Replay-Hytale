@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.hypixel.hytale.component.ComponentRegistryProxy;
 import com.hypixel.hytale.component.ComponentType;
+import com.hypixel.hytale.server.core.event.events.ShutdownEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
@@ -57,6 +58,7 @@ public class ReplayPlugin extends JavaPlugin {
 
         getCommandRegistry().registerCommand(new ReplayCommand("replay", "Replay commands"));
         getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, DisconnectEvent::onPlayerDisconnect);
+        getEventRegistry().registerGlobal(ShutdownEvent.class, DisconnectEvent::onShutdown);
 
         entityStoreRegistry.registerSystem(player);
         entityStoreRegistry.registerSystem(recorder);
@@ -92,6 +94,11 @@ public class ReplayPlugin extends JavaPlugin {
 
     public void stopReplaying(@Nonnull PlayerRef playerRef) {
         player.stop(playerRef);
+    }
+
+    public void stopAll() {
+        recorder.stopAll();
+        player.stopAll();
     }
 
     @Nonnull

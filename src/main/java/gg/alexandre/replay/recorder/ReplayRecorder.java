@@ -40,9 +40,9 @@ import io.netty.buffer.Unpooled;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ReplayRecorder extends TickingSystem<EntityStore> {
 
@@ -51,8 +51,8 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
 
     private final HytaleLogger logger = HytaleLogger.forEnclosingClass();
 
-    private final Map<PlayerRef, RecordingData> recordings = new HashMap<>();
-    private final Map<UUID, PlayerRef> watcherToPlayer = new HashMap<>();
+    private final Map<PlayerRef, RecordingData> recordings = new ConcurrentHashMap<>();
+    private final Map<UUID, PlayerRef> watcherToPlayer = new ConcurrentHashMap<>();
 
     public ReplayRecorder(@Nonnull ReplayProtocol protocol, @Nonnull ReplayRepository repository) {
         this.protocol = protocol;
@@ -145,6 +145,10 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
         }
 
         logger.atInfo().log("Stopped recording");
+    }
+
+    public void stopAll() {
+        recordings.keySet().forEach(this::stop);
     }
 
     @Override
