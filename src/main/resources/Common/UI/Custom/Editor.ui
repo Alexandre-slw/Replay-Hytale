@@ -208,20 +208,43 @@ Group {
             Group #Properties {
               LayoutMode: Top;
 
-              $C.@Slider {
+              Group {
                 Anchor: (Height: 30, Top: 5);
-                Value: 50;
-                Min: 0;
-                Max: 100;
-                Style: SliderStyle(
-                  Background: #0a0b0c,
-                  Handle: "Common/SliderHandle.png",
-                  HandleWidth: 16,
-                  HandleHeight: 16,
-                  Sounds: (
-                    MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
-                  )
-                );
+
+                LayoutMode: Full;
+                Background: #0a0b0c;
+                
+                Button #Keyframe1 {
+                  Anchor: (Width: 16, Height: 16, Left: 60);
+
+                  Style: (
+                    Default: (
+                      Background: (TexturePath: "Assets/Keyframe.png"),
+                    ),
+                    Hovered: (
+                      Background: (TexturePath: "Assets/KeyframeHovered.png"),
+                    ),
+                    Pressed: (
+                      Background: (TexturePath: "Assets/KeyframePressed.png"),
+                    ),
+                  );
+                }
+                
+                Button #Keyframe2 {
+                  Anchor: (Width: 16, Height: 16, Left: 160);
+
+                  Style: (
+                    Default: (
+                      Background: (TexturePath: "Assets/Keyframe.png"),
+                    ),
+                    Hovered: (
+                      Background: (TexturePath: "Assets/KeyframeHovered.png"),
+                    ),
+                    Pressed: (
+                      Background: (TexturePath: "Assets/KeyframePressed.png"),
+                    ),
+                  );
+                }
               }
             }
           }
