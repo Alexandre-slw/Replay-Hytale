@@ -15,7 +15,7 @@ public class PlaytailRenderer extends BaseRenderer<EditorUI.Data> {
     private int lastWidth = -1;
     private boolean lastDragging;
 
-    public PlaytailRenderer(ReplayState state) {
+    public PlaytailRenderer(@Nonnull ReplayState state) {
         super(state);
     }
 

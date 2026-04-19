@@ -57,7 +57,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         this.player = player;
         this.state = state;
 
-        KeyframesRenderer keyframesRenderer = new KeyframesRenderer(state);
+        KeyframesRenderer keyframesRenderer = new KeyframesRenderer(state, player);
 
         layoutRenderers = List.of(
                 new PlayheadLayoutRenderer(state),
@@ -148,7 +148,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     private void onPlayheadRelease(@Nonnull UIEventContext<Data> context) {
         if (context.data.playhead < state.targetTick) {
-            player.restart(playerRef);
+            player.restart(state);
         }
 
         state.targetTick = context.data.playhead;

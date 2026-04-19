@@ -19,7 +19,7 @@ public class TimeScaleRenderer extends BaseRenderer<EditorUI.Data> {
             86400000
     };
 
-    public TimeScaleRenderer(ReplayState state) {
+    public TimeScaleRenderer(@Nonnull ReplayState state) {
         super(state);
     }
 

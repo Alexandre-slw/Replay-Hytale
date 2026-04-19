@@ -15,7 +15,7 @@ public class PropertiesDropdownRenderer extends BaseRenderer<EditorUI.Data> {
 
     private int propertiesCount = -1;
 
-    public PropertiesDropdownRenderer(ReplayState state) {
+    public PropertiesDropdownRenderer(@Nonnull ReplayState state) {
         super(state);
     }
 

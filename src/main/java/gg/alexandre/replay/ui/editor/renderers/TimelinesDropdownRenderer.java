@@ -21,7 +21,7 @@ public class TimelinesDropdownRenderer extends BaseRenderer<EditorUI.Data> {
 
     private List<String> cachedTimelines = new ArrayList<>();
 
-    public TimelinesDropdownRenderer(ReplayState state) {
+    public TimelinesDropdownRenderer(@Nonnull ReplayState state) {
         super(state);
     }
 

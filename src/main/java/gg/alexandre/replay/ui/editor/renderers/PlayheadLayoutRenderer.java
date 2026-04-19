@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
 
 public class PlayheadLayoutRenderer extends BaseRenderer<EditorUI.Data> {
 
-    public PlayheadLayoutRenderer(ReplayState state) {
+    public PlayheadLayoutRenderer(@Nonnull ReplayState state) {
         super(state);
     }
 

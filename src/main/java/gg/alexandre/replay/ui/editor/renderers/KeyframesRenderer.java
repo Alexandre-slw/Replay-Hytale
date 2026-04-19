@@ -2,6 +2,7 @@ package gg.alexandre.replay.ui.editor.renderers;
 
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
+import gg.alexandre.replay.replay.ReplayPlayer;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.editor.EditorUI;
@@ -11,10 +12,13 @@ import javax.annotation.Nonnull;
 
 public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
 
+    private final ReplayPlayer player;
+
     private int lastWidth = -1;
 
-    public KeyframesRenderer(ReplayState state) {
+    public KeyframesRenderer(@Nonnull ReplayState state, @Nonnull ReplayPlayer player) {
         super(state);
+        this.player = player;
     }
 
     @Override
@@ -91,8 +95,16 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
         uiCommandBuilder.appendInline("#Keyframes", headers.toString());
     }
 
-    private void onClickKeyframe(int propertyIndex, int tick) {
+    private void gotTo(int tick) {
+        if (tick < state.targetTick) {
+            player.restart(state);
+        }
+
         state.targetTick = tick;
+    }
+
+    private void onClickKeyframe(int propertyIndex, int tick) {
+        gotTo(tick);
 
         BaseProperty<?> property = state.timeline.getProperties().get(propertyIndex);
         Object value = property.getValues().get(tick);
@@ -101,7 +113,7 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
     }
 
     private void onRightClickKeyframe(int propertyIndex, int tick) {
-        state.targetTick = tick;
+        gotTo(tick);
 
         BaseProperty<?> property = state.timeline.getProperties().get(propertyIndex);
         Object value = property.getValues().get(tick);

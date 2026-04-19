@@ -14,7 +14,7 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
 
     private int propertiesCount = -1;
 
-    public PropertiesHeaderRenderer(ReplayState state) {
+    public PropertiesHeaderRenderer(@Nonnull ReplayState state) {
         super(state);
     }
 

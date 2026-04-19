@@ -277,9 +277,8 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
-    public void restart(@Nonnull PlayerRef playerRef) {
-        ReplayState state = states.get(playerRef.getUuid());
-        if (state == null || !state.stage.hasStarted) {
+    public void restart(@Nonnull ReplayState state) {
+        if (!state.stage.hasStarted) {
             return;
         }
 

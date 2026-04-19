@@ -13,7 +13,7 @@ public abstract class BaseRenderer<T extends UIEventIdData> {
 
     protected final ReplayState state;
 
-    public BaseRenderer(ReplayState state) {
+    public BaseRenderer(@Nonnull ReplayState state) {
         this.state = state;
     }
 
