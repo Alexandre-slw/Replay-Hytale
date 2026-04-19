@@ -120,6 +120,7 @@ Group {
         Group #TimelineContainer {
           LayoutMode: LeftScrolling;
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
+          KeepScrollPosition: true;
           FlexWeight: 1;
           
           Button #Timeline {

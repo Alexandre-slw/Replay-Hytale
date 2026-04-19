@@ -21,7 +21,7 @@ Group {
       Padding: (Full: 30);
 
       Label {
-        Style: (FontSize: 20);
+        Style: (FontSize: 20, Alignment: Center);
         Text: @Text;
       }
 

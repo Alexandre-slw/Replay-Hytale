@@ -4,6 +4,7 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
+import gg.alexandre.replay.replay.state.UIState;
 import gg.alexandre.replay.ui.editor.EditorUI;
 import gg.alexandre.replay.ui.event.UIEventContext;
 import gg.alexandre.replay.ui.event.UIEventHandler;
@@ -13,6 +14,7 @@ import javax.annotation.Nonnull;
 public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
 
     private int propertiesCount = -1;
+    private UIState.Keyframe lastSelectedKeyframe = null;
 
     public PropertiesHeaderRenderer(@Nonnull ReplayState state) {
         super(state);
@@ -21,10 +23,12 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
     @Override
     public void render(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull UIEventHandler<EditorUI.Data> eventHandler,
                        @Nonnull ReplayState state, int width) {
-        if (propertiesCount == state.timeline.getProperties().size()) {
+        if (propertiesCount == state.timeline.getProperties().size() &&
+            lastSelectedKeyframe == state.ui.selectedKeyframe) {
             return;
         }
         propertiesCount = state.timeline.getProperties().size();
+        lastSelectedKeyframe = state.ui.selectedKeyframe;
 
         StringBuilder headers = new StringBuilder();
 
@@ -53,7 +57,7 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
                   );
                 };
                 
-                @KeyframeButton = Button {
+                @AddKeyframeButton = Button {
                   Anchor: (Width: 20, Height: 20, Right: 6, Top: 5);
                   TooltipText: %replay.addKeyframe;
                   Style: (
@@ -65,6 +69,25 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
                     ),
                     Pressed: (
                       Background: (TexturePath: "Assets/ButtonKeyframePlusPressed.png"),
+                    ),
+                    Sounds: (
+                      MouseHover: (SoundPath: "Sounds/ButtonsLightHover.ogg", Volume: 6)
+                    )
+                  );
+                };
+                
+                @RemoveKeyframeButton = Button {
+                  Anchor: (Width: 20, Height: 20, Right: 6, Top: 5);
+                  TooltipText: %replay.removeKeyframe;
+                  Style: (
+                    Default: (
+                      Background: (TexturePath: "Assets/ButtonKeyframeMinus.png"),
+                    ),
+                    Hovered: (
+                      Background: (TexturePath: "Assets/ButtonKeyframeMinusHovered.png"),
+                    ),
+                    Pressed: (
+                      Background: (TexturePath: "Assets/ButtonKeyframeMinusPressed.png"),
                     ),
                     Sounds: (
                       MouseHover: (SoundPath: "Sounds/ButtonsLightHover.ogg", Volume: 6)
@@ -91,6 +114,9 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
         for (int i = 0; i < state.timeline.getProperties().size(); i++) {
             BaseProperty<?> property = state.timeline.getProperties().get(i);
 
+            boolean hasSelectedKeyframe = state.ui.selectedKeyframe != null &&
+                                          state.ui.selectedKeyframe.propertyIndex() == i;
+
             headers.append(String.format("""
                     @Container {
                       Anchor: (Horizontal: 0, Height: 30, Top: 5);
@@ -101,11 +127,11 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
                     
                       @Header {
                         @Name = %s;
-                        @KeyframeButton #AddKeyframe%d {
+                        @%sKeyframeButton #KeyframeButton%d {
                         }
                       }
                     }
-                    """, i, "%replay." + property.id(), i));
+                    """, i, "%replay." + property.id(), hasSelectedKeyframe ? "Remove" : "Add", i));
 
             int index = i;
             eventHandler.handle(CustomUIEventBindingType.Activating,
@@ -115,9 +141,9 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
             );
 
             eventHandler.handle(CustomUIEventBindingType.Activating,
-                    "#AddKeyframe" + index,
+                    "#KeyframeButton" + index,
                     (data) -> data.append("@Playhead", "#Playhead.Value"),
-                    (context) -> onAddKeyframe(context, index),
+                    (context) -> onKeyframeButton(context, index),
                     true
             );
         }
@@ -133,12 +159,21 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
         state.ui.dirtyTimeline = true;
     }
 
-    private void onAddKeyframe(@Nonnull UIEventContext<EditorUI.Data> context, int propertyIndex) {
+    private void onKeyframeButton(@Nonnull UIEventContext<EditorUI.Data> context, int propertyIndex) {
+        boolean hasSelectedKeyframe = state.ui.selectedKeyframe != null &&
+                                      state.ui.selectedKeyframe.propertyIndex() == propertyIndex;
+
         BaseProperty property = state.timeline.getProperties().get(propertyIndex);
 
-        // TODO: value
-        // TODO: undo/redo
-        property.getValues().put(context.data.playhead, property.getDefaultValue(state));
+        if (hasSelectedKeyframe) {
+            // TODO: undo/redo
+            property.getValues().remove(state.ui.selectedKeyframe.tick());
+        } else {
+            // TODO: value
+            // TODO: undo/redo
+            property.getValues().put(context.data.playhead, property.getDefaultValue(state));
+        }
+
         state.ui.selectedKeyframe = null;
         state.ui.dirtyTimeline = true;
     }
