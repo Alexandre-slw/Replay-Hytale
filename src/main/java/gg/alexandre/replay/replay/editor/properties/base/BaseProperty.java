@@ -2,6 +2,7 @@ package gg.alexandre.replay.replay.editor.properties.base;
 
 import com.google.gson.annotations.SerializedName;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import gg.alexandre.replay.replay.ReplayPlayer;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.event.UIEventContext;
 
@@ -25,8 +26,13 @@ public abstract class BaseProperty<T> {
 
     public abstract void handle(@Nonnull ReplayState state, int tick);
 
-    public abstract void editKeyframe(@Nonnull ReplayState state, @Nonnull Player player,
-                                      @Nonnull UIEventContext<?> context, int tick);
+    public void onClick(@Nonnull ReplayPlayer player, @Nonnull ReplayState state,
+                        @Nonnull Player playerComponent, @Nonnull UIEventContext<?> context, int tick) {
+
+    }
+
+    public abstract void editKeyframe(@Nonnull ReplayPlayer player, @Nonnull ReplayState state,
+                                      @Nonnull Player playerComponent, @Nonnull UIEventContext<?> context, int tick);
 
     @Nullable
     public abstract T getValue(int tick);

@@ -1,6 +1,7 @@
 package gg.alexandre.replay.replay.editor.properties;
 
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import gg.alexandre.replay.replay.ReplayPlayer;
 import gg.alexandre.replay.replay.editor.properties.base.DoubleProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.EditKeyframeUI;
@@ -25,14 +26,14 @@ public class SpeedProperty extends DoubleProperty {
     }
 
     @Override
-    public void editKeyframe(@Nonnull ReplayState state, @Nonnull Player player,
-                             @Nonnull UIEventContext<?> context, int tick) {
+    public void editKeyframe(@Nonnull ReplayPlayer player, @Nonnull ReplayState state,
+                             @Nonnull Player playerComponent, @Nonnull UIEventContext<?> context, int tick) {
         Double value = getValue(tick);
         if (value == null) {
             return;
         }
 
-        player.getPageManager().openCustomPage(context.ref, context.store, new EditKeyframeUI(
+        playerComponent.getPageManager().openCustomPage(context.ref, context.store, new EditKeyframeUI(
                 context.playerRef, id(), 10, 10_000, (int) (value * 100),
                 (newValue) -> getValues().put(tick, newValue / 100.0),
                 () -> getValues().remove(tick)

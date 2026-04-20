@@ -412,20 +412,22 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
-    private void moveCamera(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
-        Ref<EntityStore> ref = playerRef.getReference();
-        assert ref != null;
-        Store<EntityStore> store = ref.getStore();
+    public void moveCamera(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
+        bypassFilter(state, () -> {
+            Ref<EntityStore> ref = playerRef.getReference();
+            assert ref != null;
+            Store<EntityStore> store = ref.getStore();
 
-        Vector3d position = new Vector3d(
-                state.edit.cameraPosition.x(), state.edit.cameraPosition.y(), state.edit.cameraPosition.z()
-        );
-        Vector3f rotation = new Vector3f(
-                (float) state.edit.cameraPosition.yaw(), (float) state.edit.cameraPosition.pitch(), 0
-        );
+            Vector3d position = new Vector3d(
+                    state.edit.cameraPosition.x(), state.edit.cameraPosition.y(), state.edit.cameraPosition.z()
+            );
+            Vector3f rotation = new Vector3f(
+                    (float) state.edit.cameraPosition.yaw(), (float) state.edit.cameraPosition.pitch(), 0
+            );
 
-        Teleport teleport = Teleport.createForPlayer(position, rotation).setHeadRotation(rotation);
-        store.addComponent(ref, Teleport.getComponentType(), teleport);
+            Teleport teleport = Teleport.createForPlayer(position, rotation).setHeadRotation(rotation);
+            store.addComponent(ref, Teleport.getComponentType(), teleport);
+        });
     }
 
     private void handlePage(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {

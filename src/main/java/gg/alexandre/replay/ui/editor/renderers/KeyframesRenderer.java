@@ -119,7 +119,7 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
                 eventHandler.handle(CustomUIEventBindingType.Activating,
                         "#KeyframeAt" + id + "Tick" + tick,
                         (data) -> data.append("@Playhead", "#Playhead.Value"),
-                        (_) -> onClickKeyframe(id, tick),
+                        (context) -> onClickKeyframe(context, id, tick),
                         true
                 );
 
@@ -155,8 +155,16 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
         }
     }
 
-    private void onClickKeyframe(@Nonnull String propertyId, int tick) {
+    private void onClickKeyframe(@Nonnull UIEventContext<EditorUI.Data> context, @Nonnull String propertyId,
+                                 int tick) {
         select(propertyId, tick, true);
+
+        BaseProperty<?> property = state.timeline.getProperties().get(propertyId);
+        context.store.getExternalData().getWorld().execute(() -> {
+            Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
+            assert playerComponent != null;
+            property.onClick(player, state, playerComponent, context, tick);
+        });
     }
 
     private void onRightClickKeyframe(@Nonnull UIEventContext<EditorUI.Data> context, @Nonnull String propertyId,
@@ -167,7 +175,7 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
         context.store.getExternalData().getWorld().execute(() -> {
             Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
             assert playerComponent != null;
-            property.editKeyframe(state, playerComponent, context, tick);
+            property.editKeyframe(player, state, playerComponent, context, tick);
         });
     }
 
