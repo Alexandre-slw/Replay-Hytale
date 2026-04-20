@@ -16,6 +16,7 @@ import gg.alexandre.replay.replay.ReplayPlayer;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.BaseUI;
 import gg.alexandre.replay.ui.CloseUI;
+import gg.alexandre.replay.ui.HideUI;
 import gg.alexandre.replay.ui.codec.CodecConstructor;
 import gg.alexandre.replay.ui.codec.UIKey;
 import gg.alexandre.replay.ui.editor.renderers.*;
@@ -148,6 +149,11 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
                 "#Timeline",
                 this::onClickContentBackground
         );
+
+        eventHandler.handle(CustomUIEventBindingType.Activating,
+                "#Hide",
+                this::onHide
+        );
     }
 
     private void onPlayhead(@Nonnull UIEventContext<Data> context) {
@@ -212,6 +218,14 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     private void onSave(@Nonnull UIEventContext<Data> context) {
         state.timeline.save(state.file.getMetadata().uuid, state.selectedTimeline);
+    }
+
+    private void onHide(@Nonnull UIEventContext<Data> context) {
+        context.store.getExternalData().getWorld().execute(() -> {
+            Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
+            assert playerComponent != null;
+            playerComponent.getPageManager().openCustomPage(context.ref, context.store, new HideUI(playerRef));
+        });
     }
 
     private void onClose(@Nonnull UIEventContext<Data> context) {

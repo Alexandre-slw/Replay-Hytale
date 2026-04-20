@@ -1,0 +1,6 @@
+Slider #Esc {
+  Value: 0;
+  Min: 0;
+  Max: 100;
+  Style: ();
+}
