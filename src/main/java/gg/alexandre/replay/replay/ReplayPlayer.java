@@ -136,8 +136,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 return false;
             }
 
+            boolean filter = state.stage.isFilteringPackets && !state.stage.isProcessingPackets;
+
             if (packet instanceof EntityUpdates entityUpdates) {
-                if (entityUpdates.removed != null) {
+                if (!filter && entityUpdates.removed != null) {
                     for (int id : entityUpdates.removed) {
                         state.entityIds.remove(id);
                     }
@@ -150,7 +152,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 }
             }
 
-            return state.stage.isFilteringPackets && !state.stage.isProcessingPackets;
+            return filter;
         });
     }
 
