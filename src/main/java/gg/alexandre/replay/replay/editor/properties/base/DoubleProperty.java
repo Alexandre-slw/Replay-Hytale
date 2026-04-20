@@ -16,13 +16,13 @@ public abstract class DoubleProperty extends BaseProperty<Double> {
     @Override
     public Double getValue(int tick) {
         Map.Entry<Integer, Double> previous = getValues().floorEntry(tick);
+        if (previous == null) {
+            return null;
+        }
+
         Map.Entry<Integer, Double> next = getValues().higherEntry(tick);
 
-        if (previous == null && next == null) {
-            return null;
-        } else if (previous == null) {
-            return next.getValue();
-        } else if (next == null) {
+        if (next == null) {
             return previous.getValue();
         } else {
             int previousTick = previous.getKey();

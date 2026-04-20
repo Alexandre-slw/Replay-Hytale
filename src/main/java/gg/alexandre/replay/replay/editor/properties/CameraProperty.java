@@ -1,8 +1,10 @@
 package gg.alexandre.replay.replay.editor.properties;
 
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import gg.alexandre.replay.replay.editor.interpolation.InterpolationUtil;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
+import gg.alexandre.replay.ui.event.UIEventContext;
 import gg.alexandre.replay.util.Position;
 
 import javax.annotation.Nonnull;
@@ -29,16 +31,16 @@ public class CameraProperty extends BaseProperty<Position> {
     @Override
     public Position getValue(int tick) {
         Map.Entry<Integer, Position> previous = getValues().floorEntry(tick);
+        if (previous == null) {
+            return null;
+        }
+
         Map.Entry<Integer, Position> next = getValues().higherEntry(tick);
 
         Map.Entry<Integer, Position> p0Entry = getValues().lowerEntry(previous != null ? previous.getKey() : tick);
         Map.Entry<Integer, Position> p3Entry = getValues().higherEntry(next != null ? next.getKey() : tick);
 
-        if (previous == null && next == null) {
-            return null;
-        } else if (previous == null) {
-            return next.getValue();
-        } else if (next == null) {
+        if (next == null) {
             return previous.getValue();
         } else {
             int previousTick = previous.getKey();
@@ -58,6 +60,12 @@ public class CameraProperty extends BaseProperty<Position> {
 
             return new Position(x, y, z, yaw, pitch);
         }
+    }
+
+    @Override
+    public void editKeyframe(@Nonnull ReplayState state, @Nonnull Player player,
+                             @Nonnull UIEventContext<?> context, int tick) {
+        // TODO: edit camera
     }
 
     @Nonnull

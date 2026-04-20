@@ -1,6 +1,7 @@
 package gg.alexandre.replay.ui.editor.renderers;
 
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import gg.alexandre.replay.replay.ReplayPlayer;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
@@ -125,7 +126,7 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
                 eventHandler.handle(CustomUIEventBindingType.RightClicking,
                         "#KeyframeAt" + id + "Tick" + tick,
                         (data) -> data.append("@Playhead", "#Playhead.Value"),
-                        (_) -> onRightClickKeyframe(id, tick),
+                        (context) -> onRightClickKeyframe(context, id, tick),
                         true
                 );
             }
@@ -137,33 +138,37 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
         uiCommandBuilder.appendInline("#Keyframes", headers.toString());
     }
 
-    private void select(@Nonnull String propertyId, int tick) {
+    private void select(@Nonnull String propertyId, int tick, boolean select) {
         if (tick < state.targetTick) {
             player.restart(state);
         }
 
         state.targetTick = tick;
+        state.stage.isPlaying = false;
 
-        state.ui.selectedKeyframe = new UIState.Keyframe(propertyId, tick);
-        state.ui.dirtyTimeline = true;
+        if (select) {
+            state.ui.selectedKeyframe = new UIState.Keyframe(propertyId, tick);
+            state.ui.dirtyTimeline = true;
+        } else if (state.ui.selectedKeyframe != null) {
+            state.ui.selectedKeyframe = null;
+            state.ui.dirtyTimeline = true;
+        }
     }
 
     private void onClickKeyframe(@Nonnull String propertyId, int tick) {
-        select(propertyId, tick);
-
-        BaseProperty<?> property = state.timeline.getProperties().get(propertyId);
-        Object value = property.getValues().get(tick);
-
-        System.out.println("Clicked keyframe for property " + property.id() + " at tick " + tick + " with value " + value);
+        select(propertyId, tick, true);
     }
 
-    private void onRightClickKeyframe(@Nonnull String propertyId, int tick) {
-        select(propertyId, tick);
+    private void onRightClickKeyframe(@Nonnull UIEventContext<EditorUI.Data> context, @Nonnull String propertyId,
+                                      int tick) {
+        select(propertyId, tick, false);
 
         BaseProperty<?> property = state.timeline.getProperties().get(propertyId);
-        Object value = property.getValues().get(tick);
-
-        System.out.println("Right clicked keyframe for property " + property.id() + " at tick " + tick + " with value " + value);
+        context.store.getExternalData().getWorld().execute(() -> {
+            Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
+            assert playerComponent != null;
+            property.editKeyframe(state, playerComponent, context, tick);
+        });
     }
 
     private void moveKeyframe(@Nonnull UIEventContext<EditorUI.Data> context, boolean overwrite) {
