@@ -25,6 +25,11 @@ public class RecordCommand extends AbstractCommand {
         runArg = withRequiredArg("run", "", ArgTypes.BOOLEAN);
     }
 
+    @Override
+    protected boolean canGeneratePermission() {
+        return false;
+    }
+
     @Nullable
     @Override
     protected CompletableFuture<Void> execute(@Nonnull CommandContext context) {

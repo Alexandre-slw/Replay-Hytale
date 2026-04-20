@@ -21,7 +21,11 @@ public class ReplayCommand extends AbstractCommand {
         super(name, description);
 
         addSubCommand(new RecordCommand("record", ""));
-        addSubCommand(new PlayCommand("play", ""));
+    }
+
+    @Override
+    protected boolean canGeneratePermission() {
+        return false;
     }
 
     @Nullable

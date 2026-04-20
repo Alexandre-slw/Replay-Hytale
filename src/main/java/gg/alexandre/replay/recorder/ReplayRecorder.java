@@ -159,7 +159,6 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
     }
 
     public void registerPacketsListener() {
-        // TODO: record based on player
         PacketAdapters.registerOutbound((PacketWatcher) (handler, packet) -> {
             if (packet instanceof Ping || handler.getAuth() == null) {
                 return;

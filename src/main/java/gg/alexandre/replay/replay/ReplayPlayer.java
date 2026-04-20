@@ -270,7 +270,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 referralData = ReplayPlugin.get().getGson().toJson(referral).getBytes(StandardCharsets.UTF_8);
             }
 
-            InetSocketAddress publicAddress = ServerManager.get().getPublicAddress();
+            InetSocketAddress publicAddress = ServerManager.get().getLocalOrPublicAddress();
             assert publicAddress != null;
 
             playerRef.referToServer(
