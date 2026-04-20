@@ -64,14 +64,13 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
                 """);
 
         int ticks = state.file.getMetadata().ticks;
-        for (int i = 0; i < state.timeline.getProperties().size(); i++) {
-            BaseProperty<?> property = state.timeline.getProperties().get(i);
-            int index = i;
+        for (BaseProperty<?> property : state.timeline.getProperties().values()) {
+            String id = property.id();
 
             headers.append("@Track {");
 
             boolean hasSelectedKeyframe = state.ui.selectedKeyframe != null &&
-                                          state.ui.selectedKeyframe.propertyIndex() == i;
+                                          state.ui.selectedKeyframe.propertyId().equals(id);
 
             if (hasSelectedKeyframe) {
                 headers.append(String.format("""
@@ -111,22 +110,22 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
                 int x = (int) ((tick / (double) ticks) * width) - 8;
 
                 headers.append(String.format("""
-                        @Keyframe #KeyframeAt%dTick%d {
+                        @Keyframe #KeyframeAt%sTick%d {
                           @Anchor = (Left: %d);
                         }
-                        """, index, tick, x));
+                        """, id, tick, x));
 
                 eventHandler.handle(CustomUIEventBindingType.Activating,
-                        "#KeyframeAt" + index + "Tick" + tick,
+                        "#KeyframeAt" + id + "Tick" + tick,
                         (data) -> data.append("@Playhead", "#Playhead.Value"),
-                        (_) -> onClickKeyframe(index, tick),
+                        (_) -> onClickKeyframe(id, tick),
                         true
                 );
 
                 eventHandler.handle(CustomUIEventBindingType.RightClicking,
-                        "#KeyframeAt" + index + "Tick" + tick,
+                        "#KeyframeAt" + id + "Tick" + tick,
                         (data) -> data.append("@Playhead", "#Playhead.Value"),
-                        (_) -> onRightClickKeyframe(index, tick),
+                        (_) -> onRightClickKeyframe(id, tick),
                         true
                 );
             }
@@ -138,30 +137,30 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
         uiCommandBuilder.appendInline("#Keyframes", headers.toString());
     }
 
-    private void select(int propertyIndex, int tick) {
+    private void select(@Nonnull String propertyId, int tick) {
         if (tick < state.targetTick) {
             player.restart(state);
         }
 
         state.targetTick = tick;
 
-        state.ui.selectedKeyframe = new UIState.Keyframe(propertyIndex, tick);
+        state.ui.selectedKeyframe = new UIState.Keyframe(propertyId, tick);
         state.ui.dirtyTimeline = true;
     }
 
-    private void onClickKeyframe(int propertyIndex, int tick) {
-        select(propertyIndex, tick);
+    private void onClickKeyframe(@Nonnull String propertyId, int tick) {
+        select(propertyId, tick);
 
-        BaseProperty<?> property = state.timeline.getProperties().get(propertyIndex);
+        BaseProperty<?> property = state.timeline.getProperties().get(propertyId);
         Object value = property.getValues().get(tick);
 
         System.out.println("Clicked keyframe for property " + property.id() + " at tick " + tick + " with value " + value);
     }
 
-    private void onRightClickKeyframe(int propertyIndex, int tick) {
-        select(propertyIndex, tick);
+    private void onRightClickKeyframe(@Nonnull String propertyId, int tick) {
+        select(propertyId, tick);
 
-        BaseProperty<?> property = state.timeline.getProperties().get(propertyIndex);
+        BaseProperty<?> property = state.timeline.getProperties().get(propertyId);
         Object value = property.getValues().get(tick);
 
         System.out.println("Right clicked keyframe for property " + property.id() + " at tick " + tick + " with value " + value);
@@ -174,7 +173,7 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
 
         int tick = context.data.tick;
 
-        BaseProperty property = state.timeline.getProperties().get(state.ui.selectedKeyframe.propertyIndex());
+        BaseProperty property = state.timeline.getProperties().get(state.ui.selectedKeyframe.propertyId());
 
         if (!overwrite && property.getValues().containsKey(tick)) {
             return;
@@ -184,7 +183,7 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
         Object value = property.getValues().remove(state.ui.selectedKeyframe.tick());
         property.getValues().put(tick, value);
 
-        state.ui.selectedKeyframe = new UIState.Keyframe(state.ui.selectedKeyframe.propertyIndex(), tick);
+        state.ui.selectedKeyframe = new UIState.Keyframe(state.ui.selectedKeyframe.propertyId(), tick);
     }
 
     private void onKeyframeMove(@Nonnull UIEventContext<EditorUI.Data> context) {

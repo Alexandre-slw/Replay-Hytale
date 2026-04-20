@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class TimelineState {
@@ -21,7 +21,7 @@ public class TimelineState {
     public static final String DEFAULT_TIMELINE_NAME = "Default";
 
     @SerializedName("properties")
-    private final List<BaseProperty<?>> properties = new ArrayList<>();
+    private final Map<String, BaseProperty<?>> properties = new HashMap<>();
 
     private Instant lastSaved = Instant.now();
 
@@ -46,7 +46,7 @@ public class TimelineState {
     }
 
     @Nonnull
-    public List<BaseProperty<?>> getProperties() {
+    public Map<String, BaseProperty<?>> getProperties() {
         return properties;
     }
 

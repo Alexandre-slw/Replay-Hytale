@@ -390,7 +390,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         state.edit.speed = 1.0;
 
-        for (BaseProperty<?> property : state.timeline.getProperties()) {
+        for (BaseProperty<?> property : state.timeline.getProperties().values()) {
             property.handle(state, state.currentTick);
         }
     }

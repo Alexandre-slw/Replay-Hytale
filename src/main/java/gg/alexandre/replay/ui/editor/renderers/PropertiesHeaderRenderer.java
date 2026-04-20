@@ -111,39 +111,37 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
                 };
                 """);
 
-        for (int i = 0; i < state.timeline.getProperties().size(); i++) {
-            BaseProperty<?> property = state.timeline.getProperties().get(i);
-
+        for (BaseProperty<?> property : state.timeline.getProperties().values()) {
+            String id = property.id();
             boolean hasSelectedKeyframe = state.ui.selectedKeyframe != null &&
-                                          state.ui.selectedKeyframe.propertyIndex() == i;
+                                          state.ui.selectedKeyframe.propertyId().equals(id);
 
             headers.append(String.format("""
                     @Container {
                       Anchor: (Horizontal: 0, Height: 30, Top: 5);
                       LayoutMode: Left;
                     
-                      @RemoveButton #Remove%d {
+                      @RemoveButton #Remove%s {
                       }
                     
                       @Header {
                         @Name = %s;
-                        @%sKeyframeButton #KeyframeButton%d {
+                        @%sKeyframeButton #KeyframeButton%s {
                         }
                       }
                     }
-                    """, i, "%replay." + property.id(), hasSelectedKeyframe ? "Remove" : "Add", i));
+                    """, id, "%replay." + id, hasSelectedKeyframe ? "Remove" : "Add", id));
 
-            int index = i;
             eventHandler.handle(CustomUIEventBindingType.Activating,
-                    "#Remove" + index,
-                    (_) -> onRemoveProperty(index),
+                    "#Remove" + id,
+                    (_) -> onRemoveProperty(id),
                     true
             );
 
             eventHandler.handle(CustomUIEventBindingType.Activating,
-                    "#KeyframeButton" + index,
+                    "#KeyframeButton" + id,
                     (data) -> data.append("@Playhead", "#Playhead.Value"),
-                    (context) -> onKeyframeButton(context, index),
+                    (context) -> onKeyframeButton(context, id),
                     true
             );
         }
@@ -152,18 +150,18 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
         uiCommandBuilder.appendInline("#PropertiesHeader", headers.toString());
     }
 
-    private void onRemoveProperty(int propertyIndex) {
+    private void onRemoveProperty(@Nonnull String propertyId) {
         // TODO: undo/redo
-        state.timeline.getProperties().remove(propertyIndex);
+        state.timeline.getProperties().remove(propertyId);
         state.ui.selectedKeyframe = null;
         state.ui.dirtyTimeline = true;
     }
 
-    private void onKeyframeButton(@Nonnull UIEventContext<EditorUI.Data> context, int propertyIndex) {
+    private void onKeyframeButton(@Nonnull UIEventContext<EditorUI.Data> context, @Nonnull String propertyId) {
         boolean hasSelectedKeyframe = state.ui.selectedKeyframe != null &&
-                                      state.ui.selectedKeyframe.propertyIndex() == propertyIndex;
+                                      state.ui.selectedKeyframe.propertyId().equals(propertyId);
 
-        BaseProperty property = state.timeline.getProperties().get(propertyIndex);
+        BaseProperty property = state.timeline.getProperties().get(propertyId);
 
         if (hasSelectedKeyframe) {
             // TODO: undo/redo

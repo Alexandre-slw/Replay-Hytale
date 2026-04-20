@@ -1,5 +1,6 @@
 package gg.alexandre.replay.replay.state;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class UIState {
@@ -17,7 +18,7 @@ public class UIState {
     @Nullable
     public Keyframe selectedKeyframe;
 
-    public record Keyframe(int propertyIndex, int tick) {
+    public record Keyframe(@Nonnull String propertyId, int tick) {
     }
 
 }

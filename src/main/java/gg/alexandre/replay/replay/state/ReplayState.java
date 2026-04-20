@@ -67,7 +67,7 @@ public class ReplayState {
 
         if (!Files.exists(path)) {
             timeline = new TimelineState();
-            timeline.getProperties().add(new CameraProperty());
+            timeline.getProperties().put("camera", new CameraProperty());
             timeline.save(file.getMetadata().uuid, name);
         } else {
             Gson gson = ReplayPlugin.get().getGson();

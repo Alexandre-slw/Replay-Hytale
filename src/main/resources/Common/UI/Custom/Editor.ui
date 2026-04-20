@@ -93,20 +93,11 @@ Group {
           Padding: (Bottom: 20);
           FlexWeight: 0;
           
-          Group {
+          Group #PropertiesDropdownContainer {
             LayoutMode: Full;
             Anchor: (Horizontal: 0, Height: 26, Top: 10);
 
-            Group #PropertiesDropdownContainer {
-              DropdownBox #AddProperty {
-              }
-            }
-
-            Label {
-              Text: %replay.plusAddProperty;
-              Anchor: (Full: 0);
-              Style: (FontSize: 14, TextColor: #ccd8e8, Alignment: Center);
-            }
+            // Rendered
           }
 
           Group #PropertiesHeader {
