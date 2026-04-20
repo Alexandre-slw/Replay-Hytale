@@ -67,6 +67,25 @@ Group {
               )
             );
           }
+
+          Button #Save {
+            Anchor: (Width: 20, Height: 20, Left: 10);
+            TooltipText: %replay.save;
+            Style: (
+              Default: (
+                Background: (TexturePath: "Assets/Save.png"),
+              ),
+              Hovered: (
+                Background: (TexturePath: "Assets/SaveHovered.png"),
+              ),
+              Pressed: (
+                Background: (TexturePath: "Assets/SavePressed.png"),
+              ),
+              Sounds: (
+                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+              )
+            );
+          }
         }
 
         Group {

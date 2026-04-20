@@ -130,6 +130,11 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         );
 
         eventHandler.handle(CustomUIEventBindingType.Activating,
+                "#Save",
+                this::onSave
+        );
+
+        eventHandler.handle(CustomUIEventBindingType.Activating,
                 "#CloseButton",
                 this::onClose
         );
@@ -203,6 +208,10 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         state.ui.timelineZoom *= 1.5f;
 
         layout(context.uiCommandBuilder, eventHandler);
+    }
+
+    private void onSave(@Nonnull UIEventContext<Data> context) {
+        state.timeline.save(state.file.getMetadata().uuid, state.selectedTimeline);
     }
 
     private void onClose(@Nonnull UIEventContext<Data> context) {

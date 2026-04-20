@@ -5,6 +5,8 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.protocol.EntityUpdate;
 import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.protocol.packets.assets.UpdateTranslations;
@@ -29,6 +31,7 @@ import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
 import com.hypixel.hytale.server.core.io.handlers.SetupPacketHandler;
 import com.hypixel.hytale.server.core.modules.entity.player.ChunkTracker;
+import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.modules.i18n.I18nModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
@@ -42,6 +45,7 @@ import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.editor.EditorUI;
 import gg.alexandre.replay.ui.manager.RealtimePageManager;
+import gg.alexandre.replay.util.Position;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -337,7 +341,6 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
     public void tick(float v, int i, @Nonnull Store<EntityStore> store) {
         for (ReplayState state : states.values()) {
             tick(state);
-            tickEditor(state);
         }
     }
 
@@ -369,32 +372,60 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                     replayPacket.handle(packetHandler, state);
 
                     if (replayPacket instanceof TickReplayPacket) {
-                        tickEditor(state);
+                        tickEditor(state, playerRef, false);
                         processedTicks++;
                     }
                 }
             }
+
+            if ((!state.stage.sentJoinWorld || state.stage.isPlaying) && canProcessPackets(state, packetHandler)) {
+                state.targetTick += Math.max(0.1, state.edit.speed);
+            }
+
+            tickEditor(state, playerRef, true);
         } catch (Exception e) {
             logger.atWarning().withCause(e).log("Error while processing replay packets");
         } finally {
             state.stage.isProcessingPackets = false;
         }
-
-        if ((!state.stage.sentJoinWorld || state.stage.isPlaying) && canProcessPackets(state, packetHandler)) {
-            state.targetTick += Math.max(0.1, state.edit.speed);
-        }
     }
 
-    private void tickEditor(@Nonnull ReplayState state) {
+    private void tickEditor(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef, boolean move) {
         if (state.timeline.getLastSaved().plus(5, ChronoUnit.MINUTES).isBefore(Instant.now())) {
             state.timeline.save(state.file.getMetadata().uuid, state.selectedTimeline);
         }
 
         state.edit.speed = 1.0;
 
-        for (BaseProperty<?> property : state.timeline.getProperties().values()) {
-            property.handle(state, state.currentTick);
+        Vector3d position = playerRef.getTransform().getPosition();
+        Vector3f rotation = playerRef.getHeadRotation();
+        state.edit.cameraPosition = new Position(position.x, position.y, position.z, rotation.x, rotation.y);
+
+        if (state.stage.isPlaying && !state.ui.controlGame) {
+            for (BaseProperty<?> property : state.timeline.getProperties().values()) {
+                property.handle(state, state.currentTick);
+            }
+
+            if (move) {
+                moveCamera(state, playerRef);
+            }
         }
+    }
+
+    private void moveCamera(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
+        Ref<EntityStore> ref = playerRef.getReference();
+        assert ref != null;
+        Store<EntityStore> store = ref.getStore();
+
+        Vector3d position = new Vector3d(
+                state.edit.cameraPosition.x(), state.edit.cameraPosition.y(), state.edit.cameraPosition.z()
+        );
+        Vector3f rotation = new Vector3f(
+                (float) state.edit.cameraPosition.yaw(), (float) state.edit.cameraPosition.pitch(), 0
+        );
+
+        Teleport teleport = Teleport.createForPlayer(position, rotation).setHeadRotation(rotation);
+        store.addComponent(ref, Teleport.getComponentType(), teleport);
     }
 
     private void handlePage(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
