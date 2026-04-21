@@ -23,6 +23,8 @@ public class ReplayState {
     public UUID playerUuid;
     public String lang;
 
+    public double timeDilatation;
+
     public Set<Integer> entityIds = new HashSet<>();
 
     public EditState edit = new EditState();

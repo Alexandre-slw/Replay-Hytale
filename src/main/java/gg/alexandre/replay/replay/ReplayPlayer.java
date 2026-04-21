@@ -25,6 +25,7 @@ import com.hypixel.hytale.protocol.packets.interface_.UpdateAnchorUI;
 import com.hypixel.hytale.protocol.packets.player.ClientReady;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
 import com.hypixel.hytale.protocol.packets.setup.RequestAssets;
+import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
 import com.hypixel.hytale.server.core.Constants;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
@@ -483,6 +484,20 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             if (move) {
                 moveCamera(state, playerRef);
             }
+        }
+
+        handleTimeDilatation(state, playerRef.getPacketHandler());
+    }
+
+    private void handleTimeDilatation(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler) {
+        float speed = (float) state.edit.speed;
+        if (!state.stage.isPlaying) {
+            speed = 0;
+        }
+
+        if (state.timeDilatation != speed) {
+            state.timeDilatation = speed;
+            packetHandler.writeNoCache(new SetTimeDilation(Math.min(Math.max(0.0101f, speed), 4)));
         }
     }
 
