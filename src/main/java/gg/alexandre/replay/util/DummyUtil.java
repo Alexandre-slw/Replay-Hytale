@@ -28,14 +28,15 @@ public class DummyUtil {
     public static String NAME_PREFIX = "ReplayRecorder_";
 
     @Nonnull
-    public static CompletableFuture<PlayerRef> spawnDummyWatcher(@Nonnull PlayerRef targetPlayer, @Nonnull UUID uuid) {
-        Player player = targetPlayer.getReference().getStore().getComponent(targetPlayer.getReference(), Player.getComponentType());
+    public static CompletableFuture<PlayerRef> spawnDummyWatcher(@Nonnull PlayerRef targetPlayer, @Nonnull String name,
+                                                                 @Nonnull UUID uuid) {
+        Player player = targetPlayer.getReference().getStore().getComponent(
+                targetPlayer.getReference(), Player.getComponentType()
+        );
 
         EmbeddedChannel dummyChannel = new EmbeddedChannel();
         dummyChannel.attr(ProtocolUtil.STREAM_CHANNEL_KEY).set(NetworkChannel.Default);
         NettyUtil.TimeoutContext.init(dummyChannel, "play", "");
-
-        String name = NAME_PREFIX + targetPlayer.getUsername();
 
         return Universe.get().addPlayer(
                 dummyChannel,

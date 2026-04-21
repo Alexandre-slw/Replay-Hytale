@@ -39,6 +39,7 @@ import io.netty.buffer.Unpooled;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -75,17 +76,19 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
 
         recordings.put(playerRef, data);
 
-        UUID uuid = UUID.randomUUID();
+        String name = DummyUtil.NAME_PREFIX + playerRef.getUsername();
+        UUID uuid = UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8));
         watcherToPlayer.put(uuid, playerRef);
 
         logger.atInfo().log("Started recording");
 
         Ref<EntityStore> ref = playerRef.getReference();
+        assert ref != null;
         Store<EntityStore> store = ref.getStore();
         World world = store.getExternalData().getWorld();
 
         data.file.startSnapshot(data.tick);
-        world.execute(() -> DummyUtil.spawnDummyWatcher(playerRef, uuid)
+        world.execute(() -> DummyUtil.spawnDummyWatcher(playerRef, name, uuid)
                 .thenAccept(watcher -> {
                     data.file.endSnapshot(data.tick);
 
@@ -114,6 +117,7 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
         }
 
         Ref<EntityStore> ref = playerRef.getReference();
+        assert ref != null;
         Store<EntityStore> store = ref.getStore();
         World world = store.getExternalData().getWorld();
         world.execute(() -> {
@@ -175,7 +179,8 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
             }
 
             if (packet instanceof SpawnParticleSystem particleSystem &&
-                    particleSystem.particleSystemId.equals("PlayerSpawn_Spawn") &&
+                    "PlayerSpawn_Spawn".equals(particleSystem.particleSystemId) &&
+                    particleSystem.position != null &&
                     particleSystem.position.x == 0 &&
                     particleSystem.position.z == 0) {
                 // Hide fake player spawn particles
