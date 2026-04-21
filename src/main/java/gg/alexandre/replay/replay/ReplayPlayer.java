@@ -111,11 +111,13 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             }
 
             if (packet instanceof Ping ||
-                packet instanceof SetPage ||
-                packet instanceof CustomPage ||
-                packet instanceof ResetUserInterfaceState ||
-                packet instanceof UpdateAnchorUI) {
-                return false;
+                    packet instanceof SetPage ||
+                    packet instanceof CustomPage ||
+                    packet instanceof ResetUserInterfaceState ||
+                    packet instanceof UpdateAnchorUI) {
+
+                return packet instanceof CustomPage customPage &&
+                       customPage.key != null && !customPage.key.startsWith("gg.alexandre.");
             }
 
             if (!state.stage.isFilteringPackets && packet instanceof ToClientPacket toClientPacket) {
@@ -527,16 +529,16 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
     }
 
     public void bypassFilter(@Nonnull ReplayState state, @Nonnull Runnable runnable) {
-        if (!state.stage.isFilteringPackets) {
+        if (!state.stage.isFilteringPackets || state.stage.isProcessingPackets) {
             runnable.run();
             return;
         }
 
-        state.stage.isFilteringPackets = false;
+        state.stage.isProcessingPackets = true;
         try {
             runnable.run();
         } finally {
-            state.stage.isFilteringPackets = true;
+            state.stage.isProcessingPackets = false;
         }
     }
 
