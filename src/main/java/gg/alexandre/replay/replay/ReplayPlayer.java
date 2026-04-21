@@ -9,6 +9,7 @@ import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.protocol.*;
 import com.hypixel.hytale.protocol.packets.assets.UpdateBlockHitboxes;
 import com.hypixel.hytale.protocol.packets.assets.UpdateTranslations;
+import com.hypixel.hytale.protocol.packets.camera.SetServerCamera;
 import com.hypixel.hytale.protocol.packets.connection.ClientDisconnect;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.protocol.packets.entities.EntityUpdates;
@@ -241,6 +242,8 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         packetHandler.writeNoCache(entityUpdates);
         state.entityIds.clear();
 
+        packetHandler.writeNoCache(new SetServerCamera(ClientCameraView.FirstPerson, true, null));
+
         packetHandler.tryFlush();
 
         state.stage.clearedWorld = true;
@@ -252,6 +255,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
     }
 
     public void start(@Nonnull PlayerRef playerRef, @Nonnull Path replayPath) {
+        if (isPlaying(playerRef)) {
+            clearWorld(playerRef, states.get(playerRef.getUuid()));
+        }
+
         initState(playerRef.getUuid(), playerRef.getLanguage(), replayPath);
 
         PacketHandler handler = playerRef.getPacketHandler();
@@ -382,6 +389,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
             if (!state.stage.clearedWorld) {
                 clearWorld(playerRef, state);
+                return;
             } else {
                 int processedTicks = 0;
                 while (canProcessPackets(state, packetHandler) &&
@@ -428,6 +436,8 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             if (move) {
                 moveCamera(state, playerRef);
             }
+        } else {
+            playerRef.getPacketHandler().writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
         }
 
         handleTimeDilatation(state, playerRef.getPacketHandler());
