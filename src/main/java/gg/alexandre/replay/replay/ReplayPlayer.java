@@ -491,7 +491,9 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
     private void handleTimeDilatation(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler) {
         float speed = (float) state.edit.speed;
-        if (!state.stage.isPlaying) {
+        if (state.ui.dragging || state.ui.controlGame) {
+            speed = 1;
+        } else if (!state.stage.isPlaying) {
             speed = 0;
         }
 
