@@ -3,8 +3,6 @@ package gg.alexandre.replay.ui;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
-import com.hypixel.hytale.server.core.Constants;
-import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -70,18 +68,8 @@ public class ReplayUI extends BaseUI<ReplayUI.Data> {
     }
 
     private void onReplay(@Nonnull UIEventContext<Data> context, @Nonnull Path replay) {
-        if (Constants.SINGLEPLAYER) {
-            context.store.getExternalData().getWorld().execute(() -> {
-                Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
-                assert playerComponent != null;
-                playerComponent.getPageManager().openCustomPage(
-                        context.ref, context.store, new SingleplayerWarningUI(playerRef, replay)
-                );
-            });
-        } else {
-            ReplayPlugin.get().startReplaying(playerRef, replay);
-            context.close();
-        }
+        ReplayPlugin.get().startReplaying(playerRef, replay);
+        context.close();
     }
 
     private void onRecord(@Nonnull UIEventContext<Data> context) {

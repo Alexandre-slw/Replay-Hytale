@@ -66,8 +66,6 @@ public class ReplayPlugin extends JavaPlugin {
         TAG_TYPE = entityStoreRegistry.registerComponent(TargetWatcherTag.class, () -> {
             throw new UnsupportedOperationException();
         });
-
-        player.setup();
     }
 
     @Override
