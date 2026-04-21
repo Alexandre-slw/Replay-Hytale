@@ -6,7 +6,6 @@ import com.hypixel.hytale.protocol.ToClientPacket;
 import com.hypixel.hytale.protocol.io.PacketIO;
 import com.hypixel.hytale.protocol.io.PacketStatsRecorder;
 import com.hypixel.hytale.protocol.io.ProtocolException;
-import com.hypixel.hytale.protocol.packets.interface_.*;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import gg.alexandre.replay.protocol.ReplayPacket;

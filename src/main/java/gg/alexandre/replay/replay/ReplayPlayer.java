@@ -9,8 +9,8 @@ import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
-import com.hypixel.hytale.protocol.EntityUpdate;
-import com.hypixel.hytale.protocol.InteractionType;
+import com.hypixel.hytale.protocol.*;
+import com.hypixel.hytale.protocol.packets.assets.UpdateBlockHitboxes;
 import com.hypixel.hytale.protocol.packets.assets.UpdateTranslations;
 import com.hypixel.hytale.protocol.packets.connection.ClientDisconnect;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
@@ -23,7 +23,9 @@ import com.hypixel.hytale.protocol.packets.interface_.ResetUserInterfaceState;
 import com.hypixel.hytale.protocol.packets.interface_.SetPage;
 import com.hypixel.hytale.protocol.packets.interface_.UpdateAnchorUI;
 import com.hypixel.hytale.protocol.packets.player.ClientReady;
+import com.hypixel.hytale.protocol.packets.player.ClientTeleport;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
+import com.hypixel.hytale.protocol.packets.player.SetMovementStates;
 import com.hypixel.hytale.protocol.packets.setup.RequestAssets;
 import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
 import com.hypixel.hytale.server.core.Constants;
@@ -36,11 +38,11 @@ import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
 import com.hypixel.hytale.server.core.io.handlers.SetupPacketHandler;
 import com.hypixel.hytale.server.core.modules.entity.player.ChunkTracker;
-import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.modules.i18n.I18nModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.core.util.PositionUtil;
 import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.file.ReplayInputFile;
 import gg.alexandre.replay.protocol.ReplayPacket;
@@ -69,8 +71,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReplayPlayer extends TickingSystem<EntityStore> {
+
+    private static final AtomicInteger NEXT_TELEPORT_ID = new AtomicInteger();
 
     private final Path replayStatePath;
 
@@ -130,6 +135,11 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             ReplayState state = getState(handler);
             if (state == null) {
                 return false;
+            }
+
+            if (packet instanceof UpdateBlockHitboxes hitboxes) {
+                assert hitboxes.blockBaseHitboxes != null;
+                hitboxes.blockBaseHitboxes.replaceAll((_, _) -> new Hitbox[0]);
             }
 
             if (packet instanceof Ping ||
@@ -240,12 +250,16 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             tracker.unloadAll(playerRef);
         }
 
+        PacketHandler packetHandler = playerRef.getPacketHandler();
+
         EntityUpdates entityUpdates = new EntityUpdates();
         entityUpdates.removed = state.entityIds.stream().mapToInt(Integer::intValue).toArray();
-        playerRef.getPacketHandler().write(entityUpdates);
+        packetHandler.writeNoCache(entityUpdates);
         state.entityIds.clear();
 
-        playerRef.getPacketHandler().tryFlush();
+        packetHandler.tryFlush();
+
+        state.stage.clearedWorld = true;
     }
 
     public boolean isPlaying(@Nonnull PlayerRef playerRef) {
@@ -437,7 +451,6 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
             if (!state.stage.clearedWorld) {
                 clearWorld(playerRef, state);
-                state.stage.clearedWorld = true;
             } else {
                 int processedTicks = 0;
                 while (canProcessPackets(state, packetHandler) &&
@@ -491,7 +504,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
     private void handleTimeDilatation(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler) {
         float speed = (float) state.edit.speed;
-        if (state.ui.dragging || state.ui.controlGame) {
+        if (state.ui.dragging || state.ui.controlGame || state.currentTick + speed < state.targetTick) {
             speed = 1;
         } else if (!state.stage.isPlaying) {
             speed = 0;
@@ -505,10 +518,6 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
     public void moveCamera(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
         bypassFilter(state, () -> {
-            Ref<EntityStore> ref = playerRef.getReference();
-            assert ref != null;
-            Store<EntityStore> store = ref.getStore();
-
             Vector3d position = new Vector3d(
                     state.edit.cameraPosition.x(), state.edit.cameraPosition.y(), state.edit.cameraPosition.z()
             );
@@ -516,8 +525,20 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                     (float) state.edit.cameraPosition.yaw(), (float) state.edit.cameraPosition.pitch(), 0
             );
 
-            Teleport teleport = Teleport.createForPlayer(position, rotation).setHeadRotation(rotation);
-            store.addComponent(ref, Teleport.getComponentType(), teleport);
+            Vector3f bodyRotation = new Vector3f(0.0F, rotation.getYaw(), 0.0F);
+
+            ModelTransform transform = new ModelTransform(
+                    PositionUtil.toPositionPacket(position),
+                    PositionUtil.toDirectionPacket(bodyRotation),
+                    PositionUtil.toDirectionPacket(rotation)
+            );
+
+            playerRef.getPacketHandler().writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
+            playerRef.getPacketHandler().writeNoCache(new ClientTeleport(
+                    (byte) NEXT_TELEPORT_ID.getAndIncrement(),
+                    transform,
+                    false
+            ));
         });
     }
 
