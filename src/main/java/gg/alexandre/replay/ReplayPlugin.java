@@ -34,18 +34,18 @@ public class ReplayPlugin extends JavaPlugin {
 
     private static ReplayPlugin instance;
 
-    private final ReplayProtocol protocol = new ReplayProtocol();
-    private final ReplayRepository repository = new ReplayRepository(getDataDirectory());
-
-    private final ReplayRecorder recorder = new ReplayRecorder(protocol, repository);
-    private final ReplayPlayer player = new ReplayPlayer(protocol);
-
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(Position.class, new PositionAdapter())
             .registerTypeAdapter(BaseProperty.class, new BasePropertyAdapter())
             .addDeserializationExclusionStrategy(new SerializedNameOnlyStrategy())
             .addSerializationExclusionStrategy(new SerializedNameOnlyStrategy())
             .create();
+
+    private final ReplayProtocol protocol = new ReplayProtocol();
+    private final ReplayRepository repository = new ReplayRepository(getDataDirectory());
+
+    private final ReplayRecorder recorder = new ReplayRecorder(protocol, repository);
+    private final ReplayPlayer player = new ReplayPlayer(protocol, getDataDirectory());
 
     public ReplayPlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -66,6 +66,8 @@ public class ReplayPlugin extends JavaPlugin {
         TAG_TYPE = entityStoreRegistry.registerComponent(TargetWatcherTag.class, () -> {
             throw new UnsupportedOperationException();
         });
+
+        player.setup();
     }
 
     @Override

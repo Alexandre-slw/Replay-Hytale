@@ -1,6 +1,8 @@
 package gg.alexandre.replay.replay;
 
 import com.google.gson.JsonObject;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
@@ -23,6 +25,8 @@ import com.hypixel.hytale.protocol.packets.interface_.UpdateAnchorUI;
 import com.hypixel.hytale.protocol.packets.player.ClientReady;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
 import com.hypixel.hytale.protocol.packets.setup.RequestAssets;
+import com.hypixel.hytale.server.core.Constants;
+import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
 import com.hypixel.hytale.server.core.io.PacketHandler;
@@ -49,11 +53,14 @@ import gg.alexandre.replay.util.Position;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -64,12 +71,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ReplayPlayer extends TickingSystem<EntityStore> {
 
+    private final Path replayStatePath;
+
     private final ReplayProtocol protocol;
     private final Map<UUID, ReplayState> states = new ConcurrentHashMap<>();
     private final HytaleLogger logger = HytaleLogger.forEnclosingClass();
 
-    public ReplayPlayer(@Nonnull ReplayProtocol protocol) {
+    public ReplayPlayer(@Nonnull ReplayProtocol protocol, @Nonnull Path dataDirectory) {
         this.protocol = protocol;
+        replayStatePath = dataDirectory.resolve("state.json");
 
         PacketAdapters.registerInbound((PacketFilter) (handler, packet) -> {
             ReplayState state = getState(handler);
@@ -160,6 +170,14 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         });
     }
 
+    public void setup() {
+        try {
+            loadState();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private boolean handleInteractionChains(@Nonnull PacketHandler handler, @Nonnull ReplayState state,
                                             @Nonnull SyncInteractionChains syncInteractionChains) {
         SyncInteractionChain interactionChain = null;
@@ -235,10 +253,15 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
     }
 
     public void start(@Nonnull PlayerRef playerRef, @Nonnull Path replayPath) {
+        initState(playerRef.getUuid(), playerRef.getLanguage(), replayPath);
+        transfer(playerRef, true);
+    }
+
+    public void initState(@Nonnull UUID uuid, @Nonnull String lang, @Nonnull Path replayPath) {
         ReplayState state = new ReplayState();
         state.replayPath = replayPath;
-        state.playerUuid = playerRef.getUuid();
-        state.lang = playerRef.getLanguage();
+        state.playerUuid = uuid;
+        state.lang = lang;
         // Run the first second so we don't see a blank world
         state.targetTick = 30;
 
@@ -248,18 +271,61 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             throw new RuntimeException(e);
         }
 
-        states.put(playerRef.getUuid(), state);
+        states.put(uuid, state);
 
         try {
             state.loadTimelines();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
 
-        transfer(playerRef, true);
+    private void loadState() throws IOException {
+        if (!Files.exists(replayStatePath)) {
+            return;
+        }
+
+        try (JsonReader reader = new JsonReader(new FileReader(replayStatePath.toFile()))) {
+            JsonObject json = ReplayPlugin.get().getGson().fromJson(reader, JsonObject.class);
+            UUID uuid = UUID.fromString(json.get("uuid").getAsString());
+            String lang = json.get("lang").getAsString();
+            Path replayPath = Path.of(json.get("replayPath").getAsString());
+
+            initState(uuid, lang, replayPath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            Files.delete(replayStatePath);
+        }
+    }
+
+    private void saveState(@Nonnull ReplayState state) {
+        JsonObject json = new JsonObject();
+        json.addProperty("uuid", state.playerUuid.toString());
+        json.addProperty("lang", state.lang);
+        json.addProperty("replayPath", state.replayPath.toString());
+
+        try (JsonWriter writer = new JsonWriter(new FileWriter(replayStatePath.toFile()))) {
+            ReplayPlugin.get().getGson().toJson(json, writer);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void transfer(@Nonnull PlayerRef playerRef, boolean replay) {
+        if (Constants.SINGLEPLAYER) {
+            if (replay) {
+                saveState(states.get(playerRef.getUuid()));
+            }
+
+            playerRef.getPacketHandler().disconnect(
+                    replay ?
+                            Message.translation("replay.clickReconnectToAccessReplay") :
+                            Message.translation("replay.clickReconnectToAccessWorld")
+            );
+            return;
+        }
+
         try {
             byte[] referralData = null;
             if (replay) {

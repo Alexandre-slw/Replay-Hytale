@@ -32,3 +32,5 @@ removeProperty=Remove Property
 selectedTimeline=Selected Timeline
 editKeyframe=Edit Keyframe
 hideUI=Hide UI
+clickReconnectToAccessReplay=Click 'Reconnect' to access your Replay.
+clickReconnectToAccessWorld=Click 'Reconnect' to access your World.
