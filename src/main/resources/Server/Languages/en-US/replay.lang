@@ -34,3 +34,7 @@ editKeyframe=Edit Keyframe
 hideUI=Hide UI
 clickReconnectToAccessReplay=Click 'Reconnect' to access your Replay.
 clickReconnectToAccessWorld=Click 'Reconnect' to access your World.
+continue=Continue
+information=Information
+singleplayerWarningMessage1=Because of limitations in Singleplayer, you will get disconnected.
+singleplayerWarningMessage2=Simply click 'Reconnect' to access your Replay.

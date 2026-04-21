@@ -287,6 +287,13 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         try (JsonReader reader = new JsonReader(new FileReader(replayStatePath.toFile()))) {
             JsonObject json = ReplayPlugin.get().getGson().fromJson(reader, JsonObject.class);
+
+            long timestamp = json.get("timestamp").getAsLong();
+            if (Instant.ofEpochMilli(timestamp).plus(5, ChronoUnit.MINUTES).isBefore(Instant.now())) {
+                logger.atWarning().log("Expired replay state, ignoring");
+                return;
+            }
+
             UUID uuid = UUID.fromString(json.get("uuid").getAsString());
             String lang = json.get("lang").getAsString();
             Path replayPath = Path.of(json.get("replayPath").getAsString());
@@ -304,6 +311,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         json.addProperty("uuid", state.playerUuid.toString());
         json.addProperty("lang", state.lang);
         json.addProperty("replayPath", state.replayPath.toString());
+        json.addProperty("timestamp", System.currentTimeMillis());
 
         try (JsonWriter writer = new JsonWriter(new FileWriter(replayStatePath.toFile()))) {
             ReplayPlugin.get().getGson().toJson(json, writer);
