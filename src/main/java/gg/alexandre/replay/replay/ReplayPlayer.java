@@ -63,7 +63,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -147,6 +146,23 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
                 if (!filter && entityUpdates.updates != null) {
                     for (EntityUpdate update : entityUpdates.updates) {
+                        if (update.networkId == state.clientId && update.updates != null) {
+                            for (ComponentUpdate data : update.updates) {
+                                if (data instanceof TransformUpdate transformUpdate) {
+                                    Position pos = state.edit.cameraPosition;
+                                    transformUpdate.transform.position = PositionUtil.toPositionPacket(new Vector3d(
+                                            pos.x(), pos.y(), pos.z()
+                                    ));
+                                    transformUpdate.transform.bodyOrientation = PositionUtil.toDirectionPacket(new Vector3f(
+                                            0, (float) pos.pitch(), 0
+                                    ));
+                                    transformUpdate.transform.lookOrientation = PositionUtil.toDirectionPacket(new Vector3f(
+                                            (float) pos.yaw(), (float) pos.pitch(), 0
+                                    ));
+                                }
+                            }
+                        }
+
                         state.entityIds.add(update.networkId);
                     }
                 }
@@ -234,6 +250,17 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         ChunkTracker tracker = store.getComponent(ref, ChunkTracker.getComponentType());
         if (tracker != null) {
             tracker.unloadAll(playerRef);
+        }
+
+        EntityTrackerSystems.EntityViewer viewer = store.getComponent(
+                ref, EntityTrackerSystems.EntityViewer.getComponentType()
+        );
+        if (viewer != null) {
+            state.entityIds.addAll(viewer.visible.stream().map(entityStoreRef -> {
+                NetworkId networkId = store.getComponent(entityStoreRef, NetworkId.getComponentType());
+                assert networkId != null;
+                return networkId.getId();
+            }).toList());
         }
 
         PacketHandler packetHandler = playerRef.getPacketHandler();
