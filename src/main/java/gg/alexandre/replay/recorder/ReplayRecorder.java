@@ -22,6 +22,7 @@ import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PacketWatcher;
 import com.hypixel.hytale.server.core.io.handlers.game.GamePacketHandler;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.i18n.I18nModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -34,6 +35,7 @@ import gg.alexandre.replay.protocol.packets.HytaleReplayPacket;
 import gg.alexandre.replay.repository.ReplayRepository;
 import gg.alexandre.replay.ui.SaveUI;
 import gg.alexandre.replay.util.DummyUtil;
+import gg.alexandre.replay.util.Position;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -94,6 +96,16 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
 
                     data.watcher = watcher;
 
+                    TransformComponent transform = store.getComponent(ref, TransformComponent.getComponentType());
+                    assert transform != null;
+                    data.position = new Position(
+                            transform.getPosition().x,
+                            transform.getPosition().y,
+                            transform.getPosition().z,
+                            0,
+                            0
+                    );
+
                     data.file.configPhase(() -> {
                         PacketHandler packetHandler = watcher.getPacketHandler();
                         AssetRegistryLoader.sendAssets(packetHandler);
@@ -134,7 +146,8 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
         try {
             ReplayMetadata metadata = new ReplayMetadata(
                     data.start.until(Instant.now()).toMillis(),
-                    data.tick
+                    data.tick,
+                    data.position
             );
 
             data.file.close(metadata);

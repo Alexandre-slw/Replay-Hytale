@@ -15,6 +15,7 @@ import com.hypixel.hytale.protocol.packets.assets.UpdateTranslations;
 import com.hypixel.hytale.protocol.packets.camera.SetServerCamera;
 import com.hypixel.hytale.protocol.packets.connection.ClientDisconnect;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
+import com.hypixel.hytale.protocol.packets.connection.Pong;
 import com.hypixel.hytale.protocol.packets.entities.EntityUpdates;
 import com.hypixel.hytale.protocol.packets.interaction.CancelInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
@@ -133,9 +134,14 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
             if (state.stage.isFilteringPackets && packet instanceof ClientDisconnect) {
                 stop(state);
+                return false;
             }
 
-            return false;
+            if (state.stage.hasStarted) {
+                return !(packet instanceof Pong || packet instanceof CustomPageEvent || packet instanceof ChatMessage);
+            } else {
+                return false;
+            }
         });
 
         PacketAdapters.registerOutbound((PacketFilter) (handler, packet) -> {
@@ -184,16 +190,18 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                         if (update.networkId == state.clientId && update.updates != null) {
                             for (ComponentUpdate data : update.updates) {
                                 if (data instanceof TransformUpdate transformUpdate) {
-                                    Position pos = state.edit.cameraPosition;
-                                    transformUpdate.transform.position = PositionUtil.toPositionPacket(new Vector3d(
-                                            pos.x(), pos.y(), pos.z()
-                                    ));
-                                    transformUpdate.transform.bodyOrientation = PositionUtil.toDirectionPacket(new Vector3f(
-                                            0, (float) pos.pitch(), 0
-                                    ));
-                                    transformUpdate.transform.lookOrientation = PositionUtil.toDirectionPacket(new Vector3f(
-                                            (float) pos.yaw(), (float) pos.pitch(), 0
-                                    ));
+                                    Position pos = state.file.getMetadata().position;
+                                    state.edit.playerPosition = pos;
+
+                                    transformUpdate.transform.position = PositionUtil.toPositionPacket(
+                                            new Vector3d(pos.x(), pos.y(), pos.z())
+                                    );
+                                    transformUpdate.transform.bodyOrientation = PositionUtil.toDirectionPacket(
+                                            new Vector3f(0, (float) pos.pitch(), 0)
+                                    );
+                                    transformUpdate.transform.lookOrientation = PositionUtil.toDirectionPacket(
+                                            new Vector3f((float) pos.yaw(), (float) pos.pitch(), 0)
+                                    );
                                 }
                             }
                         }
@@ -528,9 +536,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         state.edit.speed = 1.0;
 
-        Vector3d position = playerRef.getTransform().getPosition();
-        Vector3f rotation = playerRef.getHeadRotation();
-        state.edit.cameraPosition = new Position(position.x, position.y, position.z, rotation.x, rotation.y);
+        state.edit.cameraPosition = state.edit.playerPosition;
 
         if (state.stage.isPlaying && !state.ui.controlGame) {
             for (BaseProperty<?> property : state.timeline.getProperties().values()) {
