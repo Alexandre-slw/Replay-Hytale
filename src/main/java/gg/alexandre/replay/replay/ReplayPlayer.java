@@ -1,5 +1,8 @@
 package gg.alexandre.replay.replay;
 
+import com.google.gson.JsonObject;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
@@ -22,8 +25,6 @@ import com.hypixel.hytale.protocol.packets.player.ClientTeleport;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
 import com.hypixel.hytale.protocol.packets.player.SetMovementStates;
 import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
-import com.hypixel.hytale.protocol.packets.setup.WorldLoadFinished;
-import com.hypixel.hytale.protocol.packets.setup.WorldLoadProgress;
 import com.hypixel.hytale.server.core.Constants;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
@@ -39,6 +40,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.PositionUtil;
+import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.file.ReplayInputFile;
 import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.protocol.ReplayProtocol;
@@ -51,10 +53,14 @@ import gg.alexandre.replay.util.Position;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -67,12 +73,15 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
     private static final AtomicInteger NEXT_TELEPORT_ID = new AtomicInteger();
 
+    private final Path replayStatePath;
+
     private final ReplayProtocol protocol;
     private final Map<UUID, ReplayState> states = new ConcurrentHashMap<>();
     private final HytaleLogger logger = HytaleLogger.forEnclosingClass();
 
     public ReplayPlayer(@Nonnull ReplayProtocol protocol, @Nonnull Path dataDirectory) {
         this.protocol = protocol;
+        replayStatePath = dataDirectory.resolve("state.json");
 
         PacketAdapters.registerInbound((PacketFilter) (handler, packet) -> {
             ReplayState state = getState(handler);
@@ -83,6 +92,28 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             assert handler.getAuth() != null;
             if (state.playerUuid == null || !state.playerUuid.equals(handler.getAuth().getUuid())) {
                 return false;
+            }
+
+            if (packet instanceof RequestAssets && !state.stage.isFilteringPackets) {
+                state.file.consumeConfigPhase((replayPacket) -> replayPacket.handle(handler, state));
+                handler.tryFlush();
+
+                try {
+                    Field receivedRequest = SetupPacketHandler.class.getDeclaredField("receivedRequest");
+                    receivedRequest.setAccessible(true);
+                    receivedRequest.set(handler, true);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
+                state.stage.isFilteringPackets = true;
+
+                return true;
+            }
+
+            if (packet instanceof ClientReady clientReady) {
+                state.stage.isProcessingPackets = clientReady.readyForChunks;
+                state.stage.hasStarted = clientReady.readyForGameplay;
             }
 
             if (packet instanceof SyncInteractionChains syncInteractionChains) {
@@ -106,8 +137,9 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 return false;
             }
 
-            if (packet instanceof JoinWorld) {
-                state.stage.clientReady = false;
+            if (packet instanceof UpdateBlockHitboxes hitboxes) {
+                assert hitboxes.blockBaseHitboxes != null;
+                hitboxes.blockBaseHitboxes.replaceAll((_, _) -> new Hitbox[0]);
             }
 
             if (packet instanceof Ping ||
@@ -120,18 +152,15 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                        customPage.key != null && !customPage.key.startsWith("gg.alexandre.");
             }
 
-            if (!state.stage.isFilteringPackets && packet instanceof ToClientPacket toClientPacket) {
-                if (packet instanceof WorldLoadProgress || packet instanceof WorldLoadFinished) {
-                    return true;
-                }
-
-                handleUpdatePackets(toClientPacket);
-            }
-
             if (packet instanceof UpdateTranslations && !state.stage.sentTranslations) {
                 state.stage.sentTranslations = true;
                 I18nModule.get().sendTranslations(handler, state.lang);
                 return true;
+            }
+
+            if (packet instanceof JoinWorld && !state.stage.sentJoinWorld) {
+                state.stage.sentJoinWorld = true;
+                return false;
             }
 
             boolean filter = state.stage.isFilteringPackets && !state.stage.isProcessingPackets;
@@ -175,22 +204,11 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         });
     }
 
-    private void handleUpdatePackets(@Nonnull ToClientPacket packet) {
-        Class<? extends ToClientPacket> packetClass = packet.getClass();
-        for (Field field : packetClass.getDeclaredFields()) {
-            if (field.getType().isAssignableFrom(UpdateType.class)) {
-                try {
-                    field.setAccessible(true);
-                    field.set(packet, UpdateType.AddOrUpdate);
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-
-        if (packet instanceof UpdateBlockHitboxes hitboxes) {
-            assert hitboxes.blockBaseHitboxes != null;
-            hitboxes.blockBaseHitboxes.replaceAll((_, _) -> new Hitbox[0]);
+    public void setup() {
+        try {
+            loadState();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -288,22 +306,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
 
         initState(playerRef.getUuid(), playerRef.getLanguage(), replayPath);
-
-        PacketHandler handler = playerRef.getPacketHandler();
-        ReplayState state = states.get(playerRef.getUuid());
-        state.file.consumeConfigPhase((replayPacket) -> replayPacket.handle(handler, state));
-        handler.tryFlush();
-
-        state.stage.isFilteringPackets = true;
-        state.stage.hasStarted = true;
-
-        Ref<EntityStore> ref = playerRef.getReference();
-        assert ref != null;
-        Store<EntityStore> store = ref.getStore();
-        NetworkId networkId = store.getComponent(ref, NetworkId.getComponentType());
-        if (networkId != null) {
-            state.clientId = networkId.getId();
-        }
+        transfer(playerRef, true);
     }
 
     public void initState(@Nonnull UUID uuid, @Nonnull String lang, @Nonnull Path replayPath) {
@@ -329,18 +332,78 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
-    private void transfer(@Nonnull PlayerRef playerRef) {
+    private void loadState() throws IOException {
+        if (!Files.exists(replayStatePath)) {
+            return;
+        }
+
+        try (JsonReader reader = new JsonReader(new FileReader(replayStatePath.toFile()))) {
+            JsonObject json = ReplayPlugin.get().getGson().fromJson(reader, JsonObject.class);
+
+            long timestamp = json.get("timestamp").getAsLong();
+            if (Instant.ofEpochMilli(timestamp).plus(5, ChronoUnit.MINUTES).isBefore(Instant.now())) {
+                logger.atWarning().log("Expired replay state, ignoring");
+                return;
+            }
+
+            UUID uuid = UUID.fromString(json.get("uuid").getAsString());
+            String lang = json.get("lang").getAsString();
+            Path replayPath = Path.of(json.get("replayPath").getAsString());
+
+            initState(uuid, lang, replayPath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            Files.delete(replayStatePath);
+        }
+    }
+
+    private void saveState(@Nonnull ReplayState state) {
+        JsonObject json = new JsonObject();
+        json.addProperty("uuid", state.playerUuid.toString());
+        json.addProperty("lang", state.lang);
+        json.addProperty("replayPath", state.replayPath.toString());
+        json.addProperty("timestamp", System.currentTimeMillis());
+
+        try (JsonWriter writer = new JsonWriter(new FileWriter(replayStatePath.toFile()))) {
+            ReplayPlugin.get().getGson().toJson(json, writer);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void transfer(@Nonnull PlayerRef playerRef, boolean replay) {
         if (Constants.SINGLEPLAYER) {
+            if (replay) {
+                saveState(states.get(playerRef.getUuid()));
+            }
+
             playerRef.getPacketHandler().disconnect(
-                    Message.translation("replay.clickReconnectToAccessWorld")
+                    replay ?
+                            Message.translation("replay.clickReconnectToAccessReplay") :
+                            Message.translation("replay.clickReconnectToAccessWorld")
             );
             return;
         }
 
         try {
+            byte[] referralData = null;
+            if (replay) {
+                // Some plugins might want to know that this is a replay
+                JsonObject referral = new JsonObject();
+                referral.addProperty("replay", true);
+
+                referralData = ReplayPlugin.get().getGson().toJson(referral).getBytes(StandardCharsets.UTF_8);
+            }
+
             InetSocketAddress publicAddress = ServerManager.get().getLocalOrPublicAddress();
             assert publicAddress != null;
-            playerRef.referToServer(publicAddress.getHostName(), publicAddress.getPort(), null);
+
+            playerRef.referToServer(
+                    publicAddress.getHostName(),
+                    publicAddress.getPort(),
+                    referralData
+            );
         } catch (SocketException e) {
             throw new RuntimeException(e);
         }
@@ -376,7 +439,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         stop(state);
 
         if (playerRef.isValid()) {
-            transfer(playerRef);
+            transfer(playerRef, false);
         }
     }
 
