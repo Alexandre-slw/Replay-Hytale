@@ -109,7 +109,7 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
                     continue;
                 }
 
-                int x = (int) ((tick / (double) ticks) * width) - 8;
+                int x = (int) ((tick / (double) ticks) * (width + 7)) - 8;
 
                 keyframes.append(String.format("""
                         @Keyframe #KeyframeAt%sTick%d {
