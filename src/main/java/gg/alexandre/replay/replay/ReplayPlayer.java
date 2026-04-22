@@ -21,10 +21,7 @@ import com.hypixel.hytale.protocol.packets.interaction.CancelInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
 import com.hypixel.hytale.protocol.packets.interface_.*;
-import com.hypixel.hytale.protocol.packets.player.ClientReady;
-import com.hypixel.hytale.protocol.packets.player.ClientTeleport;
-import com.hypixel.hytale.protocol.packets.player.JoinWorld;
-import com.hypixel.hytale.protocol.packets.player.SetMovementStates;
+import com.hypixel.hytale.protocol.packets.player.*;
 import com.hypixel.hytale.protocol.packets.setup.RequestAssets;
 import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
 import com.hypixel.hytale.server.core.Constants;
@@ -52,6 +49,7 @@ import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.editor.EditorUI;
 import gg.alexandre.replay.ui.manager.RealtimePageManager;
+import gg.alexandre.replay.util.PositionTracker;
 import gg.alexandre.replay.util.Position;
 
 import javax.annotation.Nonnull;
@@ -137,6 +135,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 return false;
             }
 
+            if (packet instanceof ClientMovement movement) {
+                PositionTracker.onClientMovement(state, movement);
+            }
+
             if (state.stage.hasStarted) {
                 return !(packet instanceof Pong || packet instanceof CustomPageEvent || packet instanceof ChatMessage);
             } else {
@@ -162,7 +164,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                     packet instanceof UpdateAnchorUI) {
 
                 return packet instanceof CustomPage customPage &&
-                       customPage.key != null && !customPage.key.startsWith("gg.alexandre.");
+                        customPage.key != null && !customPage.key.startsWith("gg.alexandre.");
             }
 
             if (packet instanceof UpdateTranslations && !state.stage.sentTranslations) {
@@ -178,36 +180,55 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
             boolean filter = state.stage.isFilteringPackets && !state.stage.isProcessingPackets;
 
-            if (packet instanceof EntityUpdates entityUpdates) {
-                if (!filter && entityUpdates.removed != null) {
-                    for (int id : entityUpdates.removed) {
-                        state.entityIds.remove(id);
+            if (!filter) {
+                if (packet instanceof EntityUpdates entityUpdates) {
+                    if (entityUpdates.removed != null) {
+                        for (int id : entityUpdates.removed) {
+                            state.entityIds.remove(id);
+                        }
+                    }
+
+                    if (entityUpdates.updates != null) {
+                        for (EntityUpdate update : entityUpdates.updates) {
+                            if (update.networkId == state.clientId && update.updates != null) {
+                                for (ComponentUpdate data : update.updates) {
+                                    if (data instanceof TransformUpdate transformUpdate) {
+                                        Position pos;
+                                        if (!state.position.sentInitialPosition) {
+                                            state.position.sentInitialPosition = true;
+                                            pos = state.file.getMetadata().position;
+                                        } else {
+                                            pos = new Position(
+                                                    state.position.x,
+                                                    state.position.y,
+                                                    state.position.z,
+                                                    state.position.headPitch,
+                                                    state.position.headYaw
+                                            );
+                                        }
+
+                                        transformUpdate.transform.position = PositionUtil.toPositionPacket(
+                                                new Vector3d(pos.x(), pos.y(), pos.z())
+                                        );
+                                        transformUpdate.transform.bodyOrientation = PositionUtil.toDirectionPacket(
+                                                new Vector3f(0, (float) pos.pitch(), 0)
+                                        );
+                                        transformUpdate.transform.lookOrientation = PositionUtil.toDirectionPacket(
+                                                new Vector3f((float) pos.yaw(), (float) pos.pitch(), 0)
+                                        );
+
+                                        PositionTracker.onTransformUpdate(state, transformUpdate);
+                                    }
+                                }
+                            }
+
+                            state.entityIds.add(update.networkId);
+                        }
                     }
                 }
 
-                if (!filter && entityUpdates.updates != null) {
-                    for (EntityUpdate update : entityUpdates.updates) {
-                        if (update.networkId == state.clientId && update.updates != null) {
-                            for (ComponentUpdate data : update.updates) {
-                                if (data instanceof TransformUpdate transformUpdate) {
-                                    Position pos = state.file.getMetadata().position;
-                                    state.edit.playerPosition = pos;
-
-                                    transformUpdate.transform.position = PositionUtil.toPositionPacket(
-                                            new Vector3d(pos.x(), pos.y(), pos.z())
-                                    );
-                                    transformUpdate.transform.bodyOrientation = PositionUtil.toDirectionPacket(
-                                            new Vector3f(0, (float) pos.pitch(), 0)
-                                    );
-                                    transformUpdate.transform.lookOrientation = PositionUtil.toDirectionPacket(
-                                            new Vector3f((float) pos.yaw(), (float) pos.pitch(), 0)
-                                    );
-                                }
-                            }
-                        }
-
-                        state.entityIds.add(update.networkId);
-                    }
+                if (packet instanceof ClientTeleport teleport) {
+                    PositionTracker.onClientTeleport(state, teleport);
                 }
             }
 
@@ -536,7 +557,13 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         state.edit.speed = 1.0;
 
-        state.edit.cameraPosition = state.edit.playerPosition;
+        state.edit.cameraPosition = new Position(
+                state.position.x,
+                state.position.y,
+                state.position.z,
+                state.position.headPitch, // yaw and pitch from packets is inverted?
+                state.position.headYaw
+        );
 
         if (state.stage.isPlaying && !state.ui.controlGame) {
             for (BaseProperty<?> property : state.timeline.getProperties().values()) {

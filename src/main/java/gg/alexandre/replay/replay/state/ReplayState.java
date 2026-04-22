@@ -34,6 +34,7 @@ public class ReplayState {
     public ReplayStageState stage = new ReplayStageState();
     public UIState ui = new UIState();
     public TimelineState timeline = new TimelineState();
+    public PositionState position = new PositionState();
 
     public CommandsStack commandsStack = new CommandsStack();
 
