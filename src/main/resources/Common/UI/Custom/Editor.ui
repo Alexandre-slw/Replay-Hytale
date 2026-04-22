@@ -105,17 +105,50 @@ Group {
               )
             );
           }
-        }
 
-        Group {
-          Anchor: (Full: 0);
-          LayoutMode: Center;
+          Button #Undo {
+            Anchor: (Width: 20, Height: 20, Left: 10);
+            TooltipText: %replay.undo;
+            Style: (
+              Default: (
+                Background: (TexturePath: "Assets/Undo.png"),
+              ),
+              Hovered: (
+                Background: (TexturePath: "Assets/UndoHovered.png"),
+              ),
+              Pressed: (
+                Background: (TexturePath: "Assets/UndoPressed.png"),
+              ),
+              Sounds: (
+                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+              )
+            );
+          }
 
-          ActionButton #Pause {
-            KeyBindingLabel: %replay.pause;
+          Button #Redo {
+            Anchor: (Width: 20, Height: 20, Left: 10);
+            TooltipText: %replay.redo;
+            Style: (
+              Default: (
+                Background: (TexturePath: "Assets/Redo.png"),
+              ),
+              Hovered: (
+                Background: (TexturePath: "Assets/RedoHovered.png"),
+              ),
+              Pressed: (
+                Background: (TexturePath: "Assets/RedoPressed.png"),
+              ),
+              Sounds: (
+                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+              )
+            );
+          }
+
+          Group #PlayPauseContainer {
+            // Rendered
           }
         }
-        
+
         Group {
           Anchor: (Right: 20);
           LayoutMode: Right;

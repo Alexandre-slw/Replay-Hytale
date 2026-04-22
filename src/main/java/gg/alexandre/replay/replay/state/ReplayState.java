@@ -3,6 +3,7 @@ package gg.alexandre.replay.replay.state;
 import com.google.gson.Gson;
 import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.file.ReplayInputFile;
+import gg.alexandre.replay.replay.editor.commands.CommandsStack;
 import gg.alexandre.replay.replay.editor.properties.CameraProperty;
 
 import javax.annotation.Nonnull;
@@ -23,8 +24,8 @@ public class ReplayState {
     public UUID playerUuid;
     public String lang;
 
-    public double timeDilatation;
-    public boolean overrideTimeDilatation;
+    public double timeDilation;
+    public boolean overrideTimeDilation;
 
     public Set<Integer> entityIds = new HashSet<>();
     public int clientId;
@@ -33,6 +34,8 @@ public class ReplayState {
     public ReplayStageState stage = new ReplayStageState();
     public UIState ui = new UIState();
     public TimelineState timeline = new TimelineState();
+
+    public CommandsStack commandsStack = new CommandsStack();
 
     public String selectedTimeline;
     public List<String> timelines = new ArrayList<>();
@@ -87,6 +90,8 @@ public class ReplayState {
         if (!timelines.contains(name)) {
             timelines.add(name);
         }
+
+        commandsStack.clear();
     }
 
 }

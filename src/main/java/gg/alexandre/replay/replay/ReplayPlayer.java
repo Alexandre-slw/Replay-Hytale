@@ -8,9 +8,7 @@ import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.protocol.*;
 import com.hypixel.hytale.protocol.packets.assets.UpdateBlockHitboxes;
-import com.hypixel.hytale.protocol.packets.assets.UpdateEntityEffects;
 import com.hypixel.hytale.protocol.packets.assets.UpdateTranslations;
-import com.hypixel.hytale.protocol.packets.assets.UpdateWeathers;
 import com.hypixel.hytale.protocol.packets.camera.SetServerCamera;
 import com.hypixel.hytale.protocol.packets.connection.ClientDisconnect;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
@@ -478,23 +476,23 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             playerRef.getPacketHandler().writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
         }
 
-        handleTimeDilatation(state, playerRef.getPacketHandler(), move);
+        handleTimeDilation(state, playerRef.getPacketHandler(), move);
     }
 
-    private void handleTimeDilatation(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler, boolean move) {
+    private void handleTimeDilation(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler, boolean move) {
         float speed = (float) state.edit.speed;
         if (state.ui.dragging || state.ui.controlGame || state.currentTick + speed <= state.targetTick) {
-            state.overrideTimeDilatation = true;
+            state.overrideTimeDilation = true;
             speed = 1;
-        } else if (state.overrideTimeDilatation) {
-            state.overrideTimeDilatation = !move;
+        } else if (state.overrideTimeDilation) {
+            state.overrideTimeDilation = !move;
             speed = 1;
         } else if (!state.stage.isPlaying) {
             speed = 0;
         }
 
-        if (state.timeDilatation != speed) {
-            state.timeDilatation = speed;
+        if (state.timeDilation != speed) {
+            state.timeDilation = speed;
             packetHandler.writeNoCache(new SetTimeDilation(Math.min(Math.max(0.0101f, speed), 4)));
         }
     }

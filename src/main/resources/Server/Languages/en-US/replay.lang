@@ -35,3 +35,5 @@ hideUI=Hide UI
 clickReconnectToAccessWorld=Click 'Reconnect' to access your World.
 continue=Continue
 information=Information
+undo=Undo
+redo=Redo

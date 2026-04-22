@@ -4,6 +4,7 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import gg.alexandre.replay.replay.ReplayPlayer;
+import gg.alexandre.replay.replay.editor.commands.MoveKeyframeCommand;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.replay.state.UIState;
@@ -33,9 +34,9 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
         lastWidth = width;
         state.ui.dirtyTimeline = false;
 
-        StringBuilder headers = new StringBuilder();
+        StringBuilder keyframes = new StringBuilder();
 
-        headers.append("""
+        keyframes.append("""
                 @Track = Group {
                   Anchor: (Height: 30, Top: 5);
                 
@@ -68,13 +69,13 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
         for (BaseProperty<?> property : state.timeline.getProperties().values()) {
             String id = property.id();
 
-            headers.append("@Track {");
+            keyframes.append("@Track {");
 
             boolean hasSelectedKeyframe = state.ui.selectedKeyframe != null &&
                                           state.ui.selectedKeyframe.propertyId().equals(id);
 
             if (hasSelectedKeyframe) {
-                headers.append(String.format("""
+                keyframes.append(String.format("""
                         Slider #SelectedKeyframe {
                           Anchor: (Height: 30);
                           Value: %d;
@@ -110,7 +111,7 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
 
                 int x = (int) ((tick / (double) ticks) * width) - 8;
 
-                headers.append(String.format("""
+                keyframes.append(String.format("""
                         @Keyframe #KeyframeAt%sTick%d {
                           @Anchor = (Left: %d);
                         }
@@ -131,11 +132,11 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
                 );
             }
 
-            headers.append("}");
+            keyframes.append("}");
         }
 
         uiCommandBuilder.clear("#Keyframes");
-        uiCommandBuilder.appendInline("#Keyframes", headers.toString());
+        uiCommandBuilder.appendInline("#Keyframes", keyframes.toString());
     }
 
     private void select(@Nonnull String propertyId, int tick, boolean select) {
@@ -192,9 +193,12 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
             return;
         }
 
-        // TODO: undo/redo
-        Object value = property.getValues().remove(state.ui.selectedKeyframe.tick());
-        property.getValues().put(tick, value);
+        state.commandsStack.execute(new MoveKeyframeCommand(
+                state.timeline,
+                state.ui.selectedKeyframe.propertyId(),
+                state.ui.selectedKeyframe.tick(),
+                tick
+        ));
 
         state.ui.selectedKeyframe = new UIState.Keyframe(state.ui.selectedKeyframe.propertyId(), tick);
     }

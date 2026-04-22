@@ -74,7 +74,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
                 new PlaytailRenderer(state),
                 new PropertiesDropdownRenderer(state),
                 new PropertiesHeaderRenderer(state),
-                keyframesRenderer
+                keyframesRenderer,
+                new PlayButtonRenderer(state)
         );
     }
 
@@ -116,11 +117,6 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         );
 
         eventHandler.handle(CustomUIEventBindingType.Activating,
-                "#Pause",
-                this::onPause
-        );
-
-        eventHandler.handle(CustomUIEventBindingType.Activating,
                 "#ZoomOut",
                 this::onZoomOut
         );
@@ -153,6 +149,16 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         eventHandler.handle(CustomUIEventBindingType.Activating,
                 "#Hide",
                 this::onHide
+        );
+
+        eventHandler.handle(CustomUIEventBindingType.Activating,
+                "#Undo",
+                this::onUndo
+        );
+
+        eventHandler.handle(CustomUIEventBindingType.Activating,
+                "#Redo",
+                this::onRedo
         );
     }
 
@@ -192,10 +198,6 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         context.close();
     }
 
-    private void onPause(@Nonnull UIEventContext<Data> context) {
-        state.stage.isPlaying = !state.stage.isPlaying;
-    }
-
     private void onZoomOut(@Nonnull UIEventContext<Data> context) {
         if (state.ui.timelineZoom <= 0.45f) {
             return;
@@ -226,6 +228,16 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
             assert playerComponent != null;
             playerComponent.getPageManager().openCustomPage(context.ref, context.store, new HideUI(playerRef));
         });
+    }
+
+    private void onUndo(@Nonnull UIEventContext<Data> context) {
+        state.commandsStack.undo();
+        state.ui.dirtyTimeline = true;
+    }
+
+    private void onRedo(@Nonnull UIEventContext<Data> context) {
+        state.commandsStack.redo();
+        state.ui.dirtyTimeline = true;
     }
 
     private void onClose(@Nonnull UIEventContext<Data> context) {
@@ -264,9 +276,6 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     }
 
     public void tick(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull UIEventHandler<Data> eventHandler) {
-        update(uiCommandBuilder, "#Pause.KeyBindingLabel",
-                Message.translation(state.stage.isPlaying ? "replay.pause" : "replay.play"));
-
         if (!state.ui.dragging) {
             update(uiCommandBuilder, "#Playhead.Value", (int) state.targetTick);
             state.ui.draggingTick = (int) state.targetTick;
