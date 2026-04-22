@@ -20,11 +20,10 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomPage;
 import com.hypixel.hytale.protocol.packets.interface_.ResetUserInterfaceState;
 import com.hypixel.hytale.protocol.packets.interface_.SetPage;
 import com.hypixel.hytale.protocol.packets.interface_.UpdateAnchorUI;
-import com.hypixel.hytale.protocol.packets.player.ClientReady;
 import com.hypixel.hytale.protocol.packets.player.ClientTeleport;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
+import com.hypixel.hytale.protocol.packets.player.SetClientId;
 import com.hypixel.hytale.protocol.packets.player.SetMovementStates;
-import com.hypixel.hytale.protocol.packets.setup.RequestAssets;
 import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
 import com.hypixel.hytale.protocol.packets.setup.WorldLoadFinished;
 import com.hypixel.hytale.protocol.packets.setup.WorldLoadProgress;
@@ -36,8 +35,9 @@ import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.ServerManager;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
-import com.hypixel.hytale.server.core.io.handlers.SetupPacketHandler;
 import com.hypixel.hytale.server.core.modules.entity.player.ChunkTracker;
+import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
+import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.modules.i18n.I18nModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
@@ -63,6 +63,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -144,7 +145,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                     }
                 }
 
-                if (entityUpdates.updates != null) {
+                if (!filter && entityUpdates.updates != null) {
                     for (EntityUpdate update : entityUpdates.updates) {
                         state.entityIds.add(update.networkId);
                     }
@@ -268,6 +269,14 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         state.stage.isFilteringPackets = true;
         state.stage.hasStarted = true;
+
+        Ref<EntityStore> ref = playerRef.getReference();
+        assert ref != null;
+        Store<EntityStore> store = ref.getStore();
+        NetworkId networkId = store.getComponent(ref, NetworkId.getComponentType());
+        if (networkId != null) {
+            state.clientId = networkId.getId();
+        }
     }
 
     public void initState(@Nonnull UUID uuid, @Nonnull String lang, @Nonnull Path replayPath) {

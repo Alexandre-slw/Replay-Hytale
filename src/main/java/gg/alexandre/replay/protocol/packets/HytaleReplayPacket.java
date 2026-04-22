@@ -6,7 +6,9 @@ import com.hypixel.hytale.protocol.ToClientPacket;
 import com.hypixel.hytale.protocol.io.PacketIO;
 import com.hypixel.hytale.protocol.io.PacketStatsRecorder;
 import com.hypixel.hytale.protocol.io.ProtocolException;
+import com.hypixel.hytale.protocol.packets.entities.EntityUpdates;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
+import com.hypixel.hytale.protocol.packets.player.SetClientId;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.replay.state.ReplayState;
@@ -49,14 +51,20 @@ public class HytaleReplayPacket implements ReplayPacket {
         Packet packet = PacketIO.readFramedPacketWithInfo(data, length, info, PacketStatsRecorder.NOOP);
 
         if (packet instanceof JoinWorld) {
-            if (state.stage.sentJoinWorld) {
-                return;
-            }
-
             state.stage.sentJoinWorld = true;
         }
 
-        packetHandler.write((ToClientPacket) packet);
+        packetHandler.writeNoCache((ToClientPacket) packet);
+
+        if (packet instanceof SetClientId clientId) {
+            if (state.clientId != 0) {
+                EntityUpdates entityUpdates = new EntityUpdates();
+                entityUpdates.removed = new int[] {state.clientId};
+                packetHandler.writeNoCache(entityUpdates);
+            }
+
+            state.clientId = clientId.clientId;
+        }
     }
 
 }

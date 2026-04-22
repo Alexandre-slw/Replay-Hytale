@@ -26,6 +26,7 @@ public class ReplayState {
     public double timeDilatation;
 
     public Set<Integer> entityIds = new HashSet<>();
+    public int clientId;
 
     public EditState edit = new EditState();
     public ReplayStageState stage = new ReplayStageState();
