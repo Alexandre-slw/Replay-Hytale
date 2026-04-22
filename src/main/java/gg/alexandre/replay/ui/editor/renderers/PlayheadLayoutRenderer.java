@@ -16,7 +16,7 @@ public class PlayheadLayoutRenderer extends BaseRenderer<EditorUI.Data> {
     @Override
     public void render(@Nonnull UICommandBuilder uiCommandBuilder, @Nonnull UIEventHandler<EditorUI.Data> eventHandler,
                        @Nonnull ReplayState state, int width) {
-        uiCommandBuilder.setObject("#Playhead.Anchor", anchor(0, -20, width, 20));
+        uiCommandBuilder.setObject("#Playhead.Anchor", anchor(0, -20, width + 7, 20));
     }
 
 }
