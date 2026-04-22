@@ -7,6 +7,7 @@ public class ReplayStageState {
     public boolean isFilteringPackets;
     public boolean isProcessingPackets;
     public boolean sentJoinWorld;
+    public boolean clientReady;
     public boolean clearedWorld;
     public boolean sentTranslations;
 

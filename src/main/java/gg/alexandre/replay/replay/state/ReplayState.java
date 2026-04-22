@@ -24,6 +24,7 @@ public class ReplayState {
     public String lang;
 
     public double timeDilatation;
+    public boolean overrideTimeDilatation;
 
     public Set<Integer> entityIds = new HashSet<>();
     public int clientId;

@@ -57,7 +57,7 @@ public class HytaleReplayPacket implements ReplayPacket {
         packetHandler.writeNoCache((ToClientPacket) packet);
 
         if (packet instanceof SetClientId clientId) {
-            if (state.clientId != 0) {
+            if (state.clientId != 0 && state.clientId != clientId.clientId) {
                 EntityUpdates entityUpdates = new EntityUpdates();
                 entityUpdates.removed = new int[] {state.clientId};
                 packetHandler.writeNoCache(entityUpdates);

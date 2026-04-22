@@ -8,7 +8,9 @@ import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.protocol.*;
 import com.hypixel.hytale.protocol.packets.assets.UpdateBlockHitboxes;
+import com.hypixel.hytale.protocol.packets.assets.UpdateEntityEffects;
 import com.hypixel.hytale.protocol.packets.assets.UpdateTranslations;
+import com.hypixel.hytale.protocol.packets.assets.UpdateWeathers;
 import com.hypixel.hytale.protocol.packets.camera.SetServerCamera;
 import com.hypixel.hytale.protocol.packets.connection.ClientDisconnect;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
@@ -16,13 +18,10 @@ import com.hypixel.hytale.protocol.packets.entities.EntityUpdates;
 import com.hypixel.hytale.protocol.packets.interaction.CancelInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
-import com.hypixel.hytale.protocol.packets.interface_.CustomPage;
-import com.hypixel.hytale.protocol.packets.interface_.ResetUserInterfaceState;
-import com.hypixel.hytale.protocol.packets.interface_.SetPage;
-import com.hypixel.hytale.protocol.packets.interface_.UpdateAnchorUI;
+import com.hypixel.hytale.protocol.packets.interface_.*;
+import com.hypixel.hytale.protocol.packets.player.ClientReady;
 import com.hypixel.hytale.protocol.packets.player.ClientTeleport;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
-import com.hypixel.hytale.protocol.packets.player.SetClientId;
 import com.hypixel.hytale.protocol.packets.player.SetMovementStates;
 import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
 import com.hypixel.hytale.protocol.packets.setup.WorldLoadFinished;
@@ -35,7 +34,6 @@ import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.ServerManager;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
-import com.hypixel.hytale.server.core.modules.entity.player.ChunkTracker;
 import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
 import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.modules.i18n.I18nModule;
@@ -64,7 +62,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -94,6 +91,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 return handleInteractionChains(handler, state, syncInteractionChains);
             }
 
+            if (packet instanceof ClientReady) {
+                state.stage.clientReady = true;
+            }
+
             if (state.stage.isFilteringPackets && packet instanceof ClientDisconnect) {
                 stop(state);
             }
@@ -108,7 +109,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             }
 
             if (packet instanceof JoinWorld) {
-                return true;
+                state.stage.clientReady = false;
             }
 
             if (packet instanceof Ping ||
@@ -166,6 +167,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                         state.entityIds.add(update.networkId);
                     }
                 }
+            }
+
+            if (packet instanceof ShowEventTitle) {
+                return true;
             }
 
             return filter;
@@ -247,11 +252,6 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             return;
         }
 
-        ChunkTracker tracker = store.getComponent(ref, ChunkTracker.getComponentType());
-        if (tracker != null) {
-            tracker.unloadAll(playerRef);
-        }
-
         EntityTrackerSystems.EntityViewer viewer = store.getComponent(
                 ref, EntityTrackerSystems.EntityViewer.getComponentType()
         );
@@ -264,6 +264,8 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
 
         PacketHandler packetHandler = playerRef.getPacketHandler();
+
+        state.entityIds.remove(state.clientId);
 
         EntityUpdates entityUpdates = new EntityUpdates();
         entityUpdates.removed = state.entityIds.stream().mapToInt(Integer::intValue).toArray();
@@ -427,16 +429,16 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 clearWorld(playerRef, state);
                 return;
             } else {
-                int processedTicks = 0;
+                int processedPackets = 0;
                 while (canProcessPackets(state, packetHandler) &&
                        state.file.read((int) state.targetTick) &&
-                       processedTicks < 500) { // TODO: investigate if necessary, and what value
+                       processedPackets < 500) {
                     ReplayPacket replayPacket = state.file.consumePacket();
                     replayPacket.handle(packetHandler, state);
+                    processedPackets++;
 
                     if (replayPacket instanceof TickReplayPacket) {
                         tickEditor(state, playerRef, false);
-                        processedTicks++;
                     }
                 }
             }
@@ -476,12 +478,16 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             playerRef.getPacketHandler().writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
         }
 
-        handleTimeDilatation(state, playerRef.getPacketHandler());
+        handleTimeDilatation(state, playerRef.getPacketHandler(), move);
     }
 
-    private void handleTimeDilatation(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler) {
+    private void handleTimeDilatation(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler, boolean move) {
         float speed = (float) state.edit.speed;
-        if (state.ui.dragging || state.ui.controlGame || state.currentTick + speed < state.targetTick) {
+        if (state.ui.dragging || state.ui.controlGame || state.currentTick + speed <= state.targetTick) {
+            state.overrideTimeDilatation = true;
+            speed = 1;
+        } else if (state.overrideTimeDilatation) {
+            state.overrideTimeDilatation = !move;
             speed = 1;
         } else if (!state.stage.isPlaying) {
             speed = 0;
@@ -570,8 +576,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             return true;
         }
 
-        CompletableFuture<Void> clientReadyForChunksFuture = packetHandler.getClientReadyForChunksFuture();
-        return clientReadyForChunksFuture == null || clientReadyForChunksFuture.isDone();
+        return state.stage.clientReady;
     }
 
     public void bypassFilter(@Nonnull ReplayState state, @Nonnull Runnable runnable) {
