@@ -2,6 +2,9 @@ package gg.alexandre.replay.ui.editor.renderers;
 
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
+import gg.alexandre.replay.replay.editor.commands.AddKeyframeCommand;
+import gg.alexandre.replay.replay.editor.commands.RemoveKeyframeCommand;
+import gg.alexandre.replay.replay.editor.commands.RemovePropertyCommand;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.replay.state.UIState;
@@ -151,8 +154,7 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
     }
 
     private void onRemoveProperty(@Nonnull String propertyId) {
-        // TODO: undo/redo
-        state.timeline.getProperties().remove(propertyId);
+        state.commandsStack.execute(new RemovePropertyCommand(state, propertyId));
         state.ui.selectedKeyframe = null;
         state.ui.dirtyTimeline = true;
     }
@@ -161,15 +163,16 @@ public class PropertiesHeaderRenderer extends BaseRenderer<EditorUI.Data> {
         boolean hasSelectedKeyframe = state.ui.selectedKeyframe != null &&
                                       state.ui.selectedKeyframe.propertyId().equals(propertyId);
 
-        BaseProperty property = state.timeline.getProperties().get(propertyId);
-
         if (hasSelectedKeyframe) {
-            // TODO: undo/redo
-            property.getValues().remove(state.ui.selectedKeyframe.tick());
+            state.commandsStack.execute(new RemoveKeyframeCommand(
+                    state, propertyId, state.ui.selectedKeyframe.tick()
+            ));
         } else {
-            // TODO: value
-            // TODO: undo/redo
-            property.getValues().put(context.data.playhead, property.getDefaultValue(state));
+            BaseProperty property = state.timeline.getProperties().get(propertyId);
+
+            state.commandsStack.execute(new AddKeyframeCommand(
+                    state, propertyId, context.data.playhead, property.getDefaultValue(state)
+            ));
         }
 
         state.ui.selectedKeyframe = null;

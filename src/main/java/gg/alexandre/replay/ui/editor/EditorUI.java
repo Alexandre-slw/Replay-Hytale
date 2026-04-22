@@ -238,11 +238,13 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     private void onUndo(@Nonnull UIEventContext<Data> context) {
         state.commandsStack.undo();
+        state.ui.selectedKeyframe = null;
         state.ui.dirtyTimeline = true;
     }
 
     private void onRedo(@Nonnull UIEventContext<Data> context) {
         state.commandsStack.redo();
+        state.ui.selectedKeyframe = null;
         state.ui.dirtyTimeline = true;
     }
 

@@ -1,22 +1,20 @@
 package gg.alexandre.replay.replay.editor.commands;
 
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
-import gg.alexandre.replay.replay.state.TimelineState;
+import gg.alexandre.replay.replay.state.ReplayState;
 
 import javax.annotation.Nonnull;
 
 public class MoveKeyframeCommand extends CommandBase {
 
-    private TimelineState timelineState;
-    private String propertyId;
+    private final String propertyId;
     private final int fromTick;
     private int toTick;
 
-    public MoveKeyframeCommand(@Nonnull TimelineState timelineState, @Nonnull String propertyId, int fromTick,
+    public MoveKeyframeCommand(@Nonnull ReplayState state, @Nonnull String propertyId, int fromTick,
                                int toTick) {
-        super("moveKeyframe");
+        super("moveKeyframe", state);
 
-        this.timelineState = timelineState;
         this.propertyId = propertyId;
         this.fromTick = fromTick;
         this.toTick = toTick;
@@ -33,7 +31,7 @@ public class MoveKeyframeCommand extends CommandBase {
     }
 
     private void move(int from, int to) {
-        BaseProperty property = timelineState.getProperties().get(propertyId);
+        BaseProperty property = state.timeline.getProperties().get(propertyId);
 
         Object value = property.getValues().remove(from);
         property.getValues().put(to, value);

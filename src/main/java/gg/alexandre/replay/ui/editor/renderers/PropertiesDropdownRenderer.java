@@ -2,7 +2,7 @@ package gg.alexandre.replay.ui.editor.renderers;
 
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
-import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
+import gg.alexandre.replay.replay.editor.commands.AddPropertyCommand;
 import gg.alexandre.replay.replay.editor.registry.PropertyRegistry;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.common.CommonUI;
@@ -84,13 +84,7 @@ public class PropertiesDropdownRenderer extends BaseRenderer<EditorUI.Data> {
     }
 
     private void onAddProperty(@Nonnull UIEventContext<EditorUI.Data> context) {
-        // TODO: undo/redo
-        BaseProperty<?> property = PropertyRegistry.get().create(context.data.value);
-        if (property == null) {
-            return;
-        }
-
-        state.timeline.getProperties().put(property.id(), property);
+        state.commandsStack.execute(new AddPropertyCommand(state, context.data.value));
         state.ui.dirtyTimeline = true;
     }
 

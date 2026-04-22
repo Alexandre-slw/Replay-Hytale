@@ -85,7 +85,6 @@ public class ReplayUI extends BaseUI<ReplayUI.Data> {
     }
 
     private void onRecord(@Nonnull UIEventContext<Data> context) {
-        // TODO: stop recording
         ReplayPlugin.get().startRecording(playerRef);
         context.close();
     }

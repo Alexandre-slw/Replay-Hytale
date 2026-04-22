@@ -194,7 +194,7 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
         }
 
         state.commandsStack.execute(new MoveKeyframeCommand(
-                state.timeline,
+                state,
                 state.ui.selectedKeyframe.propertyId(),
                 state.ui.selectedKeyframe.tick(),
                 tick
