@@ -25,8 +25,8 @@ public class PlayButtonRenderer extends BaseRenderer<EditorUI.Data> {
         }
         lastPlay = state.stage.isPlaying;
 
-        String id = lastPlay ? "Play" : "Pause";
-        String translation = lastPlay ? "play" : "pause";
+        String id = lastPlay ? "Pause" : "Play";
+        String translation = lastPlay ? "pause" : "play";
         String button = String.format("""
                 Button #Play {
                   Anchor: (Width: 20, Height: 20, Left: 10);

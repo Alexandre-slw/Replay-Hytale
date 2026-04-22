@@ -114,6 +114,11 @@ public class ReplayPlugin extends JavaPlugin {
     }
 
     @Nonnull
+    public ReplayPlayer getPlayer() {
+        return player;
+    }
+
+    @Nonnull
     public Gson getGson() {
         return gson;
     }

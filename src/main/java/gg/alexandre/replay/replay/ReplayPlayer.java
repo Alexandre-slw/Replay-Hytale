@@ -24,6 +24,7 @@ import com.hypixel.hytale.protocol.packets.player.ClientReady;
 import com.hypixel.hytale.protocol.packets.player.ClientTeleport;
 import com.hypixel.hytale.protocol.packets.player.JoinWorld;
 import com.hypixel.hytale.protocol.packets.player.SetMovementStates;
+import com.hypixel.hytale.protocol.packets.setup.RequestAssets;
 import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
 import com.hypixel.hytale.server.core.Constants;
 import com.hypixel.hytale.server.core.Message;
@@ -33,6 +34,7 @@ import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.ServerManager;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
+import com.hypixel.hytale.server.core.io.handlers.SetupPacketHandler;
 import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
 import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.modules.i18n.I18nModule;
@@ -491,9 +493,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 return;
             } else {
                 int processedPackets = 0;
-                while (canProcessPackets(state, packetHandler) &&
-                       state.file.read((int) state.targetTick) &&
-                       processedPackets < 500) {
+                while (canProcessPackets(state) && state.file.read((int) state.targetTick) && processedPackets < 400) {
                     ReplayPacket replayPacket = state.file.consumePacket();
                     replayPacket.handle(packetHandler, state);
                     processedPackets++;
@@ -504,7 +504,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 }
             }
 
-            if ((!state.stage.sentJoinWorld || state.stage.isPlaying) && canProcessPackets(state, packetHandler)) {
+            if ((!state.stage.sentJoinWorld || state.stage.isPlaying) && canProcessPackets(state)) {
                 state.targetTick += Math.max(0.1, state.edit.speed);
             }
 
@@ -632,7 +632,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
-    private boolean canProcessPackets(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler) {
+    private boolean canProcessPackets(@Nonnull ReplayState state) {
         if (!state.stage.sentJoinWorld) {
             return true;
         }

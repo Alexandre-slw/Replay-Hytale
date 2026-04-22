@@ -32,17 +32,24 @@ public class ReplayCommand extends AbstractCommand {
     @Override
     protected CompletableFuture<Void> execute(@Nonnull CommandContext context) {
         if (!context.isPlayer()) {
-            context.sendMessage(Message.raw("This command can only be used by players."));
+            context.sendMessage(Message.translation("replay.commandCanOnlyBeUsedByPlayers"));
             return CompletableFuture.completedFuture(null);
         }
 
         Player player = context.senderAs(Player.class);
 
         Ref<EntityStore> ref = player.getReference();
+        assert ref != null;
         Store<EntityStore> store = ref.getStore();
+
         store.getExternalData().getWorld().execute(() -> {
             PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
             assert playerRef != null;
+
+            if (ReplayPlugin.get().getPlayer().isPlaying(playerRef)) {
+                context.sendMessage(Message.translation("replay.cannotDoThatWhileReplaying"));
+                return;
+            }
 
             player.getPageManager().openCustomPage(
                     ref, store, new ReplayUI(playerRef, ReplayPlugin.get().getRepository())

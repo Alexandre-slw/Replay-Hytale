@@ -40,3 +40,5 @@ undo=Undo
 redo=Redo
 singleplayerWarningMessage1=Because of limitations in Singleplayer, you will get disconnected.
 singleplayerWarningMessage2=Simply click 'Reconnect' to access your Replay.
+commandCanOnlyBeUsedByPlayers=This command can only be used by players.
+cannotDoThatWhileReplaying=You cannot do that while replaying.
