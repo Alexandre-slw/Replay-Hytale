@@ -116,6 +116,11 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             if (packet instanceof ClientReady clientReady) {
                 state.stage.isProcessingPackets = clientReady.readyForChunks;
                 state.stage.hasStarted = clientReady.readyForGameplay;
+
+                if (Constants.SINGLEPLAYER && clientReady.readyForGameplay && !state.stage.singleplayerHasRestarted) {
+                    state.stage.singleplayerHasRestarted = true;
+                    restart(state);
+                }
             }
 
             if (packet instanceof SyncInteractionChains syncInteractionChains) {

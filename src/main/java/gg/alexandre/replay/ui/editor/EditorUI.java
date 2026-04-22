@@ -220,6 +220,12 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     private void onSave(@Nonnull UIEventContext<Data> context) {
         state.timeline.save(state.file.getMetadata().uuid, state.selectedTimeline);
+
+        player.bypassFilter(state, () ->
+                playerRef.sendMessage(
+                        Message.translation("replay.saved").color(Color.GREEN)
+                )
+        );
     }
 
     private void onHide(@Nonnull UIEventContext<Data> context) {

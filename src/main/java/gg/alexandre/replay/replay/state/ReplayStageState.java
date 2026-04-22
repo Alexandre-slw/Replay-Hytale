@@ -11,4 +11,6 @@ public class ReplayStageState {
     public boolean clearedWorld;
     public boolean sentTranslations;
 
+    public boolean singleplayerHasRestarted;
+
 }
