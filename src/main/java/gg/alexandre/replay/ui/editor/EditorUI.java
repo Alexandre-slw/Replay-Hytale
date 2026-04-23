@@ -291,6 +291,9 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
         update(uiCommandBuilder, "#Timelines.Value", state.selectedTimeline);
 
+        update(uiCommandBuilder, "#Undo.Disabled", !state.commandsStack.canUndo());
+        update(uiCommandBuilder, "#Redo.Disabled", !state.commandsStack.canRedo());
+
         int width = (int) (WIDTH * state.ui.timelineZoom);
         for (BaseRenderer<Data> renderer : tickRenderers) {
             renderer.render(uiCommandBuilder, eventHandler, state, width);

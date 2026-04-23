@@ -30,6 +30,80 @@ Group {
             }
           }
 
+          Group #PlayPauseContainer {
+            // Rendered
+          }
+
+          Button #Hide {
+            Anchor: (Width: 20, Height: 20, Left: 10);
+            TooltipText: %replay.hideUI;
+            Style: (
+              Default: (
+                Background: (TexturePath: "Assets/Hide.png"),
+              ),
+              Hovered: (
+                Background: (TexturePath: "Assets/HideHovered.png"),
+              ),
+              Pressed: (
+                Background: (TexturePath: "Assets/HidePressed.png"),
+              ),
+              Sounds: (
+                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+              )
+            );
+          }
+
+          Button #Undo {
+            Anchor: (Width: 16, Height: 16, Left: 10);
+            Padding: (Vertical: 2);
+            TooltipText: %replay.undo;
+            Style: (
+              Default: (
+                Background: (TexturePath: "Assets/Undo.png"),
+              ),
+              Hovered: (
+                Background: (TexturePath: "Assets/UndoHovered.png"),
+              ),
+              Pressed: (
+                Background: (TexturePath: "Assets/UndoPressed.png"),
+              ),
+              Disabled: (
+                Background: (TexturePath: "Assets/UndoDisabled.png"),
+              ),
+              Sounds: (
+                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+              )
+            );
+          }
+
+          Button #Redo {
+            Anchor: (Width: 16, Height: 16, Left: 10);
+            Padding: (Vertical: 2);
+            TooltipText: %replay.redo;
+            Style: (
+              Default: (
+                Background: (TexturePath: "Assets/Redo.png"),
+              ),
+              Hovered: (
+                Background: (TexturePath: "Assets/RedoHovered.png"),
+              ),
+              Pressed: (
+                Background: (TexturePath: "Assets/RedoPressed.png"),
+              ),
+              Disabled: (
+                Background: (TexturePath: "Assets/RedoDisabled.png"),
+              ),
+              Sounds: (
+                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+              )
+            );
+          }
+        }
+
+        Group {
+          Anchor: (Right: 40);
+          LayoutMode: Right;
+          
           Button #ZoomOut {
             Anchor: (Width: 20, Height: 20, Left: 10);
             TooltipText: %replay.zoomOut;
@@ -86,72 +160,6 @@ Group {
               )
             );
           }
-
-          Button #Hide {
-            Anchor: (Width: 20, Height: 20, Left: 10);
-            TooltipText: %replay.hideUI;
-            Style: (
-              Default: (
-                Background: (TexturePath: "Assets/Hide.png"),
-              ),
-              Hovered: (
-                Background: (TexturePath: "Assets/HideHovered.png"),
-              ),
-              Pressed: (
-                Background: (TexturePath: "Assets/HidePressed.png"),
-              ),
-              Sounds: (
-                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
-              )
-            );
-          }
-
-          Button #Undo {
-            Anchor: (Width: 20, Height: 20, Left: 10);
-            TooltipText: %replay.undo;
-            Style: (
-              Default: (
-                Background: (TexturePath: "Assets/Undo.png"),
-              ),
-              Hovered: (
-                Background: (TexturePath: "Assets/UndoHovered.png"),
-              ),
-              Pressed: (
-                Background: (TexturePath: "Assets/UndoPressed.png"),
-              ),
-              Sounds: (
-                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
-              )
-            );
-          }
-
-          Button #Redo {
-            Anchor: (Width: 20, Height: 20, Left: 10);
-            TooltipText: %replay.redo;
-            Style: (
-              Default: (
-                Background: (TexturePath: "Assets/Redo.png"),
-              ),
-              Hovered: (
-                Background: (TexturePath: "Assets/RedoHovered.png"),
-              ),
-              Pressed: (
-                Background: (TexturePath: "Assets/RedoPressed.png"),
-              ),
-              Sounds: (
-                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
-              )
-            );
-          }
-
-          Group #PlayPauseContainer {
-            // Rendered
-          }
-        }
-
-        Group {
-          Anchor: (Right: 20);
-          LayoutMode: Right;
         }
       }
 

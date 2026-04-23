@@ -29,7 +29,7 @@ public class PlayButtonRenderer extends BaseRenderer<EditorUI.Data> {
         String translation = lastPlay ? "pause" : "play";
         String button = String.format("""
                 Button #Play {
-                  Anchor: (Width: 20, Height: 20, Left: 10);
+                  Anchor: (Width: 32, Height: 32, Left: 10);
                   TooltipText: %%replay.%s;
                   Style: (
                     Default: (
