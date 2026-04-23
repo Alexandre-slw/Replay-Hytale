@@ -611,7 +611,12 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         List<Vector3d> lines = new ArrayList<>();
         int ticksResolution = 10;
-        for (int i = values.firstKey(); i <= values.lastKey(); i += ticksResolution) {
+        int maxTicksWindow = 30 * 60;
+
+        int from = Math.max(values.firstKey(), state.currentTick - maxTicksWindow);
+        int to = Math.min(values.lastKey(), state.currentTick + maxTicksWindow);
+
+        for (int i = from; i <= to; i += ticksResolution) {
             Position position = cameraProperty.getValue(i);
             if (position == null) {
                 continue;
