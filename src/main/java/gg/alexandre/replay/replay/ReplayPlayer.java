@@ -17,6 +17,7 @@ import com.hypixel.hytale.protocol.packets.connection.ClientDisconnect;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.protocol.packets.connection.Pong;
 import com.hypixel.hytale.protocol.packets.entities.EntityUpdates;
+import com.hypixel.hytale.protocol.packets.interaction.CancelInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
 import com.hypixel.hytale.protocol.packets.interface_.*;
@@ -123,7 +124,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             }
 
             if (packet instanceof SyncInteractionChains syncInteractionChains) {
-                handleInteractionChains(state, syncInteractionChains);
+                handleInteractionChains(handler, state, syncInteractionChains);
                 return true;
             }
 
@@ -250,7 +251,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
-    private void handleInteractionChains(@Nonnull ReplayState state,
+    private void handleInteractionChains(@Nonnull PacketHandler handler, @Nonnull ReplayState state,
                                          @Nonnull SyncInteractionChains syncInteractionChains) {
         SyncInteractionChain interactionChain = null;
 
@@ -266,6 +267,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             return;
         }
 
+        SyncInteractionChain chain = interactionChain;
+        bypassFilter(state, () ->
+                handler.writeNoCache(new CancelInteractionChain(chain.chainId, chain.forkedId))
+        );
         state.ui.controlGame = false;
 
         if (state.ui.editingCamera && state.ui.selectedKeyframe != null) {
