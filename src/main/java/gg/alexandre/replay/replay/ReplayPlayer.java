@@ -195,7 +195,8 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                                 for (ComponentUpdate data : update.updates) {
                                     if (data instanceof TransformUpdate transformUpdate) {
                                         Position pos;
-                                        if (!state.position.sentInitialPosition) {
+                                        if (!state.position.sentInitialPosition &&
+                                                state.file.getMetadata().position != null) {
                                             state.position.sentInitialPosition = true;
                                             pos = state.file.getMetadata().position;
                                         } else {

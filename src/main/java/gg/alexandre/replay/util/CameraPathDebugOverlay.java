@@ -72,6 +72,10 @@ public class CameraPathDebugOverlay {
         return lastRenderTime.plusMillis(500).isBefore(Instant.now());
     }
 
+    public void scheduleRender() {
+        lastRenderTime = Instant.MIN;
+    }
+
     public void renderTo(@Nonnull PlayerRef playerRef, List<Position> positions, List<Vector3d> lines,
                          @Nonnull Vector3d playerPosition, @Nullable Position cameraPosition) {
         lastRenderTime = Instant.now();
