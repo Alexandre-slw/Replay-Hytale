@@ -136,11 +136,6 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                     );
                 }
 
-                if (Constants.SINGLEPLAYER && clientReady.readyForGameplay && !state.stage.singleplayerHasRestarted) {
-                    state.stage.singleplayerHasRestarted = true;
-                    restart(state);
-                }
-
                 return false;
             }
 
