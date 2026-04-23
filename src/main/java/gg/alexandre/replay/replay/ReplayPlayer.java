@@ -24,6 +24,7 @@ import com.hypixel.hytale.protocol.packets.interface_.*;
 import com.hypixel.hytale.protocol.packets.player.*;
 import com.hypixel.hytale.protocol.packets.setup.RequestAssets;
 import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
+import com.hypixel.hytale.protocol.packets.setup.ViewRadius;
 import com.hypixel.hytale.server.core.Constants;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
@@ -114,22 +115,24 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             }
 
             if (packet instanceof ClientReady clientReady) {
-                state.stage.isProcessingPackets = clientReady.readyForChunks;
-                state.stage.hasStarted = clientReady.readyForGameplay;
+                state.stage.clientReady = true;
+
+                if (clientReady.readyForChunks) {
+                    state.stage.clearedWorld = true;
+                    state.stage.hasStarted = true;
+                }
 
                 if (Constants.SINGLEPLAYER && clientReady.readyForGameplay && !state.stage.singleplayerHasRestarted) {
                     state.stage.singleplayerHasRestarted = true;
                     restart(state);
                 }
+
+                return false;
             }
 
             if (packet instanceof SyncInteractionChains syncInteractionChains) {
                 handleInteractionChains(handler, state, syncInteractionChains);
                 return true;
-            }
-
-            if (packet instanceof ClientReady) {
-                state.stage.clientReady = true;
             }
 
             if (state.stage.isFilteringPackets && packet instanceof ClientDisconnect) {
@@ -163,7 +166,8 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                     packet instanceof SetPage ||
                     packet instanceof CustomPage ||
                     packet instanceof ResetUserInterfaceState ||
-                    packet instanceof UpdateAnchorUI) {
+                    packet instanceof UpdateAnchorUI ||
+                    packet instanceof ViewRadius) {
 
                 return packet instanceof CustomPage customPage &&
                         customPage.key != null && !customPage.key.startsWith("gg.alexandre.");
