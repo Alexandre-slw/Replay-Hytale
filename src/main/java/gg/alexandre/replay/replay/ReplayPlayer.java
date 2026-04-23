@@ -17,7 +17,6 @@ import com.hypixel.hytale.protocol.packets.connection.ClientDisconnect;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.protocol.packets.connection.Pong;
 import com.hypixel.hytale.protocol.packets.entities.EntityUpdates;
-import com.hypixel.hytale.protocol.packets.interaction.CancelInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
 import com.hypixel.hytale.protocol.packets.interface_.*;
@@ -45,12 +44,13 @@ import gg.alexandre.replay.file.ReplayInputFile;
 import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.protocol.packets.TickReplayPacket;
+import gg.alexandre.replay.replay.editor.commands.SetKeyframeValueCommand;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.editor.EditorUI;
 import gg.alexandre.replay.ui.manager.RealtimePageManager;
-import gg.alexandre.replay.util.PositionTracker;
 import gg.alexandre.replay.util.Position;
+import gg.alexandre.replay.util.PositionTracker;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -123,7 +123,8 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             }
 
             if (packet instanceof SyncInteractionChains syncInteractionChains) {
-                return handleInteractionChains(handler, state, syncInteractionChains);
+                handleInteractionChains(state, syncInteractionChains);
+                return true;
             }
 
             if (packet instanceof ClientReady) {
@@ -248,41 +249,40 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
-    private boolean handleInteractionChains(@Nonnull PacketHandler handler, @Nonnull ReplayState state,
-                                            @Nonnull SyncInteractionChains syncInteractionChains) {
+    private void handleInteractionChains(@Nonnull ReplayState state,
+                                         @Nonnull SyncInteractionChains syncInteractionChains) {
         SyncInteractionChain interactionChain = null;
-        int indexToRemove = -1;
 
         for (int i = 0; i < syncInteractionChains.updates.length; i++) {
             SyncInteractionChain chain = syncInteractionChains.updates[i];
             if (chain.interactionType == InteractionType.Primary && chain.initial) {
                 interactionChain = chain;
-                indexToRemove = i;
                 break;
             }
         }
 
         if (interactionChain == null) {
-            return false;
+            return;
         }
 
-        SyncInteractionChain chain = interactionChain;
-        bypassFilter(state, () ->
-                handler.writeNoCache(new CancelInteractionChain(chain.chainId, chain.forkedId))
-        );
         state.ui.controlGame = false;
 
-        if (syncInteractionChains.updates.length == 1) {
-            return true;
+        if (state.ui.editingCamera && state.ui.selectedKeyframe != null) {
+            state.commandsStack.execute(new SetKeyframeValueCommand(
+                    state,
+                    state.ui.selectedKeyframe.propertyId(),
+                    state.ui.selectedKeyframe.tick(),
+                    new Position(
+                            state.position.x,
+                            state.position.y,
+                            state.position.z,
+                            state.position.headPitch,
+                            state.position.headYaw
+                    )
+            ));
         }
 
-        SyncInteractionChain[] updates = new SyncInteractionChain[syncInteractionChains.updates.length - 1];
-        System.arraycopy(syncInteractionChains.updates, 0, updates, 0, indexToRemove);
-        System.arraycopy(syncInteractionChains.updates, indexToRemove + 1, updates, indexToRemove,
-                syncInteractionChains.updates.length - indexToRemove - 1);
-
-        syncInteractionChains.updates = updates;
-        return false;
+        state.ui.editingCamera = false;
     }
 
     @Nullable

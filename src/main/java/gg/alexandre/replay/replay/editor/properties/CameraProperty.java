@@ -5,6 +5,7 @@ import gg.alexandre.replay.replay.ReplayPlayer;
 import gg.alexandre.replay.replay.editor.interpolation.InterpolationUtil;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
+import gg.alexandre.replay.replay.state.UIState;
 import gg.alexandre.replay.ui.event.UIEventContext;
 import gg.alexandre.replay.util.Position;
 
@@ -114,7 +115,12 @@ public class CameraProperty extends BaseProperty<Position> {
     public void editKeyframe(@Nonnull ReplayPlayer player, @Nonnull ReplayState state,
                              @Nonnull Player playerComponent, @Nonnull UIEventContext<?> context, int tick) {
         onClick(player, state, playerComponent, context, tick);
-        // TODO: edit camera
+
+        state.stage.isPlaying = false;
+        state.ui.controlGame = true;
+        state.ui.editingCamera = true;
+        state.ui.selectedKeyframe = new UIState.Keyframe(id(), tick);
+        context.close();
     }
 
     @Nonnull

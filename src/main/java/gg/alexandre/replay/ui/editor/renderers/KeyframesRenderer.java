@@ -161,11 +161,9 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
         select(propertyId, tick, true);
 
         BaseProperty<?> property = state.timeline.getProperties().get(propertyId);
-        context.store.getExternalData().getWorld().execute(() -> {
-            Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
-            assert playerComponent != null;
-            property.onClick(player, state, playerComponent, context, tick);
-        });
+        Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
+        assert playerComponent != null;
+        property.onClick(player, state, playerComponent, context, tick);
     }
 
     private void onRightClickKeyframe(@Nonnull UIEventContext<EditorUI.Data> context, @Nonnull String propertyId,
@@ -173,11 +171,9 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
         select(propertyId, tick, false);
 
         BaseProperty<?> property = state.timeline.getProperties().get(propertyId);
-        context.store.getExternalData().getWorld().execute(() -> {
-            Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
-            assert playerComponent != null;
-            property.editKeyframe(player, state, playerComponent, context, tick);
-        });
+        Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
+        assert playerComponent != null;
+        property.editKeyframe(player, state, playerComponent, context, tick);
     }
 
     private void moveKeyframe(@Nonnull UIEventContext<EditorUI.Data> context, boolean overwrite) {

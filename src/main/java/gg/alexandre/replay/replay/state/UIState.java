@@ -10,6 +10,7 @@ public class UIState {
     public int draggingTick;
     public boolean dragging;
 
+    public boolean editingCamera;
     public boolean controlGame;
     public boolean sentEscHint;
 
