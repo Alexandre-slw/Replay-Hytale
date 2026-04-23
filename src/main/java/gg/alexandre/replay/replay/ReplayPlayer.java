@@ -45,6 +45,7 @@ import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.protocol.packets.TickReplayPacket;
 import gg.alexandre.replay.replay.editor.commands.SetKeyframeValueCommand;
+import gg.alexandre.replay.replay.editor.properties.CameraProperty;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.editor.EditorUI;
@@ -65,8 +66,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -578,6 +578,45 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
 
         handleTimeDilation(state, playerRef.getPacketHandler(), move);
+
+        if (move && state.timeline.getProperties().containsKey("camera")) {
+            handleCameraPathDisplay(state, playerRef);
+        }
+    }
+
+    private void handleCameraPathDisplay(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
+        if (state.stage.isPlaying) {
+            state.overlay.clearImmediately(playerRef);
+            return;
+        }
+
+        if (!state.overlay.shouldRender()) {
+            return;
+        }
+
+        CameraProperty cameraProperty = (CameraProperty) state.timeline.getProperties().get("camera");
+
+        TreeMap<Integer, Position> values = cameraProperty.getValues();
+        if (values.isEmpty()) {
+            return;
+        }
+
+        List<Position> positions = values.values().stream().toList();
+
+        List<Vector3d> lines = new ArrayList<>();
+        int ticksResolution = 10;
+        for (int i = values.firstKey(); i <= values.lastKey(); i += ticksResolution) {
+            Position position = cameraProperty.getValue(i);
+            if (position == null) {
+                continue;
+            }
+
+            lines.add(new Vector3d(position.x(), position.y(), position.z()));
+        }
+
+        Vector3d playerPosition = new Vector3d(state.position.x, state.position.y, state.position.z);
+
+        state.overlay.renderTo(playerRef, positions, lines, playerPosition, cameraProperty.getValue(state.currentTick));
     }
 
     private void handleTimeDilation(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler, boolean move) {

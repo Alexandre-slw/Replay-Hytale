@@ -5,6 +5,7 @@ import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.file.ReplayInputFile;
 import gg.alexandre.replay.replay.editor.commands.CommandsStack;
 import gg.alexandre.replay.replay.editor.properties.CameraProperty;
+import gg.alexandre.replay.util.CameraPathDebugOverlay;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -35,6 +36,8 @@ public class ReplayState {
     public UIState ui = new UIState();
     public TimelineState timeline = new TimelineState();
     public PositionState position = new PositionState();
+
+    public CameraPathDebugOverlay overlay = new CameraPathDebugOverlay();
 
     public CommandsStack commandsStack = new CommandsStack();
 
