@@ -26,6 +26,7 @@ import com.hypixel.hytale.protocol.packets.setup.RequestAssets;
 import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
 import com.hypixel.hytale.protocol.packets.setup.ViewRadius;
 import com.hypixel.hytale.server.core.Constants;
+import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
@@ -114,12 +115,25 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 return true;
             }
 
+            if (packet instanceof ViewRadius viewRadius) {
+                state.clientViewRadius = viewRadius.value;
+            }
+
             if (packet instanceof ClientReady clientReady) {
                 state.stage.clientReady = true;
 
                 if (clientReady.readyForChunks) {
                     state.stage.clearedWorld = true;
                     state.stage.hasStarted = true;
+                }
+
+                // Restore view radius
+                if (clientReady.readyForGameplay && !state.stage.restoredViewRadius) {
+                    int maxViewRadius = HytaleServer.get().getConfig().getMaxViewRadius();
+                    state.stage.restoredViewRadius = true;
+                    bypassFilter(state, () ->
+                            handler.write(new ViewRadius(Math.min(state.clientViewRadius, maxViewRadius * 32)))
+                    );
                 }
 
                 if (Constants.SINGLEPLAYER && clientReady.readyForGameplay && !state.stage.singleplayerHasRestarted) {
@@ -162,13 +176,18 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 hitboxes.blockBaseHitboxes.replaceAll((_, _) -> new Hitbox[0]);
             }
 
+            if (packet instanceof ViewRadius viewRadius) {
+                if (!state.stage.restoredViewRadius) {
+                    viewRadius.value = 32; // Fast load
+                }
+                return false;
+            }
+
             if (packet instanceof Ping ||
                     packet instanceof SetPage ||
                     packet instanceof CustomPage ||
                     packet instanceof ResetUserInterfaceState ||
-                    packet instanceof UpdateAnchorUI ||
-                    packet instanceof ViewRadius) {
-
+                    packet instanceof UpdateAnchorUI) {
                 return packet instanceof CustomPage customPage &&
                         customPage.key != null && !customPage.key.startsWith("gg.alexandre.");
             }

@@ -31,6 +31,8 @@ public class ReplayState {
     public Set<Integer> entityIds = new HashSet<>();
     public int clientId;
 
+    public int clientViewRadius = 16 * 32;
+
     public EditState edit = new EditState();
     public ReplayStageState stage = new ReplayStageState();
     public UIState ui = new UIState();
