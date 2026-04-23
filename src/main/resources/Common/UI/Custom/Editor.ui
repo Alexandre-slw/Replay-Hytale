@@ -1,6 +1,41 @@
 $C = "Common.ui";
 $Sounds = "Sounds.ui";
 
+@HelpEntry = Group {
+  LayoutMode: Left;
+  Anchor: (Bottom: 10);
+
+  Group {
+    Anchor: (Width: 16, Height: 16, Right: 5);
+    Background: (TexturePath: @FirstTexture);
+  }
+
+  Label {
+    Anchor: (Left: 5);
+    Text: @Text;
+  }
+};
+
+@HelpEntryTwo = Group {
+  LayoutMode: Left;
+  Anchor: (Bottom: 10);
+
+  Group {
+    Anchor: (Width: 16, Height: 16, Right: 5);
+    Background: (TexturePath: @FirstTexture);
+  }
+
+  Group {
+    Anchor: (Width: 16, Height: 16, Right: 5);
+    Background: (TexturePath: @SecondTexture);
+  }
+
+  Label {
+    Anchor: (Left: 5);
+    Text: @Text;
+  }
+};
+
 Group {
   LayoutMode: Full;
 
@@ -14,6 +49,94 @@ Group {
   Group {
     LayoutMode: Bottom;
 
+    Group #HelpPanel {
+      @ContentPadding = Padding(Full: 9 + 8);
+
+      Anchor: (Top: 0, Bottom: 10, Right: 10, Width: 400);
+      HitTestVisible: true;
+      Visible: false;
+
+      Group {
+        Anchor: (Height: $C.@TitleHeight, Top: 0);
+        Background: (TexturePath: "Common/ContainerHeader.png", HorizontalBorder: 50, VerticalBorder: 0);
+        Padding: (Top: 7);
+
+        Group #ContainerDecorationTop {
+          Anchor: (Width: 236, Height: 11, Top: -12);
+          Background: "Common/ContainerDecorationTop.png";
+        }
+
+        $C.@Title {
+          @Text = %replay.help;
+        }
+      }
+
+      Group {
+        LayoutMode: TopScrolling;
+        ScrollbarStyle: $C.@DefaultScrollbarStyle;
+        Anchor: (Top: $C.@TitleHeight);
+        Padding: @ContentPadding;
+        Background: (TexturePath: "Common/ContainerPatch.png", Border: 23);
+
+        @HelpEntry {
+          @FirstTexture = "Assets/Play.png";
+          @Text = %replay.play;
+        }
+
+        @HelpEntry {
+          @FirstTexture = "Assets/Pause.png";
+          @Text = %replay.pause;
+        }
+
+        @HelpEntry {
+          @FirstTexture = "Common/SmallInputIconMouseLeftClick.png";
+          @Text = %replay.leftClickToMoveAround;
+        }
+
+        @HelpEntry {
+          @FirstTexture = "Assets/ButtonKeyframePlus.png";
+          @Text = %replay.addKeyframe;
+        }
+
+        @HelpEntry {
+          @FirstTexture = "Assets/ButtonKeyframeMinus.png";
+          @Text = %replay.removeKeyframe;
+        }
+
+        @HelpEntryTwo {
+          @FirstTexture = "Assets/Keyframe.png";
+          @SecondTexture = "Common/SmallInputIconMouseLeftClick.png";
+          @Text = %replay.moveKeyframe;
+        }
+
+        @HelpEntryTwo {
+          @FirstTexture = "Assets/Keyframe.png";
+          @SecondTexture = "Common/SmallInputIconMouseRightClick.png";
+          @Text = %replay.editKeyframe;
+        }
+
+        @HelpEntry {
+          @FirstTexture = "Assets/Hide.png";
+          @Text = %replay.hideUI;
+        }
+
+        @HelpEntry {
+          @FirstTexture = "Assets/Save.png";
+          @Text = %replay.save;
+        }
+
+        @HelpEntry {
+          @FirstTexture = "Common/ContainerCloseButton.png";
+          @Text = %replay.exit;
+        }
+      }
+
+      Group {
+        Anchor: (Width: 236, Height: 11, Bottom: -6);
+        Background: "Common/ContainerDecorationBottom.png";
+      }
+    }
+    
     $C.@DecoratedContainer {
       @CloseButton = true;
       Anchor: (Left: 10, Right: 10, Bottom: 10);
@@ -104,6 +227,25 @@ Group {
           Anchor: (Right: 40);
           LayoutMode: Right;
           
+          Button #Help {
+            Anchor: (Width: 20, Height: 20, Left: 10);
+            TooltipText: %replay.help;
+            Style: (
+              Default: (
+                Background: (TexturePath: "Assets/Help.png"),
+              ),
+              Hovered: (
+                Background: (TexturePath: "Assets/HelpHovered.png"),
+              ),
+              Pressed: (
+                Background: (TexturePath: "Assets/HelpPressed.png"),
+              ),
+              Sounds: (
+                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+              )
+            );
+          }
+
           Button #ZoomOut {
             Anchor: (Width: 20, Height: 20, Left: 10);
             TooltipText: %replay.zoomOut;

@@ -51,6 +51,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     private boolean needToResume = false;
 
+    private boolean helpVisible = false;
+
     private final Map<String, Object> cachedData = new HashMap<>();
 
     private final List<BaseRenderer<Data>> layoutRenderers;
@@ -160,6 +162,11 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
                 "#Redo",
                 this::onRedo
         );
+
+        eventHandler.handle(CustomUIEventBindingType.Activating,
+                "#Help",
+                this::onHelp
+        );
     }
 
     private void onPlayhead(@Nonnull UIEventContext<Data> context) {
@@ -246,6 +253,11 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         state.commandsStack.redo();
         state.ui.selectedKeyframe = null;
         state.ui.dirtyTimeline = true;
+    }
+
+    private void onHelp(@Nonnull UIEventContext<Data> context) {
+        helpVisible = !helpVisible;
+        context.uiCommandBuilder.set("#HelpPanel.Visible", helpVisible);
     }
 
     private void onClose(@Nonnull UIEventContext<Data> context) {
