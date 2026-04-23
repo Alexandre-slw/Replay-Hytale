@@ -16,10 +16,22 @@ Group {
 
       $C.@PanelTitle {
         @Text = %replay.record;
-        
-        $C.@TextButton #Record {
-          @Text = %replay.startRecording;
-          FlexWeight: 1;
+
+        Group {
+          Anchor: (Top: 10);
+          LayoutMode: Left;
+
+          Label #Time {
+            Text: %replay.notRecording;
+            Anchor: (Left: 10);
+            Style: (FontSize: 16, VerticalAlignment: Center);
+            FlexWeight: 1;
+          }
+          
+          $C.@TextButton #Record {
+            @Text = %replay.startRecording;
+            @Anchor = (Right: 10);
+          }
         }
       }
 
@@ -28,7 +40,9 @@ Group {
         Anchor: (Top: 20);
         
         Group #List {
-          LayoutMode: Top;
+          LayoutMode: TopScrolling;
+          ScrollbarStyle: $C.@DefaultScrollbarStyle;
+          Anchor: (Height: 500, Top: 10);
         }
       }
     }

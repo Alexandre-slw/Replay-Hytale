@@ -40,6 +40,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -222,6 +223,11 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
         PacketIO.writeFramedPacket(packet, type, buffer, PacketStatsRecorder.NOOP);
 
         return new HytaleReplayPacket(buffer);
+    }
+
+    @Nullable
+    public RecordingData getRecordingData(@Nonnull PlayerRef playerRef) {
+        return recordings.get(playerRef);
     }
 
 }

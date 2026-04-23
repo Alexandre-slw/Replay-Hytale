@@ -114,6 +114,11 @@ public class ReplayPlugin extends JavaPlugin {
     }
 
     @Nonnull
+    public ReplayRecorder getRecorder() {
+        return recorder;
+    }
+
+    @Nonnull
     public ReplayPlayer getPlayer() {
         return player;
     }

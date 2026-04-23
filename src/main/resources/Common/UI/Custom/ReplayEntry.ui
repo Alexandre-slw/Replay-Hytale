@@ -2,5 +2,6 @@ $C = "Common.ui";
 
 $C.@TextButton {
   @Text = "Name";
+  @Anchor = (Top: 5);
   FlexWeight: 1;
 }

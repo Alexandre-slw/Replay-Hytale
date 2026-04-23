@@ -19,8 +19,6 @@ public class ReplayCommand extends AbstractCommand {
 
     public ReplayCommand(@Nullable String name, @Nullable String description) {
         super(name, description);
-
-        addSubCommand(new RecordCommand("record", ""));
     }
 
     @Override
@@ -52,7 +50,9 @@ public class ReplayCommand extends AbstractCommand {
             }
 
             player.getPageManager().openCustomPage(
-                    ref, store, new ReplayUI(playerRef, ReplayPlugin.get().getRepository())
+                    ref,
+                    store,
+                    new ReplayUI(playerRef, ReplayPlugin.get().getRepository(), ReplayPlugin.get().getRecorder())
             );
         });
 

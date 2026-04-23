@@ -48,3 +48,6 @@ moveKeyframe=Move Keyframe
 editKeyframeValue=Edit Keyframe Value
 leftClickToMoveAround=Left click on the game to move around
 exit=Exit
+noReplaysYet=No replays yet!
+notRecording=Not recording
+recording=Recording:
