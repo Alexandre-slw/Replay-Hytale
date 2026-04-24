@@ -1,6 +1,7 @@
 package gg.alexandre.replay.replay.editor.registry;
 
 import gg.alexandre.replay.replay.editor.properties.CameraProperty;
+import gg.alexandre.replay.replay.editor.properties.FovProperty;
 import gg.alexandre.replay.replay.editor.properties.SpeedProperty;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 
@@ -18,6 +19,7 @@ public class PropertyRegistry {
     private PropertyRegistry() {
         register(CameraProperty.class);
         register(SpeedProperty.class);
+        register(FovProperty.class);
     }
 
     private void register(Class<? extends BaseProperty<?>> clazz) {

@@ -54,7 +54,7 @@ public class HytaleReplayPacket implements ReplayPacket {
             state.stage.sentJoinWorld = true;
         }
 
-        packetHandler.writeNoCache((ToClientPacket) packet);
+        packetHandler.write((ToClientPacket) packet);
 
         if (packet instanceof SetClientId clientId) {
             if (state.clientId != 0 && state.clientId != clientId.clientId) {

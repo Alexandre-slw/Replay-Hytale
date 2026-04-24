@@ -40,6 +40,7 @@ import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.modules.i18n.I18nModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
+import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.PositionUtil;
 import gg.alexandre.replay.ReplayPlugin;
@@ -53,6 +54,7 @@ import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.editor.EditorUI;
 import gg.alexandre.replay.ui.manager.RealtimePageManager;
+import gg.alexandre.replay.util.FovPacketUtil;
 import gg.alexandre.replay.util.Position;
 import gg.alexandre.replay.util.PositionTracker;
 
@@ -186,6 +188,13 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 return packet instanceof CustomPage customPage &&
                         customPage.key != null && !customPage.key.startsWith("gg.alexandre.");
             }
+
+//            if (packet instanceof UpdateBlockTypes updateBlockTypes && updateBlockTypes.blockTypes != null) {
+//                for (BlockType type : updateBlockTypes.blockTypes.values()) {
+//                    // Stops caustics from rendering, required for fov property
+//                    type.requiresAlphaBlending = true;
+//                }
+//            }
 
             if (packet instanceof UpdateTranslations && !state.stage.sentTranslations) {
                 state.stage.sentTranslations = true;
@@ -536,11 +545,12 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 continue;
             }
 
-            ref.getStore().getExternalData().getWorld().execute(() -> tick(state, playerRef));
+            World world = ref.getStore().getExternalData().getWorld();
+            world.execute(() -> tick(state, playerRef, world));
         }
     }
 
-    private void tick(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
+    private void tick(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef, @Nonnull World world) {
         if (!state.stage.hasStarted) {
             return;
         }
@@ -564,7 +574,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                     processedPackets++;
 
                     if (replayPacket instanceof TickReplayPacket) {
-                        tickEditor(state, playerRef, false);
+                        tickEditor(state, playerRef, world, false);
                     }
                 }
             }
@@ -573,7 +583,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 state.targetTick += Math.max(0.1, state.edit.speed);
             }
 
-            tickEditor(state, playerRef, true);
+            tickEditor(state, playerRef, world, true);
         } catch (Exception e) {
             logger.atWarning().withCause(e).log("Error while processing replay packets");
         } finally {
@@ -581,7 +591,8 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
-    private void tickEditor(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef, boolean move) {
+    private void tickEditor(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef, @Nonnull World world,
+                            boolean move) {
         if (state.timeline.getLastSaved().plus(5, ChronoUnit.MINUTES).isBefore(Instant.now())) {
             state.timeline.save(state.file.getMetadata().uuid, state.selectedTimeline);
         }
@@ -596,11 +607,13 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 state.position.x,
                 state.position.y,
                 state.position.z,
-                state.position.headPitch, // yaw and pitch from packets is inverted?
+                state.position.headPitch, // yaw and pitch from packets are inverted?
                 state.position.headYaw
         );
 
         if (state.stage.isPlaying && !state.ui.controlGame) {
+            state.edit.fov = 1.0;
+
             for (BaseProperty<?> property : state.timeline.getProperties().values()) {
                 property.handle(state, (int) state.targetTick);
             }
@@ -616,6 +629,16 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         if (move && state.timeline.getProperties().containsKey("camera")) {
             handleCameraPathDisplay(state, playerRef);
+        }
+
+        if (move) {
+            if (state.fovUtil == null) {
+                state.fovUtil = new FovPacketUtil(playerRef, world);
+                state.fovUtil.setup();
+            }
+
+            Vector3d playerPosition = new Vector3d(state.position.x, state.position.y, state.position.z);
+            state.fovUtil.apply(state.edit.fov, playerPosition);
         }
     }
 

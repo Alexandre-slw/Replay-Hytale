@@ -6,6 +6,7 @@ import gg.alexandre.replay.file.ReplayInputFile;
 import gg.alexandre.replay.replay.editor.commands.CommandsStack;
 import gg.alexandre.replay.replay.editor.properties.CameraProperty;
 import gg.alexandre.replay.util.CameraPathDebugOverlay;
+import gg.alexandre.replay.util.FovPacketUtil;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -32,6 +33,8 @@ public class ReplayState {
     public int clientId;
 
     public int clientViewRadius = 16 * 32;
+
+    public FovPacketUtil fovUtil;
 
     public EditState edit = new EditState();
     public ReplayStageState stage = new ReplayStageState();
