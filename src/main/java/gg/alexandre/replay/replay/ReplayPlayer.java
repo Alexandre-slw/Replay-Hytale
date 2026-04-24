@@ -683,11 +683,12 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                     PositionUtil.toDirectionPacket(rotation)
             );
 
-            playerRef.getPacketHandler().writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
-            playerRef.getPacketHandler().writeNoCache(new ClientTeleport(
+            PacketHandler packetHandler = playerRef.getPacketHandler();
+            packetHandler.writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
+            packetHandler.writeNoCache(new ClientTeleport(
                     (byte) NEXT_TELEPORT_ID.getAndIncrement(),
                     transform,
-                    false
+                    true
             ));
         });
     }
