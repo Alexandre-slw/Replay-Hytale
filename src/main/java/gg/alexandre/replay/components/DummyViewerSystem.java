@@ -1,9 +1,6 @@
 package gg.alexandre.replay.components;
 
-import com.hypixel.hytale.component.ArchetypeChunk;
-import com.hypixel.hytale.component.CommandBuffer;
-import com.hypixel.hytale.component.ComponentType;
-import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.component.*;
 import com.hypixel.hytale.component.dependency.Dependency;
 import com.hypixel.hytale.component.dependency.Order;
 import com.hypixel.hytale.component.dependency.SystemDependency;
@@ -12,7 +9,9 @@ import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
+import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import gg.alexandre.replay.util.DummyUtil;
 
 import javax.annotation.Nonnull;
 import java.util.Set;
@@ -54,15 +53,36 @@ public class DummyViewerSystem extends EntityTickingSystem<EntityStore> {
         EntityTrackerSystems.EntityViewer viewer = chunk.getComponent(index, viewerType);
         TargetWatcherTag tag = chunk.getComponent(index, tagType);
 
-        if (viewer != null && tag != null && tag.target != null && tag.target.isValid()) {
-            viewer.visible.add(tag.target);
-
-            TransformComponent targetTransform = store.getComponent(tag.target, TransformComponent.getComponentType());
-            TransformComponent dummyTransform = chunk.getComponent(index, TransformComponent.getComponentType());
-
-            if (targetTransform != null && dummyTransform != null) {
-                dummyTransform.setPosition(targetTransform.getPosition());
-            }
+        if (viewer == null || tag == null || tag.target == null || !tag.target.isValid()) {
+            return;
         }
+
+        Ref<EntityStore> dummyRef = chunk.getReferenceTo(index);
+        World currentWorld = store.getExternalData().getWorld();
+        World targetWorld = tag.target.getStore().getExternalData().getWorld();
+
+        if (targetWorld != currentWorld) {
+            cb.run(s -> {
+                Holder<EntityStore> holder = s.removeEntity(dummyRef, EntityStore.REGISTRY.newHolder(), RemoveReason.UNLOAD);
+
+                targetWorld.execute(() -> {
+                    Store<EntityStore> worldStore = targetWorld.getEntityStore().getStore();
+                    Ref<EntityStore> newDummyRef = worldStore.addEntity(holder, AddReason.LOAD);
+
+                    assert newDummyRef != null;
+                    DummyUtil.makeGhost(worldStore, newDummyRef);
+                });
+            });
+            return;
+        }
+
+        TransformComponent targetTransform = store.getComponent(tag.target, TransformComponent.getComponentType());
+        TransformComponent dummyTransform = chunk.getComponent(index, TransformComponent.getComponentType());
+
+        if (targetTransform != null && dummyTransform != null) {
+            dummyTransform.setPosition(targetTransform.getPosition());
+        }
+
+        viewer.visible.add(tag.target);
     }
 }

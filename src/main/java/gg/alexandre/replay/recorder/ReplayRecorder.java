@@ -226,6 +226,19 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
     }
 
     @Nullable
+    public World getWorldForWatcher(@Nonnull PlayerRef watcher) {
+        PlayerRef player = watcherToPlayer.get(watcher.getUuid());
+        if (player == null) {
+            return null;
+        }
+
+        Ref<EntityStore> ref = player.getReference();
+        assert ref != null;
+        Store<EntityStore> store = ref.getStore();
+        return store.getExternalData().getWorld();
+    }
+
+    @Nullable
     public RecordingData getRecordingData(@Nonnull PlayerRef playerRef) {
         return recordings.get(playerRef);
     }

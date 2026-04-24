@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.hypixel.hytale.component.ComponentRegistryProxy;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.server.core.event.events.ShutdownEvent;
+import com.hypixel.hytale.server.core.event.events.player.PlayerConnectEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
@@ -15,6 +16,7 @@ import gg.alexandre.replay.commands.ReplayCommand;
 import gg.alexandre.replay.components.DummyViewerSystem;
 import gg.alexandre.replay.components.TargetWatcherTag;
 import gg.alexandre.replay.events.DisconnectEvent;
+import gg.alexandre.replay.events.WatcherConnectEvent;
 import gg.alexandre.replay.gson.BasePropertyAdapter;
 import gg.alexandre.replay.gson.PositionAdapter;
 import gg.alexandre.replay.gson.SerializedNameOnlyStrategy;
@@ -59,6 +61,7 @@ public class ReplayPlugin extends JavaPlugin {
         getCommandRegistry().registerCommand(new ReplayCommand("replay", "Replay commands"));
         getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, DisconnectEvent::onPlayerDisconnect);
         getEventRegistry().registerGlobal(ShutdownEvent.class, DisconnectEvent::onShutdown);
+        getEventRegistry().registerGlobal(PlayerConnectEvent.class, WatcherConnectEvent::onPlayerConnect);
 
         entityStoreRegistry.registerSystem(player);
         entityStoreRegistry.registerSystem(recorder);

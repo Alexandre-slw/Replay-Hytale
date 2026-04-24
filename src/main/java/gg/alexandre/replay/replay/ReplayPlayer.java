@@ -323,7 +323,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         assert ref != null;
         Store<EntityStore> store = ref.getStore();
 
-        Player player = ref.getStore().getComponent(ref, Player.getComponentType());
+        Player player = store.getComponent(ref, Player.getComponentType());
         if (player == null) {
             return;
         }
@@ -526,17 +526,22 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
     @Override
     public void tick(float v, int i, @Nonnull Store<EntityStore> store) {
         for (ReplayState state : states.values()) {
-            tick(state);
+            PlayerRef playerRef = Universe.get().getPlayer(state.playerUuid);
+            if (playerRef == null || !playerRef.isValid()) {
+                continue;
+            }
+
+            Ref<EntityStore> ref = playerRef.getReference();
+            if (ref == null) {
+                continue;
+            }
+
+            ref.getStore().getExternalData().getWorld().execute(() -> tick(state, playerRef));
         }
     }
 
-    private void tick(@Nonnull ReplayState state) {
+    private void tick(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
         if (!state.stage.hasStarted) {
-            return;
-        }
-
-        PlayerRef playerRef = Universe.get().getPlayer(state.playerUuid);
-        if (playerRef == null || !playerRef.isValid()) {
             return;
         }
 
