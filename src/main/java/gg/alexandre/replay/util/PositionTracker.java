@@ -14,6 +14,10 @@ public class PositionTracker {
     public static final double TELEPORT_ACK_MAX_DIST_SQ = 0.001;
 
     public static void onClientMovement(@Nonnull ReplayState state, @Nonnull ClientMovement packet) {
+        if (state.cameraManager.isFollowingPath()) {
+            return;
+        }
+
         if (state.position.hasPendingTeleport) {
             if (packet.teleportAck != null && packet.absolutePosition != null) {
                 int ackId = packet.teleportAck.teleportId & 0xFF;
@@ -60,6 +64,10 @@ public class PositionTracker {
     }
 
     public static void onClientTeleport(@Nonnull ReplayState state, @Nonnull ClientTeleport packet) {
+        if (state.cameraManager.isFollowingPath()) {
+            return;
+        }
+
         ModelTransform modelTransform = packet.modelTransform;
         if (modelTransform != null && modelTransform.position != null) {
             state.position.x = modelTransform.position.x;
@@ -87,6 +95,10 @@ public class PositionTracker {
     }
 
     public static void onTransformUpdate(@Nonnull ReplayState state, @Nonnull TransformUpdate transformUpdate) {
+        if (state.cameraManager.isFollowingPath()) {
+            return;
+        }
+
         ModelTransform modelTransform = transformUpdate.transform;
 
         if (modelTransform.position != null) {

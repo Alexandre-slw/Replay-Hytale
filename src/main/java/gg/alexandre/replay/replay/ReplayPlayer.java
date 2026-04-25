@@ -12,7 +12,6 @@ import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.protocol.*;
 import com.hypixel.hytale.protocol.packets.assets.UpdateBlockHitboxes;
 import com.hypixel.hytale.protocol.packets.assets.UpdateTranslations;
-import com.hypixel.hytale.protocol.packets.camera.SetServerCamera;
 import com.hypixel.hytale.protocol.packets.connection.ClientDisconnect;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.protocol.packets.connection.Pong;
@@ -73,11 +72,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReplayPlayer extends TickingSystem<EntityStore> {
-
-    private static final AtomicInteger NEXT_TELEPORT_ID = new AtomicInteger();
 
     private final Path replayStatePath;
 
@@ -357,7 +353,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         packetHandler.writeNoCache(entityUpdates);
         state.entityIds.clear();
 
-        packetHandler.writeNoCache(new SetServerCamera(ClientCameraView.FirstPerson, true, null));
+        state.cameraManager.setDefaultCamera(packetHandler);
 
         packetHandler.tryFlush();
 
@@ -617,12 +613,12 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             for (BaseProperty<?> property : state.timeline.getProperties().values()) {
                 property.handle(state, (int) state.targetTick);
             }
-
-            if (move) {
-                moveCamera(state, playerRef);
-            }
         } else {
             playerRef.getPacketHandler().writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
+        }
+
+        if (move) {
+            state.cameraManager.moveCamera(state, playerRef, this, false);
         }
 
         handleTimeDilation(state, playerRef.getPacketHandler(), move);
@@ -700,33 +696,6 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             state.timeDilation = speed;
             packetHandler.writeNoCache(new SetTimeDilation(Math.min(Math.max(0.0101f, speed), 4)));
         }
-    }
-
-    public void moveCamera(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
-        bypassFilter(state, () -> {
-            Vector3d position = new Vector3d(
-                    state.edit.cameraPosition.x(), state.edit.cameraPosition.y(), state.edit.cameraPosition.z()
-            );
-            Vector3f rotation = new Vector3f(
-                    (float) state.edit.cameraPosition.yaw(), (float) state.edit.cameraPosition.pitch(), 0
-            );
-
-            Vector3f bodyRotation = new Vector3f(0.0F, rotation.getYaw(), 0.0F);
-
-            ModelTransform transform = new ModelTransform(
-                    PositionUtil.toPositionPacket(position),
-                    PositionUtil.toDirectionPacket(bodyRotation),
-                    PositionUtil.toDirectionPacket(rotation)
-            );
-
-            PacketHandler packetHandler = playerRef.getPacketHandler();
-            packetHandler.writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
-            packetHandler.writeNoCache(new ClientTeleport(
-                    (byte) NEXT_TELEPORT_ID.getAndIncrement(),
-                    transform,
-                    true
-            ));
-        });
     }
 
     private void handlePage(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {

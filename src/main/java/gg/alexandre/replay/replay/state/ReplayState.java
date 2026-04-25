@@ -3,6 +3,7 @@ package gg.alexandre.replay.replay.state;
 import com.google.gson.Gson;
 import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.file.ReplayInputFile;
+import gg.alexandre.replay.replay.CameraManager;
 import gg.alexandre.replay.replay.editor.commands.CommandsStack;
 import gg.alexandre.replay.replay.editor.properties.CameraProperty;
 import gg.alexandre.replay.util.CameraPathDebugOverlay;
@@ -43,6 +44,7 @@ public class ReplayState {
     public PositionState position = new PositionState();
 
     public CameraPathDebugOverlay overlay = new CameraPathDebugOverlay();
+    public CameraManager cameraManager = new CameraManager();
 
     public CommandsStack commandsStack = new CommandsStack();
 
