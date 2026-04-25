@@ -43,31 +43,42 @@ public abstract class BaseUI<T extends UIEventIdData> extends InteractiveCustomU
     public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull T data) {
         super.handleDataEvent(ref, store, data);
 
-        UICommandBuilder uiCommandBuilder = new UICommandBuilder();
-        UIEventBuilder uiEventBuilder = new UIEventBuilder();
-        eventHandler.bind(uiEventBuilder);
-
-        UIEventContext<T> eventContext = new UIEventContext<>(
-                playerRef, ref, store, data, uiCommandBuilder, eventHandler
-        );
-
-
-        eventHandler.handleEvent(eventContext);
-        handleEvent(eventContext);
-
-        eventHandler.unbind();
-
-        if (eventContext.isClosed()) {
-            close();
-        } else if (uiCommandBuilder.getCommands().length > 0) {
-            if (uiEventBuilder.getEvents().length > 0) {
-                sendUpdate(uiCommandBuilder, uiEventBuilder, false);
-            } else {
-                sendUpdate(uiCommandBuilder);
-            }
-        } else if (uiEventBuilder.getEvents().length > 0) {
-            sendUpdate(null, uiEventBuilder, false);
+        Ref<EntityStore> reference = playerRef.getReference();
+        if (reference == null || !reference.isValid()) {
+            return;
         }
+
+        Store<EntityStore> playerStore = reference.getStore();
+        playerStore.getExternalData().getWorld().execute(() -> {
+            if (!reference.isValid()) {
+                return;
+            }
+
+            UICommandBuilder uiCommandBuilder = new UICommandBuilder();
+            UIEventBuilder uiEventBuilder = new UIEventBuilder();
+            eventHandler.bind(uiEventBuilder);
+
+            UIEventContext<T> eventContext = new UIEventContext<>(
+                    playerRef, ref, playerStore, data, uiCommandBuilder, eventHandler
+            );
+
+            eventHandler.handleEvent(eventContext);
+            handleEvent(eventContext);
+
+            eventHandler.unbind();
+
+            if (eventContext.isClosed()) {
+                close();
+            } else if (uiCommandBuilder.getCommands().length > 0) {
+                if (uiEventBuilder.getEvents().length > 0) {
+                    sendUpdate(uiCommandBuilder, uiEventBuilder, false);
+                } else {
+                    sendUpdate(uiCommandBuilder);
+                }
+            } else if (uiEventBuilder.getEvents().length > 0) {
+                sendUpdate(null, uiEventBuilder, false);
+            }
+        });
     }
 
     @Override

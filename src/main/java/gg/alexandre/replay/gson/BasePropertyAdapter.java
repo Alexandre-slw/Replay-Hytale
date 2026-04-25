@@ -21,7 +21,7 @@ public final class BasePropertyAdapter implements JsonSerializer<BaseProperty<?>
         Class<? extends BaseProperty<?>> clazz = PropertyRegistry.get().get(id);
 
         if (clazz == null) {
-            throw new JsonParseException("Unknown property id: " + id);
+            return null;
         }
 
         return context.deserialize(obj, clazz);

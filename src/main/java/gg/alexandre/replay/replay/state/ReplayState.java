@@ -87,6 +87,10 @@ public class ReplayState {
             try {
                 String json = Files.readString(path);
                 timeline = gson.fromJson(json, TimelineState.class);
+
+                timeline.getProperties().entrySet().removeIf(
+                        entry -> entry.getValue() == null
+                );
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
