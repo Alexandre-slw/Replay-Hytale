@@ -596,7 +596,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         if (state.stage.isPlaying && !state.ui.controlGame) {
             for (BaseProperty<?> property : state.timeline.getProperties().values()) {
-                property.handle(state, state.currentTick);
+                property.handle(state, (int) state.targetTick);
             }
 
             if (move) {
@@ -650,7 +650,9 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         Vector3d playerPosition = new Vector3d(state.position.x, state.position.y, state.position.z);
 
-        state.overlay.renderTo(playerRef, positions, lines, playerPosition, cameraProperty.getValue(state.currentTick));
+        state.overlay.renderTo(
+                playerRef, positions, lines, playerPosition, cameraProperty.getValue((int) state.targetTick)
+        );
     }
 
     private void handleTimeDilation(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler, boolean move) {
