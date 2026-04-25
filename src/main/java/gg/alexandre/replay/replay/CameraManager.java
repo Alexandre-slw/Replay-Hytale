@@ -32,7 +32,9 @@ public class CameraManager {
                     state.edit.cameraPosition.x(), state.edit.cameraPosition.y(), state.edit.cameraPosition.z()
             );
             Vector3f rotation = new Vector3f(
-                    (float) state.edit.cameraPosition.yaw(), (float) state.edit.cameraPosition.pitch(), 0
+                    (float) state.edit.cameraPosition.yaw(),
+                    (float) state.edit.cameraPosition.pitch(),
+                    (float) Math.toRadians(-state.edit.roll)
             );
 
             PacketHandler packetHandler = playerRef.getPacketHandler();

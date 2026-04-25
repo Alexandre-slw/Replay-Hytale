@@ -598,6 +598,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
 
         state.edit.speed = 1.0;
+        state.edit.roll = 0.0;
 
         state.edit.cameraPosition = new Position(
                 state.position.x,
