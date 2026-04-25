@@ -1,5 +1,6 @@
 package gg.alexandre.replay.commands;
 
+import com.hypixel.hytale.common.semver.Semver;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
@@ -10,9 +11,11 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.ui.ReplayUI;
+import gg.alexandre.replay.util.UpdateUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.awt.*;
 import java.util.concurrent.CompletableFuture;
 
 public class ReplayCommand extends AbstractCommand {
@@ -33,6 +36,18 @@ public class ReplayCommand extends AbstractCommand {
             context.sendMessage(Message.translation("replay.commandCanOnlyBeUsedByPlayers"));
             return CompletableFuture.completedFuture(null);
         }
+
+        Semver version = ReplayPlugin.get().getManifest().getVersion();
+        UpdateUtil.getUpdateAsync(version).thenAccept(update -> {
+            if (update.isEmpty()) {
+                return;
+            }
+
+            context.sendMessage(Message.join(
+                    Message.translation("replay.updateAvailableCurseForge"),
+                    Message.raw(" v" + update.get())
+            ).color(Color.GREEN));
+        });
 
         Player player = context.senderAs(Player.class);
 
