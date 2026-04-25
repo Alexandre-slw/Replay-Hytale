@@ -556,7 +556,9 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 return;
             } else {
                 int processedPackets = 0;
-                while (canProcessPackets(state) && state.file.read((int) state.targetTick) && processedPackets < 400) {
+                while (canProcessPackets(state) &&
+                       state.file.read(!state.stage.restoredViewRadius ? Integer.MAX_VALUE : (int) state.targetTick) &&
+                       processedPackets < 400) {
                     ReplayPacket replayPacket = state.file.consumePacket();
                     replayPacket.handle(packetHandler, state);
                     processedPackets++;
@@ -582,6 +584,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
     private void tickEditor(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef, boolean move) {
         if (state.timeline.getLastSaved().plus(5, ChronoUnit.MINUTES).isBefore(Instant.now())) {
             state.timeline.save(state.file.getMetadata().uuid, state.selectedTimeline);
+        }
+
+        if (!state.stage.sentJoinWorld || !canProcessPackets(state)) {
+            return;
         }
 
         state.edit.speed = 1.0;
