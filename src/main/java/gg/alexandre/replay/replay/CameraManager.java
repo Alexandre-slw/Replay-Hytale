@@ -44,7 +44,7 @@ public class CameraManager {
                 setDefaultCamera(packetHandler);
                 teleportPlayer(packetHandler, position, rotation);
             } else if (!wasFollowingPath && followingPath) {
-                teleportPlayer(packetHandler, new Vector3d(0, -1000, 0), Vector3f.ZERO);
+                teleportPlayer(packetHandler, new Vector3d(0, -1000, 0), rotation);
             }
 
             if (followingPath) {
