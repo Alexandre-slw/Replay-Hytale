@@ -34,8 +34,8 @@ public class PlaytailRenderer extends BaseRenderer<EditorUI.Data> {
         int x = (int) Math.round(width * (state.ui.draggingTick / (double) state.file.getMetadata().ticks));
 
         Anchor anchor = new Anchor();
-        anchor.setLeft(Value.of(Math.min(Math.max(0, x), width) - width - 31));
-        anchor.setTop(Value.of(40));
+        anchor.setLeft(Value.of(x - 1));
+        anchor.setTop(Value.of(0));
         anchor.setWidth(Value.of(state.ui.dragging ? 0 : 2));
         uiCommandBuilder.setObject("#Playtail.Anchor", anchor);
     }

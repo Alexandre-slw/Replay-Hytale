@@ -367,18 +367,23 @@ Group {
               );
             }
 
-            Group #Keyframes {
-              LayoutMode: Top;
+            Group {
+              LayoutMode: Full;
 
-              // Rendered
-            }
-          }
+              Group #Keyframes {
+                LayoutMode: Top;
 
-          Group #PlaytailLayout {
-            LayoutMode: Full;
-            
-            Group #Playtail {
-              Background: #992f2b(0.8);
+                // Rendered
+              }
+
+              Group #PlaytailLayout {
+                LayoutMode: Full;
+                Padding: (Top: -4, Bottom: -20);
+
+                Group #Playtail {
+                  Background: #992f2b(0.8);
+                }
+              }
             }
           }
         }

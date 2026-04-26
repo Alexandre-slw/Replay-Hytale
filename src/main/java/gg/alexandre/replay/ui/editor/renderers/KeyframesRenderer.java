@@ -36,9 +36,9 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
 
         StringBuilder keyframes = new StringBuilder();
 
-        keyframes.append("""
+        keyframes.append(String.format("""
                 @Track = Group {
-                  Anchor: (Height: 30, Top: 5);
+                  Anchor: (Height: 30, Top: 5, Width: %d, Left: 0);
                 
                   LayoutMode: Full;
                   Background: #0a0b0c(0.9);
@@ -63,7 +63,7 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
                     )
                   );
                 };
-                """);
+                """, width + 7));
 
         int ticks = state.file.getMetadata().ticks;
         for (BaseProperty<?> property : state.timeline.getProperties().values()) {
