@@ -4,6 +4,7 @@ import com.hypixel.hytale.math.matrix.Matrix4d;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.protocol.DebugFlags;
 import com.hypixel.hytale.protocol.DebugShape;
+import com.hypixel.hytale.protocol.ToClientPacket;
 import com.hypixel.hytale.protocol.Vector3f;
 import com.hypixel.hytale.protocol.packets.player.ClearDebugShapes;
 import com.hypixel.hytale.protocol.packets.player.DisplayDebug;
@@ -72,10 +73,6 @@ public class CameraPathDebugOverlay {
         return lastRenderTime.plusMillis(500).isBefore(Instant.now());
     }
 
-    public void scheduleRender() {
-        lastRenderTime = Instant.MIN;
-    }
-
     public void renderTo(@Nonnull PlayerRef playerRef, List<Position> positions, List<Vector3d> lines,
                          @Nonnull Vector3d playerPosition, @Nullable Position cameraPosition) {
         lastRenderTime = Instant.now();
@@ -94,7 +91,11 @@ public class CameraPathDebugOverlay {
         for (int i = 0; i + 1 < lines.size(); i++) {
             Vector3d start = lines.get(i);
             Vector3d end = lines.get(i + 1);
-            playerRef.getPacketHandler().writeNoCache(makeLine(start, end, lineColor, lineThickness, playerPosition));
+
+            ToClientPacket packet = makeLine(start, end, lineColor, lineThickness, playerPosition);
+            if (packet != null) {
+                playerRef.getPacketHandler().writeNoCache(packet);
+            }
         }
 
         if (cameraPosition != null) {
@@ -137,7 +138,7 @@ public class CameraPathDebugOverlay {
         );
     }
 
-    @Nonnull
+    @Nullable
     private DisplayDebug makeLine(@Nonnull Vector3d start, @Nonnull Vector3d end, @Nonnull Vector3f color,
                                   double thickness, @Nonnull Vector3d playerPosition) {
         double dirX = end.x - start.x;
