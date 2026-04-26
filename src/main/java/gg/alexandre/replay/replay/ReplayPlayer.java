@@ -566,10 +566,12 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                 clearWorld(playerRef, state);
                 return;
             } else {
+                boolean forceProcess = !state.stage.restoredViewRadius;
+
                 int processedPackets = 0;
                 while (canProcessPackets(state) &&
-                       state.file.read(!state.stage.restoredViewRadius ? Integer.MAX_VALUE : (int) state.targetTick) &&
-                       processedPackets < 400) {
+                       state.file.read(forceProcess ? Integer.MAX_VALUE : (int) state.targetTick) &&
+                       processedPackets < (forceProcess ? 10 : 400)) {
                     ReplayPacket replayPacket = state.file.consumePacket();
                     replayPacket.handle(packetHandler, state);
                     processedPackets++;
