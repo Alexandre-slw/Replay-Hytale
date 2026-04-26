@@ -202,12 +202,12 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
                 return;
             }
 
+            data.file.write(toReplayPacket(packet), data.tick);
+
             if (packet instanceof JoinWorld && handler instanceof GamePacketHandler gamePacketHandler) {
                 gamePacketHandler.handle(new ClientReady(true, false));
                 gamePacketHandler.handle(new ClientReady(false, true));
             }
-
-            data.file.write(toReplayPacket(packet), data.tick);
         });
     }
 
