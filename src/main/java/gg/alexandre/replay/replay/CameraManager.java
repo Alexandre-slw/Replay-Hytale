@@ -2,7 +2,10 @@ package gg.alexandre.replay.replay;
 
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
-import com.hypixel.hytale.protocol.*;
+import com.hypixel.hytale.protocol.ClientCameraView;
+import com.hypixel.hytale.protocol.ModelTransform;
+import com.hypixel.hytale.protocol.SavedMovementStates;
+import com.hypixel.hytale.protocol.ServerCameraSettings;
 import com.hypixel.hytale.protocol.packets.camera.SetServerCamera;
 import com.hypixel.hytale.protocol.packets.player.ClientTeleport;
 import com.hypixel.hytale.protocol.packets.player.SetMovementStates;
@@ -19,14 +22,22 @@ public class CameraManager {
     private static final AtomicInteger NEXT_TELEPORT_ID = new AtomicInteger();
 
     private boolean followingPath;
+    private boolean hasFov;
+    private int offset;
 
     public void moveCamera(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef, @Nonnull ReplayPlayer player,
                            boolean force) {
         player.bypassFilter(state, () -> {
-            boolean hasFov = state.edit.fov != 1.0;
+            boolean hadFov = hasFov;
+            hasFov = state.edit.fov != 1.0;
 
             boolean wasFollowingPath = followingPath;
             followingPath = (state.stage.isPlaying && !state.ui.controlGame) || force;
+
+            boolean startedFollowing = !wasFollowingPath && followingPath;
+            boolean stoppedFollowing = wasFollowingPath && !followingPath;
+            boolean fovEnabled = !hadFov && hasFov;
+            boolean fovDisabled = hadFov && !hasFov;
 
             Vector3d position = new Vector3d(
                     state.edit.cameraPosition.x(), state.edit.cameraPosition.y(), state.edit.cameraPosition.z()
@@ -40,34 +51,27 @@ public class CameraManager {
             PacketHandler packetHandler = playerRef.getPacketHandler();
             packetHandler.writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
 
-            if (wasFollowingPath && !followingPath) {
+            if (stoppedFollowing || fovEnabled) {
                 setDefaultCamera(packetHandler);
                 teleportPlayer(packetHandler, position, rotation);
-            } else if (!wasFollowingPath && followingPath) {
-                teleportPlayer(packetHandler, new Vector3d(0, -1000, 0), rotation);
+            } else if ((startedFollowing || fovDisabled) && followingPath && !hasFov) {
+                offset = 1000;
+
+                ServerCameraSettings settings = new ServerCameraSettings();
+
+                settings.isFirstPerson = false;
+                settings.positionOffset = PositionUtil.toPositionPacket(new Vector3d(0, offset + 1.6, 0));
+                settings.sendMouseMotion = false;
+                settings.rotationLerpSpeed = 0.5f;
+                settings.positionLerpSpeed = 0.5f;
+
+                packetHandler.writeNoCache(new SetServerCamera(
+                        ClientCameraView.Custom, true, settings
+                ));
             }
 
             if (followingPath) {
-                if (hasFov) {
-                    // The current implementation of FOV does not work when using Custom Server Camera
-                    setDefaultCamera(packetHandler);
-                    teleportPlayer(packetHandler, position, rotation);
-                } else {
-                    ServerCameraSettings settings = new ServerCameraSettings();
-
-                    settings.isFirstPerson = false;
-                    settings.position = PositionUtil.toPositionPacket(new Vector3d(position).add(0, 1.6, 0));
-                    settings.positionType = PositionType.Custom;
-                    settings.rotation = PositionUtil.toDirectionPacket(rotation);
-                    settings.rotationType = RotationType.Custom;
-                    settings.sendMouseMotion = false;
-                    settings.rotationLerpSpeed = 1;
-                    settings.positionLerpSpeed = 1;
-
-                    packetHandler.writeNoCache(new SetServerCamera(
-                            ClientCameraView.Custom, true, settings
-                    ));
-                }
+                teleportPlayer(packetHandler, new Vector3d(0, -offset, 0).add(position), rotation);
 
                 state.position.x = position.x;
                 state.position.y = position.y;
@@ -103,6 +107,7 @@ public class CameraManager {
 
     public void setDefaultCamera(@Nonnull PacketHandler handler) {
         handler.writeNoCache(new SetServerCamera(ClientCameraView.FirstPerson, true, null));
+        offset = 0;
     }
 
     public boolean isFollowingPath() {
