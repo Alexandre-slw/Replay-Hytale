@@ -23,7 +23,7 @@ public class CameraManager {
     public void moveCamera(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef, @Nonnull ReplayPlayer player,
                            boolean force) {
         player.bypassFilter(state, () -> {
-            boolean hasFov = state.timeline.getProperties().containsKey("fov");
+            boolean hasFov = state.edit.fov != 1.0;
 
             boolean wasFollowingPath = followingPath;
             followingPath = (state.stage.isPlaying && !state.ui.controlGame) || force;
