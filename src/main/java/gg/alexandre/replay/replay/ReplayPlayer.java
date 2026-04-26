@@ -493,6 +493,11 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
         state.stage.clearedWorld = false;
         state.currentTick = 0;
+        state.stage.sentJoinWorld = false;
+        state.stage.clientReady = false;
+        state.clientId = 0;
+
+        state.stage.isPlaying = false;
     }
 
     public void stop(@Nonnull PlayerRef playerRef) {

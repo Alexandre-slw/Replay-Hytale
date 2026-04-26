@@ -184,16 +184,16 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     }
 
     private void onPlayheadRelease(@Nonnull UIEventContext<Data> context) {
+        if (needToResume) {
+            state.stage.isPlaying = true;
+            needToResume = false;
+        }
+
         if (context.data.playhead < state.targetTick) {
             player.restart(state);
         }
 
         state.targetTick = context.data.playhead;
-
-        if (needToResume) {
-            state.stage.isPlaying = true;
-            needToResume = false;
-        }
 
         state.ui.draggingTick = context.data.playhead;
         state.ui.dragging = false;

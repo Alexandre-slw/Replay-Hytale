@@ -125,7 +125,8 @@ public final class FovPacketUtil {
         setup = true;
     }
 
-    private FluidFX buildFluidFx(String id, float fovModifier) {
+    @Nonnull
+    private FluidFX buildFluidFx(@Nonnull String id, float fovModifier) {
         FluidFX fx = new FluidFX();
         fx.id = id;
         fx.shader = ShaderType.None;
@@ -154,7 +155,8 @@ public final class FovPacketUtil {
         return fx;
     }
 
-    private Fluid buildInvisibleFluid(String id, int fluidFxIndex) {
+    @Nonnull
+    private Fluid buildInvisibleFluid(@Nonnull String id, int fluidFxIndex) {
         Fluid fluid = new Fluid();
         fluid.id = id;
         fluid.maxFluidLevel = 15;
@@ -172,6 +174,7 @@ public final class FovPacketUtil {
         return fluid;
     }
 
+    @Nonnull
     private Set<BlockCell> cellsFor(Vector3d playerPosition) {
         int x = (int) Math.floor(playerPosition.x);
         int y = (int) Math.floor(playerPosition.y);
@@ -193,7 +196,8 @@ public final class FovPacketUtil {
         return cells;
     }
 
-    private FluidState getActualFluidState(BlockCell cell) {
+    @Nonnull
+    private FluidState getActualFluidState(@Nonnull BlockCell cell) {
         if (cell.y < 0 || cell.y >= 320) {
             return FluidState.EMPTY;
         }
@@ -212,7 +216,7 @@ public final class FovPacketUtil {
         return new FluidState(fluidId, level);
     }
 
-    private void sendFluidStatePackets(Map<BlockCell, FluidState> cells) {
+    private void sendFluidStatePackets(@Nonnull Map<BlockCell, FluidState> cells) {
         Map<SectionKey, List<SetFluidCmd>> grouped = new HashMap<>();
 
         for (Map.Entry<BlockCell, FluidState> entry : cells.entrySet()) {
