@@ -542,11 +542,12 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             }
 
             Ref<EntityStore> ref = playerRef.getReference();
-            if (ref == null) {
+            // TODO: use tick on player directly using a component
+            if (ref == null || ref.getStore() != store) {
                 continue;
             }
 
-            World world = ref.getStore().getExternalData().getWorld();
+            World world = store.getExternalData().getWorld();
             world.execute(() -> tick(state, playerRef, world));
         }
     }

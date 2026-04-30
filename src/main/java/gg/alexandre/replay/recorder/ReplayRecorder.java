@@ -172,6 +172,16 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
     @Override
     public void tick(float v, int i, @Nonnull Store<EntityStore> store) {
         for (RecordingData data : recordings.values()) {
+            if (data.watcher == null) {
+                continue;
+            }
+
+            // TODO: use tick on player directly using a component
+            Ref<EntityStore> ref = data.watcher.getReference();
+            if (ref == null || ref.getStore() != store) {
+                continue;
+            }
+
             data.tick++;
         }
     }
