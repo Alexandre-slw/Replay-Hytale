@@ -2,10 +2,7 @@ package gg.alexandre.replay.replay;
 
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
-import com.hypixel.hytale.protocol.ClientCameraView;
-import com.hypixel.hytale.protocol.ModelTransform;
-import com.hypixel.hytale.protocol.SavedMovementStates;
-import com.hypixel.hytale.protocol.ServerCameraSettings;
+import com.hypixel.hytale.protocol.*;
 import com.hypixel.hytale.protocol.packets.camera.SetServerCamera;
 import com.hypixel.hytale.protocol.packets.player.ClientTeleport;
 import com.hypixel.hytale.protocol.packets.player.SetMovementStates;
@@ -24,6 +21,8 @@ public class CameraManager {
     private boolean followingPath;
     private boolean hasFov;
     private int offset;
+
+    private Vector3f lastRotation = Vector3f.ZERO;
 
     public void moveCamera(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef, @Nonnull ReplayPlayer player,
                            boolean force) {
@@ -56,22 +55,11 @@ public class CameraManager {
                 teleportPlayer(packetHandler, position, rotation);
             } else if ((startedFollowing || fovDisabled) && followingPath && !hasFov) {
                 offset = 1000;
-
-                ServerCameraSettings settings = new ServerCameraSettings();
-
-                settings.isFirstPerson = false;
-                settings.positionOffset = PositionUtil.toPositionPacket(new Vector3d(0, offset + 1.6, 0));
-                settings.sendMouseMotion = false;
-                settings.rotationLerpSpeed = 0.5f;
-                settings.positionLerpSpeed = 0.5f;
-
-                packetHandler.writeNoCache(new SetServerCamera(
-                        ClientCameraView.Custom, true, settings
-                ));
+                lastRotation = rotation;
             }
 
             if (followingPath) {
-                teleportPlayer(packetHandler, new Vector3d(0, -offset, 0).add(position), rotation);
+                teleportPlayer(packetHandler, new Vector3d(0, -offset, 0).add(position), lastRotation);
 
                 state.position.x = position.x;
                 state.position.y = position.y;
@@ -84,6 +72,24 @@ public class CameraManager {
                 state.position.headPitch = rotation.getPitch();
                 state.position.headYaw = rotation.getYaw();
                 state.position.headRoll = rotation.getRoll();
+
+                if (offset != 0) {
+                    ServerCameraSettings settings = new ServerCameraSettings();
+
+                    settings.isFirstPerson = false;
+                    settings.positionOffset = PositionUtil.toPositionPacket(new Vector3d(0, offset + 1.6, 0));
+                    settings.rotation = PositionUtil.toDirectionPacket(rotation);
+                    settings.rotationType = RotationType.Custom;
+                    settings.sendMouseMotion = false;
+                    settings.rotationLerpSpeed = 0.8f;
+                    settings.positionLerpSpeed = 0.8f;
+                    settings.skipCharacterPhysics = true;
+                    settings.allowPitchControls = false;
+
+                    packetHandler.writeNoCache(new SetServerCamera(
+                            ClientCameraView.Custom, true, settings
+                    ));
+                }
             }
         });
     }
