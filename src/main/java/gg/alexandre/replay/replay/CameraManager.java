@@ -59,7 +59,12 @@ public class CameraManager {
             }
 
             if (followingPath) {
-                teleportPlayer(packetHandler, new Vector3d(0, -offset, 0).add(position), lastRotation);
+                boolean useSmootherRotation = offset != 0;
+                teleportPlayer(
+                        packetHandler,
+                        new Vector3d(0, -offset, 0).add(position),
+                        useSmootherRotation ? lastRotation : rotation
+                );
 
                 state.position.x = position.x;
                 state.position.y = position.y;
@@ -73,7 +78,7 @@ public class CameraManager {
                 state.position.headYaw = rotation.getYaw();
                 state.position.headRoll = rotation.getRoll();
 
-                if (offset != 0) {
+                if (useSmootherRotation) {
                     ServerCameraSettings settings = new ServerCameraSettings();
 
                     settings.isFirstPerson = false;
