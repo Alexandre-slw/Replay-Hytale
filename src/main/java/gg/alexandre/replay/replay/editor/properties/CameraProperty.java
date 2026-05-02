@@ -108,7 +108,7 @@ public class CameraProperty extends BaseProperty<Position> {
     public void onClick(@Nonnull ReplayPlayer player, @Nonnull ReplayState state,
                         @Nonnull Player playerComponent, @Nonnull UIEventContext<?> context, int tick) {
         handle(state, tick);
-        state.cameraManager.moveCamera(state, context.playerRef, player, true);
+        state.cameraManager.moveCamera(state, context.playerRef, true);
     }
 
     @Override

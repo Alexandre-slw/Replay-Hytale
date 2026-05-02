@@ -221,6 +221,29 @@ Group {
               )
             );
           }
+
+          Button #ExportCutScene {
+            Anchor: (Width: 16, Height: 16, Left: 10);
+            Padding: (Vertical: 2);
+            TooltipText: %replay.exportAsCutScene;
+            Style: (
+              Default: (
+                Background: (TexturePath: "Assets/ExportCutScene.png"),
+              ),
+              Hovered: (
+                Background: (TexturePath: "Assets/ExportCutSceneHovered.png"),
+              ),
+              Pressed: (
+                Background: (TexturePath: "Assets/ExportCutScenePressed.png"),
+              ),
+              Disabled: (
+                Background: (TexturePath: "Assets/ExportCutSceneDisabled.png"),
+              ),
+              Sounds: (
+                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+              )
+            );
+          }
         }
 
         Group {

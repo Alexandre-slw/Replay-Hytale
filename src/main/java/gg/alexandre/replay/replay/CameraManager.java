@@ -24,79 +24,89 @@ public class CameraManager {
 
     private Rotation3f lastRotation = new Rotation3f();
 
-    public void moveCamera(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef, @Nonnull ReplayPlayer player,
-                           boolean force) {
-        player.bypassFilter(state, () -> {
-            boolean hadFov = hasFov;
-            hasFov = state.edit.fov != 1.0;
+    private boolean cutScene = false;
 
-            boolean wasFollowingPath = followingPath;
-            followingPath = (state.stage.isPlaying && !state.ui.controlGame) || force;
+    public void moveCamera(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef, boolean force) {
+        boolean hadFov = hasFov;
+        hasFov = state.edit.fov != 1.0;
 
-            boolean startedFollowing = !wasFollowingPath && followingPath;
-            boolean stoppedFollowing = wasFollowingPath && !followingPath;
-            boolean fovEnabled = !hadFov && hasFov;
-            boolean fovDisabled = hadFov && !hasFov;
+        boolean wasFollowingPath = followingPath;
+        followingPath = (state.stage.isPlaying && !state.ui.controlGame) || force;
 
-            Vector3d position = new Vector3d(
-                    state.edit.cameraPosition.x(), state.edit.cameraPosition.y(), state.edit.cameraPosition.z()
-            );
-            Rotation3f rotation = new Rotation3f(
-                    (float) state.edit.cameraPosition.yaw(),
-                    (float) state.edit.cameraPosition.pitch(),
-                    (float) Math.toRadians(-state.edit.roll)
-            );
+        boolean startedFollowing = !wasFollowingPath && followingPath;
+        boolean stoppedFollowing = wasFollowingPath && !followingPath;
+        boolean fovEnabled = !hadFov && hasFov;
+        boolean fovDisabled = hadFov && !hasFov;
 
-            PacketHandler packetHandler = playerRef.getPacketHandler();
+        Vector3d position = new Vector3d(
+                state.edit.cameraPosition.x(), state.edit.cameraPosition.y(), state.edit.cameraPosition.z()
+        );
+        Rotation3f rotation = new Rotation3f(
+                (float) state.edit.cameraPosition.yaw(),
+                (float) state.edit.cameraPosition.pitch(),
+                (float) Math.toRadians(-state.edit.roll)
+        );
+
+        PacketHandler packetHandler = playerRef.getPacketHandler();
+        if (!cutScene) {
             packetHandler.writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
+        }
 
-            if (stoppedFollowing || fovEnabled) {
-                setDefaultCamera(packetHandler);
-                teleportPlayer(packetHandler, position, rotation);
-            } else if ((startedFollowing || fovDisabled) && followingPath && !hasFov) {
-                offset = 1000;
-                lastRotation = rotation;
-            }
+        if (stoppedFollowing || fovEnabled) {
+            setDefaultCamera(packetHandler);
+            teleportPlayer(packetHandler, position, rotation);
+        } else if ((startedFollowing || fovDisabled) && followingPath && !hasFov) {
+            offset = 1000;
+            lastRotation = rotation;
+        }
 
-            if (followingPath) {
-                boolean useSmootherRotation = offset != 0;
+        if (followingPath) {
+            boolean useSmootherRotation = offset != 0;
+            if (!cutScene) {
                 teleportPlayer(
                         packetHandler,
                         new Vector3d(0, -offset, 0).add(position),
                         useSmootherRotation ? lastRotation : rotation
                 );
-
-                state.position.x = position.x;
-                state.position.y = position.y;
-                state.position.z = position.z;
-
-                state.position.bodyPitch = 0;
-                state.position.bodyRoll = rotation.yaw();
-                state.position.bodyYaw = 0;
-
-                state.position.headPitch = rotation.pitch();
-                state.position.headYaw = rotation.yaw();
-                state.position.headRoll = rotation.roll();
-
-                if (useSmootherRotation) {
-                    ServerCameraSettings settings = new ServerCameraSettings();
-
-                    settings.isFirstPerson = false;
-                    settings.positionOffset = PositionUtil.toPositionPacket(new Vector3d(0, offset + 1.6, 0));
-                    settings.rotation = PositionUtil.toDirectionPacket(rotation);
-                    settings.rotationType = RotationType.Custom;
-                    settings.sendMouseMotion = false;
-                    settings.rotationLerpSpeed = 0.8f;
-                    settings.positionLerpSpeed = 0.8f;
-                    settings.skipCharacterPhysics = true;
-                    settings.allowPitchControls = false;
-
-                    packetHandler.writeNoCache(new SetServerCamera(
-                            ClientCameraView.Custom, true, settings
-                    ));
-                }
             }
-        });
+
+            state.position.x = position.x;
+            state.position.y = position.y;
+            state.position.z = position.z;
+
+            state.position.bodyPitch = 0;
+            state.position.bodyRoll = rotation.yaw();
+            state.position.bodyYaw = 0;
+
+            state.position.headPitch = rotation.pitch();
+            state.position.headYaw = rotation.yaw();
+            state.position.headRoll = rotation.roll();
+
+            if (useSmootherRotation) {
+                ServerCameraSettings settings = new ServerCameraSettings();
+
+                settings.isFirstPerson = false;
+
+                if (cutScene) {
+                    settings.position = PositionUtil.toPositionPacket(position);
+                    settings.positionType = PositionType.Custom;
+                } else {
+                    settings.positionOffset = PositionUtil.toPositionPacket(new Vector3d(0, offset + 1.6, 0));
+                }
+
+                settings.rotation = PositionUtil.toDirectionPacket(rotation);
+                settings.rotationType = RotationType.Custom;
+                settings.sendMouseMotion = false;
+                settings.rotationLerpSpeed = 0.8f;
+                settings.positionLerpSpeed = 0.8f;
+                settings.skipCharacterPhysics = true;
+                settings.allowPitchControls = false;
+
+                packetHandler.writeNoCache(new SetServerCamera(
+                        ClientCameraView.Custom, true, settings
+                ));
+            }
+        }
     }
 
     private void teleportPlayer(@Nonnull PacketHandler handler, @Nonnull Vector3d position,
@@ -117,11 +127,15 @@ public class CameraManager {
     }
 
     public void setDefaultCamera(@Nonnull PacketHandler handler) {
-        handler.writeNoCache(new SetServerCamera(ClientCameraView.FirstPerson, true, null));
+        handler.writeNoCache(new SetServerCamera(ClientCameraView.FirstPerson, !cutScene, null));
         offset = 0;
     }
 
     public boolean isFollowingPath() {
         return followingPath;
+    }
+
+    public void setCutScene(boolean cutScene) {
+        this.cutScene = cutScene;
     }
 }

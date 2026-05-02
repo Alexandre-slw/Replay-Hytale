@@ -11,11 +11,13 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import gg.alexandre.replay.cutscene.CutSceneCodec;
 import gg.alexandre.replay.file.ReplayMetadata;
 import gg.alexandre.replay.replay.ReplayPlayer;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.BaseUI;
 import gg.alexandre.replay.ui.CloseUI;
+import gg.alexandre.replay.ui.CopyUI;
 import gg.alexandre.replay.ui.HideUI;
 import gg.alexandre.replay.ui.codec.CodecConstructor;
 import gg.alexandre.replay.ui.codec.UIKey;
@@ -167,6 +169,11 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
                 "#Help",
                 this::onHelp
         );
+
+        eventHandler.handle(CustomUIEventBindingType.Activating,
+                "#ExportCutScene",
+                this::onExportCutScene
+        );
     }
 
     private void onPlayhead(@Nonnull UIEventContext<Data> context) {
@@ -258,6 +265,16 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     private void onHelp(@Nonnull UIEventContext<Data> context) {
         helpVisible = !helpVisible;
         context.uiCommandBuilder.set("#HelpPanel.Visible", helpVisible);
+    }
+
+    private void onExportCutScene(@Nonnull UIEventContext<Data> context) {
+        context.store.getExternalData().getWorld().execute(() -> {
+            Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
+            assert playerComponent != null;
+            playerComponent.getPageManager().openCustomPage(
+                    context.ref, context.store, new CopyUI(playerRef, CutSceneCodec.toData(state.timeline))
+            );
+        });
     }
 
     private void onClose(@Nonnull UIEventContext<Data> context) {

@@ -548,7 +548,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             }
 
             World world = store.getExternalData().getWorld();
-            world.execute(() -> tick(state, playerRef, world));
+            tick(state, playerRef, world);
         }
     }
 
@@ -628,7 +628,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
 
         if (move) {
-            state.cameraManager.moveCamera(state, playerRef, this, false);
+            state.cameraManager.moveCamera(state, playerRef, false);
         }
 
         handleTimeDilation(state, playerRef.getPacketHandler(), move);

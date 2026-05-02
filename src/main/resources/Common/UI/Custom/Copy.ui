@@ -1,0 +1,44 @@
+$C = "Common.ui";
+
+Group {
+  LayoutMode: MiddleCenter;
+  
+  $C.@DecoratedContainer {
+    @Title = %replay.cutSceneData;
+    @Text = %replay.copyCutSceneMessage;
+    @SaveText = %replay.close;
+
+    Anchor: (Width: 800);
+
+    #Title {
+      $C.@Title { @Text = @Title; }
+    }
+
+    #Content {
+      LayoutMode: Top;
+      Padding: (Full: 30);
+
+      Label {
+        Style: (FontSize: 20);
+        Text: @Text;
+      }
+
+      TextField #Input {
+        Background: $C.@InputBoxBackground;
+        Anchor: (Top: 5, Left: 0, Right: 0, Height: 50);
+        Padding: (Full: 10);
+        IsReadOnly: true;
+      }
+
+      Group {
+        LayoutMode: Left;
+        Anchor: (Top: 30);
+
+        $C.@TextButton #Save {
+          @Text = @SaveText;
+          FlexWeight: 1;
+        }
+      }
+    }
+  }
+}

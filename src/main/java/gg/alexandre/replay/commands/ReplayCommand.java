@@ -59,7 +59,7 @@ public class ReplayCommand extends AbstractCommand {
             Player player = store.getComponent(ref, Player.getComponentType());
             assert player != null;
 
-            if (ReplayPlugin.get().getPlayer().isPlaying(playerRef)) {
+            if (ReplayPlugin.get().getReplayPlayer().isPlaying(playerRef)) {
                 context.sendMessage(Message.translation("replay.cannotDoThatWhileReplaying"));
                 return;
             }

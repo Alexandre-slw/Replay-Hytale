@@ -10,6 +10,7 @@ import gg.alexandre.replay.util.CameraPathDebugOverlay;
 import gg.alexandre.replay.util.FovPacketUtil;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,6 +20,7 @@ import java.util.stream.Stream;
 public class ReplayState {
 
     public Path replayPath;
+    @Nullable
     public ReplayInputFile file;
 
     public int currentTick;
@@ -52,6 +54,10 @@ public class ReplayState {
     public List<String> timelines = new ArrayList<>();
 
     public void loadTimelines() throws IOException {
+        if (file == null) {
+            return;
+        }
+
         Path dir = TimelineState.EDITS_DIRECTORY.resolve(file.getMetadata().uuid.toString());
         List<String> timelines;
 
@@ -77,6 +83,10 @@ public class ReplayState {
     }
 
     public void loadTimeline(@Nonnull String name) {
+        if (file == null) {
+            return;
+        }
+
         if (selectedTimeline != null) {
             timeline.save(file.getMetadata().uuid, selectedTimeline);
         }
