@@ -113,21 +113,39 @@ public class CameraPathDebugOverlay {
     }
 
     @Nonnull
+    private static Vector3d directionFromYawPitch(double yaw, double pitch) {
+        return new Vector3d(
+                Math.sin(yaw) * Math.cos(pitch),
+                -Math.sin(pitch),
+                Math.cos(yaw) * Math.cos(pitch)
+        ).normalize();
+    }
+
+    @Nonnull
     private DisplayDebug makeCone(@Nonnull Position position, @Nonnull Vector3f color, double radius,
                                   @Nonnull Vector3d playerPosition) {
-        Matrix4d tmp = new Matrix4d();
+        Vector3d direction = directionFromYawPitch(position.pitch(), position.yaw());
+
         Matrix4d matrix = new Matrix4d();
         matrix.identity();
 
         matrix.translate(position.x(), position.y() + 1.8, position.z());
-        matrix.rotate(-position.pitch(), 0.0, 1.0, 0.0, tmp);
-        matrix.rotate((Math.PI / 2.0) - position.yaw(), 1.0, 0.0, 0.0, tmp);
-        matrix.rotate(Math.PI, 1.0, 0.0, 0.0, tmp);
+
+        double angleY = Math.atan2(direction.z, direction.x);
+        matrix.rotate(-(angleY + (Math.PI / 2.0)), 0.0, 1.0, 0.0);
+
+        double angleX = Math.atan2(
+                Math.sqrt(direction.x * direction.x + direction.z * direction.z),
+                direction.y
+        );
+        matrix.rotate(-angleX, 1.0, 0.0, 0.0);
+
         matrix.scale(radius, radius, radius);
 
         float distanceOpacity = getDistanceOpacity(playerPosition, new Vector3d(
                 position.x(), position.y(), position.z()
         ));
+
         return new DisplayDebug(
                 DebugShape.Cone,
                 Matrix4dUtil.asFloatData(matrix),
@@ -151,16 +169,14 @@ public class CameraPathDebugOverlay {
             return null;
         }
 
-        Matrix4d tmp = new Matrix4d();
         Matrix4d matrix = new Matrix4d();
-        matrix.identity();
         matrix.translate(start.x, start.y + 1.8, start.z);
 
         double angleY = Math.atan2(dirZ, dirX);
-        matrix.rotate(angleY + (Math.PI / 2.0), 0.0, 1.0, 0.0, tmp);
+        matrix.rotate(-(angleY + (Math.PI / 2.0)), 0.0, 1.0, 0.0);
 
         double angleX = Math.atan2(Math.sqrt(dirX * dirX + dirZ * dirZ), dirY);
-        matrix.rotate(angleX, 1.0, 0.0, 0.0, tmp);
+        matrix.rotate(-angleX, 1.0, 0.0, 0.0);
 
         matrix.translate(0.0, length / 2.0, 0.0);
         matrix.scale(thickness, length, thickness);
