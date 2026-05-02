@@ -49,15 +49,15 @@ public class ReplayCommand extends AbstractCommand {
             ).color(Color.GREEN));
         });
 
-        Player player = context.senderAs(Player.class);
+        PlayerRef playerRef = context.senderAs(PlayerRef.class);
 
-        Ref<EntityStore> ref = player.getReference();
+        Ref<EntityStore> ref = playerRef.getReference();
         assert ref != null;
         Store<EntityStore> store = ref.getStore();
 
         store.getExternalData().getWorld().execute(() -> {
-            PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
-            assert playerRef != null;
+            Player player = store.getComponent(ref, Player.getComponentType());
+            assert player != null;
 
             if (ReplayPlugin.get().getPlayer().isPlaying(playerRef)) {
                 context.sendMessage(Message.translation("replay.cannotDoThatWhileReplaying"));

@@ -13,6 +13,7 @@ import com.hypixel.hytale.server.core.io.PacketHandler;
 import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.replay.state.ReplayState;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
 import javax.annotation.Nonnull;
@@ -48,7 +49,9 @@ public class HytaleReplayPacket implements ReplayPacket {
             throw new ProtocolException("Unknown packet ID: " + packetId);
         }
 
-        Packet packet = PacketIO.readFramedPacketWithInfo(data, length, info, PacketStatsRecorder.NOOP);
+        Packet packet = PacketIO.readFramedPacketWithInfo(
+                data, length, ByteBufAllocator.DEFAULT, info, PacketStatsRecorder.NOOP
+        );
 
         if (packet instanceof JoinWorld) {
             state.stage.sentJoinWorld = true;

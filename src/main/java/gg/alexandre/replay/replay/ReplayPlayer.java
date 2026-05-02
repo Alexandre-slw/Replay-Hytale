@@ -7,8 +7,7 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
-import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
+import com.hypixel.hytale.math.vector.Rotation3f;
 import com.hypixel.hytale.protocol.*;
 import com.hypixel.hytale.protocol.packets.assets.UpdateBlockHitboxes;
 import com.hypixel.hytale.protocol.packets.assets.UpdateTranslations;
@@ -56,6 +55,7 @@ import gg.alexandre.replay.ui.manager.RealtimePageManager;
 import gg.alexandre.replay.util.FovPacketUtil;
 import gg.alexandre.replay.util.Position;
 import gg.alexandre.replay.util.PositionTracker;
+import org.joml.Vector3d;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -237,10 +237,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                                                 new Vector3d(pos.x(), pos.y(), pos.z())
                                         );
                                         transformUpdate.transform.bodyOrientation = PositionUtil.toDirectionPacket(
-                                                new Vector3f(0, (float) pos.pitch(), 0)
+                                                new Rotation3f(0, (float) pos.pitch(), 0)
                                         );
                                         transformUpdate.transform.lookOrientation = PositionUtil.toDirectionPacket(
-                                                new Vector3f((float) pos.yaw(), (float) pos.pitch(), 0)
+                                                new Rotation3f((float) pos.yaw(), (float) pos.pitch(), 0)
                                         );
 
                                         PositionTracker.onTransformUpdate(state, transformUpdate);
