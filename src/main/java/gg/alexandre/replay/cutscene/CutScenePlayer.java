@@ -132,6 +132,8 @@ public class CutScenePlayer extends BasePlayer {
         state.cameraManager.setDefaultCamera(playerRef.getPacketHandler());
         playerRef.getPacketHandler().writeNoCache(new SetTimeDilation(1));
 
+        state.overlay.clearImmediately(playerRef);
+
         stop(state);
     }
 
