@@ -3,9 +3,11 @@ package gg.alexandre.replay.cutscene;
 import com.google.gson.Gson;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.protocol.SavedMovementStates;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
 import com.hypixel.hytale.protocol.packets.player.ClientMovement;
 import com.hypixel.hytale.protocol.packets.player.ClientTeleport;
+import com.hypixel.hytale.protocol.packets.player.SetMovementStates;
 import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
@@ -181,8 +183,12 @@ public class CutScenePlayer extends BasePlayer {
                 state.position.headYaw
         );
 
-        for (BaseProperty<?> property : state.timeline.getProperties().values()) {
-            property.handle(state, (int) state.targetTick);
+        if (state.stage.isPlaying && !state.ui.controlGame) {
+            for (BaseProperty<?> property : state.timeline.getProperties().values()) {
+                property.handle(state, (int) state.targetTick);
+            }
+        } else {
+            playerRef.getPacketHandler().writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
         }
 
         state.cameraManager.moveCamera(state, playerRef, false);

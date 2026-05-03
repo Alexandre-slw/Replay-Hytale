@@ -36,7 +36,7 @@ public abstract class BasePlayer extends TickingSystem<EntityStore> {
     }
 
     public void bypassFilter(@Nonnull ReplayState state, @Nonnull Runnable runnable) {
-
+        runnable.run();
     }
 
     @Nullable

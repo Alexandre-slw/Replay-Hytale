@@ -42,7 +42,6 @@ import gg.alexandre.replay.file.ReplayInputFile;
 import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.protocol.packets.TickReplayPacket;
-import gg.alexandre.replay.replay.editor.properties.CameraProperty;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.util.FovPacketUtil;
@@ -63,15 +62,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.UUID;
 
 public class ReplayPlayer extends BasePlayer {
 
     private final Path replayStatePath;
 
     private final ReplayProtocol protocol;
-    private final Map<UUID, ReplayState> states = new ConcurrentHashMap<>();
     private final HytaleLogger logger = HytaleLogger.forEnclosingClass();
 
     public ReplayPlayer(@Nonnull ReplayProtocol protocol, @Nonnull Path dataDirectory) {
