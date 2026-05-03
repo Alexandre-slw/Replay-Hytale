@@ -225,7 +225,7 @@ Group {
           Button #ExportCutScene {
             Anchor: (Width: 16, Height: 16, Left: 10);
             Padding: (Vertical: 2);
-            TooltipText: %replay.exportAsCutScene;
+            TooltipText: %replay.exportForTriggerVolumes;
             Style: (
               Default: (
                 Background: (TexturePath: "Assets/ExportCutScene.png"),
@@ -238,6 +238,29 @@ Group {
               ),
               Disabled: (
                 Background: (TexturePath: "Assets/ExportCutSceneDisabled.png"),
+              ),
+              Sounds: (
+                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+              )
+            );
+          }
+
+          Button #EditCutScene {
+            Anchor: (Width: 16, Height: 16, Left: 10);
+            Padding: (Vertical: 2);
+            TooltipText: %replay.editCutScene;
+            Style: (
+              Default: (
+                Background: (TexturePath: "Assets/EditCutScene.png"),
+              ),
+              Hovered: (
+                Background: (TexturePath: "Assets/EditCutSceneHovered.png"),
+              ),
+              Pressed: (
+                Background: (TexturePath: "Assets/EditCutScenePressed.png"),
+              ),
+              Disabled: (
+                Background: (TexturePath: "Assets/EditCutSceneDisabled.png"),
               ),
               Sounds: (
                 MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)

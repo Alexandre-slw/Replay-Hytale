@@ -9,6 +9,7 @@ import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.cutscene.CutSceneMetadata;
+import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.repository.CutSceneRepository;
 import gg.alexandre.replay.ui.codec.CodecConstructor;
 import gg.alexandre.replay.ui.codec.UIKey;
@@ -17,6 +18,7 @@ import gg.alexandre.replay.ui.event.UIEventHandler;
 import gg.alexandre.replay.ui.event.UIEventIdData;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,6 +28,9 @@ public class EditCutSceneUI extends BaseUI<EditCutSceneUI.Data> {
     private final Path savePath;
     private final CutSceneMetadata metadata;
     private final boolean shouldDeleteOnCancel;
+
+    @Nullable
+    private final ReplayState state;
 
     private static final BuilderCodec<Data> CODEC = CodecConstructor.create(Data.class, Data::new);
 
@@ -38,12 +43,13 @@ public class EditCutSceneUI extends BaseUI<EditCutSceneUI.Data> {
     }
 
     public EditCutSceneUI(@Nonnull PlayerRef playerRef, @Nonnull Path savePath, @Nonnull CutSceneMetadata metadata,
-                          boolean shouldDeleteOnCancel) {
+                          boolean shouldDeleteOnCancel, @Nullable ReplayState state) {
         super(playerRef, CustomPageLifetime.CanDismissOrCloseThroughInteraction, CODEC);
 
         this.savePath = savePath;
         this.metadata = metadata;
         this.shouldDeleteOnCancel = shouldDeleteOnCancel;
+        this.state = state;
     }
 
     @Override
@@ -129,6 +135,10 @@ public class EditCutSceneUI extends BaseUI<EditCutSceneUI.Data> {
 
         if (shouldDeleteOnCancel) {
             ReplayPlugin.get().editCutScene(context.playerRef, path);
+        }
+
+        if (state != null) {
+            state.path = path;
         }
     }
 

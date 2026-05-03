@@ -97,11 +97,14 @@ public class CameraManager {
 
                 settings.rotation = PositionUtil.toDirectionPacket(rotation);
                 settings.rotationType = RotationType.Custom;
-                settings.sendMouseMotion = false;
                 settings.rotationLerpSpeed = 0.8f;
                 settings.positionLerpSpeed = 0.8f;
-                settings.skipCharacterPhysics = true;
-                settings.allowPitchControls = false;
+
+                if (!cutScene) {
+                    settings.sendMouseMotion = false;
+                    settings.skipCharacterPhysics = true;
+                    settings.allowPitchControls = false;
+                }
 
                 packetHandler.writeNoCache(new SetServerCamera(
                         ClientCameraView.Custom, true, settings

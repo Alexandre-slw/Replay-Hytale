@@ -4,8 +4,8 @@ Group {
   LayoutMode: MiddleCenter;
   
   $C.@DecoratedContainer {
-    @Title = %replay.cutSceneData;
-    @Text = %replay.copyCutSceneMessage;
+    @Title = %replay.triggerVolumesData;
+    @Text = %replay.copyDataMessage;
     @SaveText = %replay.close;
 
     Anchor: (Width: 800);
@@ -19,7 +19,7 @@ Group {
       Padding: (Full: 30);
 
       Label {
-        Style: (FontSize: 20);
+        Style: (FontSize: 16);
         Text: @Text;
       }
 

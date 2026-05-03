@@ -104,7 +104,7 @@ public class CutSceneUI extends BaseUI<CutSceneUI.Data> {
             cutSceneRepository.saveCutScene(path, metadata);
 
             player.getPageManager().openCustomPage(
-                    ref, store, new EditCutSceneUI(playerRef, path, metadata, true)
+                    ref, store, new EditCutSceneUI(playerRef, path, metadata, true, null)
             );
         });
     }

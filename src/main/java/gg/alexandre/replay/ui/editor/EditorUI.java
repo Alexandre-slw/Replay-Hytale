@@ -14,10 +14,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import gg.alexandre.replay.cutscene.CutSceneCodec;
 import gg.alexandre.replay.replay.BasePlayer;
 import gg.alexandre.replay.replay.state.ReplayState;
-import gg.alexandre.replay.ui.BaseUI;
-import gg.alexandre.replay.ui.CloseUI;
-import gg.alexandre.replay.ui.CopyUI;
-import gg.alexandre.replay.ui.HideUI;
+import gg.alexandre.replay.ui.*;
 import gg.alexandre.replay.ui.codec.CodecConstructor;
 import gg.alexandre.replay.ui.codec.UIKey;
 import gg.alexandre.replay.ui.editor.renderers.*;
@@ -91,6 +88,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         uiCommandBuilder.set("#Playhead.Max", player.getDurationTicks(state));
 
         uiCommandBuilder.set("#ExportCutScene.Visible", state.cutSceneMetadata != null);
+        uiCommandBuilder.set("#EditCutScene.Visible", state.cutSceneMetadata != null);
 
         layout(uiCommandBuilder, eventHandler);
         tick(uiCommandBuilder, eventHandler);
@@ -173,6 +171,11 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         eventHandler.handle(CustomUIEventBindingType.Activating,
                 "#ExportCutScene",
                 this::onExportCutScene
+        );
+
+        eventHandler.handle(CustomUIEventBindingType.Activating,
+                "#EditCutScene",
+                this::onEditCutScene
         );
     }
 
@@ -276,6 +279,19 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
             playerComponent.getPageManager().openCustomPage(
                     context.ref, context.store, new CopyUI(playerRef, CutSceneCodec.toDataString(data))
+            );
+        });
+    }
+
+    private void onEditCutScene(@Nonnull UIEventContext<Data> context) {
+        context.store.getExternalData().getWorld().execute(() -> {
+            Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
+            assert playerComponent != null;
+
+            playerComponent.getPageManager().openCustomPage(
+                    context.ref, context.store, new EditCutSceneUI(
+                            playerRef, state.path, state.cutSceneMetadata, false, state
+                    )
             );
         });
     }
