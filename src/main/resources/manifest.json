@@ -1,7 +1,7 @@
 {
     "Group": "Alexandre",
     "Name": "Replay",
-    "Version": "0.2.7",
+    "Version": "0.3.0",
     "Description": "Record, Replay and Edit your Hytale sessions.",
     "Authors": [
         {
@@ -17,6 +17,6 @@
         "Hytale:AssetModule": "*"
     },
     "OptionalDependencies": {},
-    "ServerVersion": "2026.03.26-89796e57b",
+    "ServerVersion": "2026.04.30-b4f6a911e",
     "Main": "gg.alexandre.replay.ReplayPlugin"
 }
