@@ -20,7 +20,7 @@ public class CameraProperty extends BaseProperty<Position> {
     }
 
     @Override
-    public void handle(@Nonnull ReplayState state, int tick) {
+    public void handle(@Nonnull ReplayState state, double tick) {
         Position cameraPosition = getValue(tick);
         if (cameraPosition == null) {
             return;
@@ -31,16 +31,18 @@ public class CameraProperty extends BaseProperty<Position> {
 
     @Nullable
     @Override
-    public Position getValue(int tick) {
-        Map.Entry<Integer, Position> previous = getValues().floorEntry(tick);
+    public Position getValue(double tick) {
+        int intTick = (int) Math.floor(tick);
+
+        Map.Entry<Integer, Position> previous = getValues().floorEntry(intTick);
         if (previous == null) {
             return null;
         }
 
-        Map.Entry<Integer, Position> next = getValues().higherEntry(tick);
+        Map.Entry<Integer, Position> next = getValues().higherEntry(intTick);
 
-        Map.Entry<Integer, Position> p0Entry = getValues().lowerEntry(previous != null ? previous.getKey() : tick);
-        Map.Entry<Integer, Position> p3Entry = getValues().higherEntry(next != null ? next.getKey() : tick);
+        Map.Entry<Integer, Position> p0Entry = getValues().lowerEntry(previous.getKey());
+        Map.Entry<Integer, Position> p3Entry = getValues().higherEntry(next != null ? next.getKey() : intTick);
 
         if (next == null) {
             return previous.getValue();
@@ -52,7 +54,7 @@ public class CameraProperty extends BaseProperty<Position> {
             Position p2 = next.getValue();
             Position p3 = p3Entry != null ? p3Entry.getValue() : next.getValue();
 
-            double ratio = (double) (tick - previousTick) / (nextTick - previousTick);
+            double ratio = (tick - previousTick) / (nextTick - previousTick);
 
             double p0Yaw = unwrapRelative(p0.yaw(), p1.yaw());
             double p1Yaw = p1.yaw();

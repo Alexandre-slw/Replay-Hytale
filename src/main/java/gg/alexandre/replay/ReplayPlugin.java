@@ -127,6 +127,10 @@ public class ReplayPlugin extends JavaPlugin {
         cutScenePlayer.stop(playerRef);
     }
 
+    public boolean isEditingCutScene(@Nonnull PlayerRef playerRef) {
+        return cutScenePlayer.isEditingCutScene(playerRef);
+    }
+
     public void stopAll() {
         recorder.stopAll();
         replayPlayer.stopAll();

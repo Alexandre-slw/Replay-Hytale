@@ -45,10 +45,14 @@ public class CutSceneEffect extends TriggerEffect {
 
         PlayerRef playerRef = store.getComponent(entityRef, PlayerRef.getComponentType());
         if (playerRef != null) {
+            if (ReplayPlugin.get().isEditingCutScene(playerRef)) {
+                return;
+            }
+
             if (play && data != null) {
                 CutSceneCodec.Data cutSceneData = CutSceneCodec.fromDataString(data);
                 CutSceneMetadata metadata = new CutSceneMetadata(cutSceneData.ticks());
-                
+
                 ReplayPlugin.get().startCutScene(playerRef, cutSceneData.state(), metadata);
             }
 

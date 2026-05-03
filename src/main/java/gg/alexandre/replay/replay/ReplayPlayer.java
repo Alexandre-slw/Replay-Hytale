@@ -562,7 +562,7 @@ public class ReplayPlayer extends BasePlayer {
             state.edit.fov = 1.0;
 
             for (BaseProperty<?> property : state.timeline.getProperties().values()) {
-                property.handle(state, (int) state.targetTick);
+                property.handle(state, state.targetTick);
             }
         } else {
             playerRef.getPacketHandler().writeNoCache(new SetMovementStates(new SavedMovementStates(true)));

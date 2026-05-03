@@ -14,13 +14,15 @@ public abstract class DoubleProperty extends BaseProperty<Double> {
 
     @Nullable
     @Override
-    public Double getValue(int tick) {
-        Map.Entry<Integer, Double> previous = getValues().floorEntry(tick);
+    public Double getValue(double tick) {
+        int intTick = (int) Math.floor(tick);
+
+        Map.Entry<Integer, Double> previous = getValues().floorEntry(intTick);
         if (previous == null) {
             return null;
         }
 
-        Map.Entry<Integer, Double> next = getValues().higherEntry(tick);
+        Map.Entry<Integer, Double> next = getValues().higherEntry(intTick);
 
         if (next == null) {
             return previous.getValue();
@@ -30,7 +32,7 @@ public abstract class DoubleProperty extends BaseProperty<Double> {
             Double previousValue = previous.getValue();
             Double nextValue = next.getValue();
 
-            double ratio = (double) (tick - previousTick) / (nextTick - previousTick);
+            double ratio = (tick - previousTick) / (nextTick - previousTick);
             return InterpolationUtil.easeInOut(previousValue, nextValue, ratio);
         }
     }

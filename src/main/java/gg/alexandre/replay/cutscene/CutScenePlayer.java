@@ -118,6 +118,11 @@ public class CutScenePlayer extends BasePlayer {
         state.stage.isPlaying = true;
     }
 
+    public boolean isEditingCutScene(@Nonnull PlayerRef playerRef) {
+        ReplayState state = states.get(playerRef.getUuid());
+        return state != null && state.useEditor;
+    }
+
     public void stop(@Nonnull PlayerRef playerRef) {
         ReplayState state = states.get(playerRef.getUuid());
         if (state == null) {
@@ -125,6 +130,7 @@ public class CutScenePlayer extends BasePlayer {
         }
 
         state.cameraManager.setDefaultCamera(playerRef.getPacketHandler());
+        playerRef.getPacketHandler().writeNoCache(new SetTimeDilation(1));
 
         stop(state);
     }
@@ -185,7 +191,7 @@ public class CutScenePlayer extends BasePlayer {
 
         if (state.stage.isPlaying && !state.ui.controlGame) {
             for (BaseProperty<?> property : state.timeline.getProperties().values()) {
-                property.handle(state, (int) state.targetTick);
+                property.handle(state, state.targetTick);
             }
         } else {
             playerRef.getPacketHandler().writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
