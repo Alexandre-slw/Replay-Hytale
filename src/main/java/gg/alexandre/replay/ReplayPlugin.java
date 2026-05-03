@@ -27,6 +27,7 @@ import gg.alexandre.replay.recorder.ReplayRecorder;
 import gg.alexandre.replay.replay.ReplayPlayer;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.TimelineState;
+import gg.alexandre.replay.repository.CutSceneRepository;
 import gg.alexandre.replay.repository.ReplayRepository;
 import gg.alexandre.replay.util.Position;
 import gg.alexandre.replay.volumes.CutSceneEffect;
@@ -49,6 +50,7 @@ public class ReplayPlugin extends JavaPlugin {
 
     private final ReplayProtocol protocol = new ReplayProtocol();
     private final ReplayRepository repository = new ReplayRepository(getDataDirectory());
+    private final CutSceneRepository cutSceneRepository = new CutSceneRepository(getDataDirectory());
 
     private final ReplayRecorder recorder = new ReplayRecorder(protocol, repository);
     private final ReplayPlayer replayPlayer = new ReplayPlayer(protocol, getDataDirectory());
@@ -135,6 +137,11 @@ public class ReplayPlugin extends JavaPlugin {
     @Nonnull
     public ReplayRepository getRepository() {
         return repository;
+    }
+
+    @Nonnull
+    public CutSceneRepository getCutSceneRepository() {
+        return cutSceneRepository;
     }
 
     @Nonnull
