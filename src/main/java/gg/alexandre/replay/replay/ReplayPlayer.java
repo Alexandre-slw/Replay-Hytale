@@ -525,7 +525,7 @@ public class ReplayPlayer extends BasePlayer {
             }
 
             if ((!state.stage.sentJoinWorld || state.stage.isPlaying) && canProcessPackets(state)) {
-                state.targetTick += Math.max(0.1, state.edit.speed);
+                state.targetTick += Math.max(0.01, state.edit.speed);
                 state.targetTick = Math.min(state.targetTick, state.file.getMetadata().ticks);
             }
 
