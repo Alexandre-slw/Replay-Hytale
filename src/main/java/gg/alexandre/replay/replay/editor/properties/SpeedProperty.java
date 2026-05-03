@@ -35,7 +35,7 @@ public class SpeedProperty extends DoubleProperty {
 
         context.store.getExternalData().getWorld().execute(() -> {
             playerComponent.getPageManager().openCustomPage(context.ref, context.store, new EditKeyframeUI(
-                    context.playerRef, id(), 10, 1000, (int) (value * 100),
+                    context.playerRef, id(), 1, 1000, (int) (value * 100),
                     (newValue) -> getValues().put(tick, newValue / 100.0),
                     () -> getValues().remove(tick)
             ));
