@@ -49,4 +49,8 @@ public abstract class BaseProperty<T> {
     public TreeMap<Integer, T> getValues() {
         return values;
     }
+
+    public boolean isAvailableInCutScenes() {
+        return true;
+    }
 }

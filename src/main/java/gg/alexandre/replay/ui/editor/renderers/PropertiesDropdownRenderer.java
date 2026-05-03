@@ -3,6 +3,7 @@ package gg.alexandre.replay.ui.editor.renderers;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import gg.alexandre.replay.replay.editor.commands.AddPropertyCommand;
+import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.editor.registry.PropertyRegistry;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.common.CommonUI;
@@ -29,6 +30,8 @@ public class PropertiesDropdownRenderer extends BaseRenderer<EditorUI.Data> {
         }
         lastPropertiesCount = count;
 
+        PropertyRegistry registry = PropertyRegistry.get();
+
         StringBuilder dropdown = new StringBuilder(CommonUI.DEFAULT_DROPDOWN_STYLE);
 
         dropdown.append(String.format("""
@@ -43,12 +46,19 @@ public class PropertiesDropdownRenderer extends BaseRenderer<EditorUI.Data> {
                       LabelStyle: (TextColor: #000000(0))
                     );
                     Value: "";
-                """, count >= PropertyRegistry.get().getRegistry().size()));
+                """, count >= registry.getRegistry().size()));
 
         boolean hasProperties = false;
-        for (String id : PropertyRegistry.get().getRegistry().keySet()) {
+        for (String id : registry.getRegistry().keySet()) {
             if (state.timeline.getProperties().containsKey(id)) {
                 continue;
+            }
+
+            if (state.cutSceneMetadata != null) {
+                BaseProperty<?> baseProperty = registry.create(id);
+                if (baseProperty == null || !baseProperty.isAvailableInCutScenes()) {
+                    continue;
+                }
             }
 
             dropdown.append(String.format("""

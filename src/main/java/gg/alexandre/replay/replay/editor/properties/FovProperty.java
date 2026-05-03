@@ -47,4 +47,9 @@ public class FovProperty extends DoubleProperty {
     public String id() {
         return "fov";
     }
+
+    @Override
+    public boolean isAvailableInCutScenes() {
+        return false;
+    }
 }

@@ -73,7 +73,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         );
 
         tickRenderers = List.of(
-                new TimelinesDropdownRenderer(state),
+                new TimelinesDropdownRenderer(state, player),
                 new PlaytailRenderer(state, player),
                 new PropertiesDropdownRenderer(state),
                 new PropertiesHeaderRenderer(state),
