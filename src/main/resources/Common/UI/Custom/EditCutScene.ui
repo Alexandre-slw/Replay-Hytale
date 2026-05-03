@@ -1,0 +1,73 @@
+$C = "Common.ui";
+
+Group {
+  LayoutMode: MiddleCenter;
+  
+  $C.@DecoratedContainer {
+    @PlaceholderText = %replay.namePlaceholder;
+    @Title = %replay.saveReplay;
+    @Text = %replay.replayName;
+    @CancelText = %replay.cancel;
+    @SaveText = %replay.save;
+
+    Anchor: (Width: 800);
+
+    #Title {
+      $C.@Title { @Text = @Title; }
+    }
+
+    #Content {
+      LayoutMode: Top;
+      Padding: (Full: 30);
+
+      Label {
+        Style: (FontSize: 20);
+        Text: @Text;
+      }
+
+      TextField #NameInput {
+        Background: $C.@InputBoxBackground;
+        Anchor: (Top: 5, Left: 0, Right: 0, Height: 50);
+        Padding: (Full: 10);
+        PlaceholderText: @PlaceholderText;
+      }
+
+      Label {
+        Anchor: (Top: 20);
+        Style: (FontSize: 20);
+        Text: %replay.durationSeconds;
+      }
+
+      NumberField #DurationInput {
+        Background: $C.@InputBoxBackground;
+        Anchor: (Top: 5, Left: 0, Right: 0, Height: 50);
+        Padding: (Full: 10);
+        Value: 5;
+        Format: (
+          MaxDecimalPlaces: 2,
+          MinValue: 0.1,
+          Step: 1
+        );
+      }
+
+      Group {
+        LayoutMode: Left;
+        Anchor: (Top: 30);
+
+        $C.@CancelTextButton #Discard {
+          @Text = @CancelText;
+          FlexWeight: 1;
+        }
+
+        Group {
+          Anchor: (Width: 10);
+        }
+
+        $C.@TextButton #Save {
+          @Text = @SaveText;
+          FlexWeight: 1;
+        }
+      }
+    }
+  }
+}

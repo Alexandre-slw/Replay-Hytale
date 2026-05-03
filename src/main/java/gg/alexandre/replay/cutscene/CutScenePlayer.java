@@ -3,8 +3,15 @@ package gg.alexandre.replay.cutscene;
 import com.google.gson.Gson;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
+import com.hypixel.hytale.protocol.packets.player.ClientMovement;
+import com.hypixel.hytale.protocol.packets.player.ClientTeleport;
 import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
 import com.hypixel.hytale.server.core.io.PacketHandler;
+import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
+import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
+import com.hypixel.hytale.server.core.io.adapter.PacketWatcher;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -14,51 +21,97 @@ import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.replay.state.TimelineState;
 import gg.alexandre.replay.util.Position;
+import gg.alexandre.replay.util.PositionTracker;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class CutScenePlayer extends BasePlayer {
 
-    private final Map<UUID, ReplayState> states = new ConcurrentHashMap<>();
+    public CutScenePlayer() {
+        PacketAdapters.registerInbound((PacketFilter) (handler, packet) -> {
+            ReplayState state = getState(handler);
+            if (state == null) {
+                return false;
+            }
+
+            if (packet instanceof SyncInteractionChains syncInteractionChains) {
+                handleInteractionChains(handler, state, syncInteractionChains);
+                return true;
+            }
+
+            if (packet instanceof ClientMovement movement) {
+                PositionTracker.onClientMovement(state, movement);
+            }
+
+            return false;
+        });
+
+        PacketAdapters.registerOutbound((PacketWatcher) (handler, packet) -> {
+            ReplayState state = getState(handler);
+            if (state == null) {
+                return;
+            }
+
+            if (packet instanceof ClientTeleport teleport) {
+                PositionTracker.onClientTeleport(state, teleport);
+            }
+        });
+    }
 
     private ReplayState initState(@Nonnull PlayerRef playerRef) {
         ReplayState state = new ReplayState();
         state.playerUuid = playerRef.getUuid();
         state.lang = playerRef.getLanguage();
 
-        state.cameraManager.setCutScene(true);
+        Ref<EntityStore> ref = playerRef.getReference();
+        assert ref != null;
+        Store<EntityStore> store = ref.getStore();
+
+        store.getExternalData().getWorld().execute(() -> {
+            TransformComponent transformComponent = store.getComponent(ref, TransformComponent.getComponentType());
+            if (transformComponent != null) {
+                state.position.x = transformComponent.getPosition().x;
+                state.position.y = transformComponent.getPosition().y;
+                state.position.z = transformComponent.getPosition().z;
+                state.position.headPitch = transformComponent.getRotation().pitch();
+                state.position.headYaw = transformComponent.getRotation().yaw();
+            }
+        });
 
         states.put(state.playerUuid, state);
 
         return state;
     }
 
-    public void start(@Nonnull PlayerRef playerRef, @Nonnull Path path) {
+    public void edit(@Nonnull PlayerRef playerRef, @Nonnull Path path) {
         ReplayState state = initState(playerRef);
 
         state.path = path;
-        
-        Gson gson = ReplayPlugin.get().getGson();
-        state.cutSceneMetadata = gson.fromJson(path.toFile().toString(), CutSceneMetadata.class);
 
         try {
+            Gson gson = ReplayPlugin.get().getGson();
+            state.cutSceneMetadata = gson.fromJson(Files.readString(path), CutSceneMetadata.class);
+
             state.loadTimelines(getSaveUUID(state));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void start(@Nonnull PlayerRef playerRef, @Nonnull TimelineState timelineState) {
+    public void play(@Nonnull PlayerRef playerRef, @Nonnull TimelineState timelineState) {
         ReplayState state = initState(playerRef);
 
         state.timeline = timelineState;
         state.useEditor = false;
+
+        state.cameraManager.setCutScene(true);
+
+        state.stage.isPlaying = true;
     }
 
     public void stop(@Nonnull PlayerRef playerRef) {
@@ -100,10 +153,16 @@ public class CutScenePlayer extends BasePlayer {
 
             tickEditor(state, playerRef);
 
-            state.targetTick += state.edit.speed;
+            if (state.stage.isPlaying) {
+                state.targetTick += state.edit.speed;
+            }
 
-            if (!state.useEditor && state.targetTick > getDurationTicks(state)) {
-                stop(playerRef);
+            if (state.targetTick > getDurationTicks(state)) {
+                if (!state.useEditor) {
+                    stop(playerRef);
+                } else {
+                    state.targetTick = getDurationTicks(state);
+                }
             }
         }
     }
@@ -124,9 +183,13 @@ public class CutScenePlayer extends BasePlayer {
             property.handle(state, (int) state.targetTick);
         }
 
-        state.cameraManager.moveCamera(state, playerRef, true);
+        state.cameraManager.moveCamera(state, playerRef, false);
 
         handleTimeDilation(state, playerRef.getPacketHandler());
+
+        if (state.timeline.getProperties().containsKey("camera")) {
+            handleCameraPathDisplay(state, playerRef);
+        }
     }
 
     private void handleTimeDilation(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler) {

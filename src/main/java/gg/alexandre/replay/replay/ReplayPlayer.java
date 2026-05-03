@@ -14,8 +14,6 @@ import com.hypixel.hytale.protocol.packets.connection.ClientDisconnect;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.protocol.packets.connection.Pong;
 import com.hypixel.hytale.protocol.packets.entities.EntityUpdates;
-import com.hypixel.hytale.protocol.packets.interaction.CancelInteractionChain;
-import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
 import com.hypixel.hytale.protocol.packets.interface_.*;
 import com.hypixel.hytale.protocol.packets.player.*;
@@ -44,7 +42,6 @@ import gg.alexandre.replay.file.ReplayInputFile;
 import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.protocol.packets.TickReplayPacket;
-import gg.alexandre.replay.replay.editor.commands.SetKeyframeValueCommand;
 import gg.alexandre.replay.replay.editor.properties.CameraProperty;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
@@ -55,7 +52,6 @@ import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.joml.Vector3d;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -269,55 +265,6 @@ public class ReplayPlayer extends BasePlayer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private void handleInteractionChains(@Nonnull PacketHandler handler, @Nonnull ReplayState state,
-                                         @Nonnull SyncInteractionChains syncInteractionChains) {
-        SyncInteractionChain interactionChain = null;
-
-        for (int i = 0; i < syncInteractionChains.updates.length; i++) {
-            SyncInteractionChain chain = syncInteractionChains.updates[i];
-            if (chain.interactionType == InteractionType.Primary && chain.initial) {
-                interactionChain = chain;
-                break;
-            }
-        }
-
-        if (interactionChain == null) {
-            return;
-        }
-
-        SyncInteractionChain chain = interactionChain;
-        bypassFilter(state, () ->
-                handler.writeNoCache(new CancelInteractionChain(chain.chainId, chain.forkedId))
-        );
-        state.ui.controlGame = false;
-
-        if (state.ui.editingCamera && state.ui.selectedKeyframe != null) {
-            state.commandsStack.execute(new SetKeyframeValueCommand(
-                    state,
-                    state.ui.selectedKeyframe.propertyId(),
-                    state.ui.selectedKeyframe.tick(),
-                    new Position(
-                            state.position.x,
-                            state.position.y,
-                            state.position.z,
-                            state.position.headPitch,
-                            state.position.headYaw
-                    )
-            ));
-        }
-
-        state.ui.editingCamera = false;
-    }
-
-    @Nullable
-    private ReplayState getState(@Nonnull PacketHandler packetHandler) {
-        if (packetHandler.getAuth() == null) {
-            return null;
-        }
-
-        return states.get(packetHandler.getAuth().getUuid());
     }
 
     private void clearWorld(@Nonnull PlayerRef playerRef, @Nonnull ReplayState state) {
@@ -643,48 +590,6 @@ public class ReplayPlayer extends BasePlayer {
             Vector3d playerPosition = new Vector3d(state.position.x, state.position.y, state.position.z);
             state.fovUtil.apply(state.edit.fov, playerPosition);
         }
-    }
-
-    private void handleCameraPathDisplay(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
-        if (state.stage.isPlaying) {
-            state.overlay.clearImmediately(playerRef);
-            return;
-        }
-
-        if (!state.overlay.shouldRender()) {
-            return;
-        }
-
-        CameraProperty cameraProperty = (CameraProperty) state.timeline.getProperties().get("camera");
-
-        TreeMap<Integer, Position> values = cameraProperty.getValues();
-        if (values.isEmpty()) {
-            return;
-        }
-
-        List<Position> positions = values.values().stream().toList();
-
-        List<Vector3d> lines = new ArrayList<>();
-        int ticksResolution = 10;
-        int maxTicksWindow = 30 * 60;
-
-        int from = Math.max(values.firstKey(), state.currentTick - maxTicksWindow);
-        int to = Math.min(values.lastKey(), state.currentTick + maxTicksWindow);
-
-        for (int i = from; i <= to; i += ticksResolution) {
-            Position position = cameraProperty.getValue(i);
-            if (position == null) {
-                continue;
-            }
-
-            lines.add(new Vector3d(position.x(), position.y(), position.z()));
-        }
-
-        Vector3d playerPosition = new Vector3d(state.position.x, state.position.y, state.position.z);
-
-        state.overlay.renderTo(
-                playerRef, positions, lines, playerPosition, cameraProperty.getValue((int) state.targetTick)
-        );
     }
 
     private void handleTimeDilation(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler, boolean move) {

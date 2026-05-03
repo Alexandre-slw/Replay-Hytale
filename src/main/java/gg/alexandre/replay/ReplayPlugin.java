@@ -13,6 +13,7 @@ import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import gg.alexandre.replay.commands.CutSceneCommand;
 import gg.alexandre.replay.commands.ReplayCommand;
 import gg.alexandre.replay.components.DummyViewerSystem;
 import gg.alexandre.replay.components.TargetWatcherTag;
@@ -65,7 +66,8 @@ public class ReplayPlugin extends JavaPlugin {
     protected void setup() {
         ComponentRegistryProxy<EntityStore> entityStoreRegistry = getEntityStoreRegistry();
 
-        getCommandRegistry().registerCommand(new ReplayCommand("replay", "Replay commands"));
+        getCommandRegistry().registerCommand(new ReplayCommand("replay", "Open Replay UI"));
+        getCommandRegistry().registerCommand(new CutSceneCommand("cutscene", "Open Cut Scene UI"));
         getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, DisconnectEvent::onPlayerDisconnect);
         getEventRegistry().registerGlobal(ShutdownEvent.class, DisconnectEvent::onShutdown);
         getEventRegistry().registerGlobal(PlayerConnectEvent.class, WatcherConnectEvent::onPlayerConnect);
@@ -112,11 +114,11 @@ public class ReplayPlugin extends JavaPlugin {
     }
 
     public void editCutScene(@Nonnull PlayerRef playerRef, @Nonnull Path path) {
-        cutScenePlayer.start(playerRef, path);
+        cutScenePlayer.edit(playerRef, path);
     }
 
     public void startCutScene(@Nonnull PlayerRef playerRef, @Nonnull TimelineState timelineState) {
-        cutScenePlayer.start(playerRef, timelineState);
+        cutScenePlayer.play(playerRef, timelineState);
     }
 
     public void stopCutScene(@Nonnull PlayerRef playerRef) {

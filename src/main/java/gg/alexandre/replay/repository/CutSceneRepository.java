@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.DateFormat;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -25,7 +26,8 @@ public class CutSceneRepository {
         cutScenesDirectory = dataDirectory.resolve("cutscenes");
     }
 
-    public void saveCutScene(@Nonnull PlayerRef playerRef, @Nonnull String name, @Nonnull CutSceneMetadata metadata) {
+    @Nonnull
+    public Path newCutScene(@Nonnull PlayerRef playerRef) {
         Path dir = cutScenesDirectory.resolve(playerRef.getUuid().toString());
 
         File directoryFile = dir.toFile();
@@ -36,7 +38,11 @@ public class CutSceneRepository {
             }
         }
 
-        saveCutScene(dir.resolve(name + CUTSCENE_EXTENSION), metadata);
+        String name = DateFormat.getDateTimeInstance().format(System.currentTimeMillis())
+                .replace(":", "-")
+                .replace("/", "-")
+                .replace("\u202F", " ");
+        return dir.resolve(name + CUTSCENE_EXTENSION);
     }
 
     public void saveCutScene(@Nonnull Path path, @Nonnull CutSceneMetadata metadata) {

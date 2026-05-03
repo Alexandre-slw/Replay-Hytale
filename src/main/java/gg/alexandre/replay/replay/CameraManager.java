@@ -55,7 +55,8 @@ public class CameraManager {
         if (stoppedFollowing || fovEnabled) {
             setDefaultCamera(packetHandler);
             teleportPlayer(packetHandler, position, rotation);
-        } else if ((startedFollowing || fovDisabled) && followingPath && !hasFov) {
+        } else if ((startedFollowing || fovDisabled) && followingPath && !hasFov &&
+                   (state.cutSceneMetadata == null || cutScene)) {
             offset = 1000;
             lastRotation = rotation;
         }
