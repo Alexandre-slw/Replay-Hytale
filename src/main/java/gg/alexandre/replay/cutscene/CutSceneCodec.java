@@ -21,8 +21,8 @@ public class CutSceneCodec {
     private static final int ZSTD_LEVEL = 22;
 
     @Nonnull
-    public static String toData(TimelineState state) {
-        byte[] raw = writeRaw(state);
+    public static String toDataString(@Nonnull Data data) {
+        byte[] raw = writeRaw(data);
         byte[] zstd = Zstd.compress(raw, ZSTD_LEVEL);
 
         byte[] packed;
@@ -44,7 +44,7 @@ public class CutSceneCodec {
     }
 
     @Nonnull
-    public static TimelineState fromData(String data) {
+    public static Data fromDataString(@Nonnull String data) {
         byte[] packed = Base85.decodeBase85(data);
 
         ByteBuffer buffer = ByteBuffer.wrap(packed);
@@ -70,16 +70,18 @@ public class CutSceneCodec {
         return readRaw(raw);
     }
 
-    private static byte[] writeRaw(TimelineState state) {
+    private static byte[] writeRaw(@Nonnull Data data) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         out.write(VERSION);
+
+        ByteBufferUtil.writeVarInt(out, data.ticks);
 
         int propertyCount = 0;
 
         for (PropertiesCodecList codec : PropertiesCodecList.values()) {
             BaseProperty<?> property = codec.getCodec().get();
-            if (state.getProperties().containsKey(property.id())) {
+            if (data.state.getProperties().containsKey(property.id())) {
                 propertyCount++;
             }
         }
@@ -88,16 +90,19 @@ public class CutSceneCodec {
 
         for (PropertiesCodecList entry : PropertiesCodecList.values()) {
             BaseProperty<?> property = entry.getCodec().get();
-            if (state.getProperties().containsKey(property.id())) {
+            if (data.state.getProperties().containsKey(property.id())) {
                 ByteBufferUtil.writeVarInt(out, entry.getId());
-                ((PropertyCodec) entry.getCodec()).write(state.getProperties().get(property.id()), state, out);
+                ((PropertyCodec) entry.getCodec()).write(
+                        data.state.getProperties().get(property.id()), data.state, out
+                );
             }
         }
 
         return out.toByteArray();
     }
 
-    private static TimelineState readRaw(byte[] raw) {
+    @Nonnull
+    private static Data readRaw(byte[] raw) {
         ByteBuffer buffer = ByteBuffer.wrap(raw);
 
         int version = ByteBufferUtil.readUnsignedByte(buffer);
@@ -105,6 +110,8 @@ public class CutSceneCodec {
         if (version != VERSION) {
             throw new IllegalArgumentException("Unsupported cutscene data version: " + version);
         }
+
+        int ticks = ByteBufferUtil.readVarInt(buffer);
 
         TimelineState state = new TimelineState();
 
@@ -124,7 +131,10 @@ public class CutSceneCodec {
             throw new IllegalArgumentException("Trailing unread bytes: " + buffer.remaining());
         }
 
-        return state;
+        return new Data(state, ticks);
+    }
+
+    public record Data(@Nonnull TimelineState state, int ticks) {
     }
 
 }

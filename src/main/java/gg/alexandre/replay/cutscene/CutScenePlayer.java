@@ -103,12 +103,14 @@ public class CutScenePlayer extends BasePlayer {
         }
     }
 
-    public void play(@Nonnull PlayerRef playerRef, @Nonnull TimelineState timelineState) {
+    public void play(@Nonnull PlayerRef playerRef, @Nonnull TimelineState timelineState,
+                     @Nonnull CutSceneMetadata metadata) {
         ReplayState state = initState(playerRef);
 
         state.timeline = timelineState;
-        state.useEditor = false;
+        state.cutSceneMetadata = metadata;
 
+        state.useEditor = false;
         state.cameraManager.setCutScene(true);
 
         state.stage.isPlaying = true;

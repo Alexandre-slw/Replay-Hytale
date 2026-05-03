@@ -17,6 +17,7 @@ import gg.alexandre.replay.commands.CutSceneCommand;
 import gg.alexandre.replay.commands.ReplayCommand;
 import gg.alexandre.replay.components.DummyViewerSystem;
 import gg.alexandre.replay.components.TargetWatcherTag;
+import gg.alexandre.replay.cutscene.CutSceneMetadata;
 import gg.alexandre.replay.cutscene.CutScenePlayer;
 import gg.alexandre.replay.events.DisconnectEvent;
 import gg.alexandre.replay.events.WatcherConnectEvent;
@@ -117,8 +118,9 @@ public class ReplayPlugin extends JavaPlugin {
         cutScenePlayer.edit(playerRef, path);
     }
 
-    public void startCutScene(@Nonnull PlayerRef playerRef, @Nonnull TimelineState timelineState) {
-        cutScenePlayer.play(playerRef, timelineState);
+    public void startCutScene(@Nonnull PlayerRef playerRef, @Nonnull TimelineState timelineState,
+                              @Nonnull CutSceneMetadata metadata) {
+        cutScenePlayer.play(playerRef, timelineState, metadata);
     }
 
     public void stopCutScene(@Nonnull PlayerRef playerRef) {

@@ -90,6 +90,8 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
         uiCommandBuilder.set("#Playhead.Max", player.getDurationTicks(state));
 
+        uiCommandBuilder.set("#ExportCutScene.Visible", state.cutSceneMetadata != null);
+
         layout(uiCommandBuilder, eventHandler);
         tick(uiCommandBuilder, eventHandler);
     }
@@ -269,8 +271,11 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         context.store.getExternalData().getWorld().execute(() -> {
             Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
             assert playerComponent != null;
+
+            CutSceneCodec.Data data = new CutSceneCodec.Data(state.timeline, player.getDurationTicks(state));
+
             playerComponent.getPageManager().openCustomPage(
-                    context.ref, context.store, new CopyUI(playerRef, CutSceneCodec.toData(state.timeline))
+                    context.ref, context.store, new CopyUI(playerRef, CutSceneCodec.toDataString(data))
             );
         });
     }

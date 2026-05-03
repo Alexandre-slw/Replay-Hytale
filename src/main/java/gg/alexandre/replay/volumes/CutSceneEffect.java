@@ -11,6 +11,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.cutscene.CutSceneCodec;
+import gg.alexandre.replay.cutscene.CutSceneMetadata;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -45,7 +46,10 @@ public class CutSceneEffect extends TriggerEffect {
         PlayerRef playerRef = store.getComponent(entityRef, PlayerRef.getComponentType());
         if (playerRef != null) {
             if (play && data != null) {
-                ReplayPlugin.get().startCutScene(playerRef, CutSceneCodec.fromData(data));
+                CutSceneCodec.Data cutSceneData = CutSceneCodec.fromDataString(data);
+                CutSceneMetadata metadata = new CutSceneMetadata(cutSceneData.ticks());
+                
+                ReplayPlugin.get().startCutScene(playerRef, cutSceneData.state(), metadata);
             }
 
             if (!play) {
