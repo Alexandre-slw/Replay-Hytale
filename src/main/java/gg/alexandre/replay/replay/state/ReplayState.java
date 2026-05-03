@@ -2,6 +2,7 @@ package gg.alexandre.replay.replay.state;
 
 import com.google.gson.Gson;
 import gg.alexandre.replay.ReplayPlugin;
+import gg.alexandre.replay.cutscene.CutSceneMetadata;
 import gg.alexandre.replay.file.ReplayInputFile;
 import gg.alexandre.replay.replay.CameraManager;
 import gg.alexandre.replay.replay.editor.commands.CommandsStack;
@@ -19,7 +20,7 @@ import java.util.stream.Stream;
 
 public class ReplayState {
 
-    public Path replayPath;
+    public Path path;
     @Nullable
     public ReplayInputFile file;
 
@@ -31,6 +32,9 @@ public class ReplayState {
 
     public double timeDilation;
     public boolean overrideTimeDilation;
+
+    public CutSceneMetadata cutSceneMetadata;
+    public boolean useEditor = true;
 
     public Set<Integer> entityIds = new HashSet<>();
     public int clientId;
@@ -53,12 +57,8 @@ public class ReplayState {
     public String selectedTimeline;
     public List<String> timelines = new ArrayList<>();
 
-    public void loadTimelines() throws IOException {
-        if (file == null) {
-            return;
-        }
-
-        Path dir = TimelineState.EDITS_DIRECTORY.resolve(file.getMetadata().uuid.toString());
+    public void loadTimelines(UUID uuid) throws IOException {
+        Path dir = TimelineState.EDITS_DIRECTORY.resolve(uuid.toString());
         List<String> timelines;
 
         if (Files.isDirectory(dir)) {
@@ -76,27 +76,23 @@ public class ReplayState {
         this.timelines.addAll(timelines);
 
         if (this.timelines.isEmpty() || this.timelines.contains(TimelineState.DEFAULT_TIMELINE_NAME)) {
-            loadTimeline(TimelineState.DEFAULT_TIMELINE_NAME);
+            loadTimeline(uuid, TimelineState.DEFAULT_TIMELINE_NAME);
         } else {
-            loadTimeline(this.timelines.getFirst());
+            loadTimeline(uuid, this.timelines.getFirst());
         }
     }
 
-    public void loadTimeline(@Nonnull String name) {
-        if (file == null) {
-            return;
-        }
-
+    public void loadTimeline(@Nonnull UUID uuid, @Nonnull String name) {
         if (selectedTimeline != null) {
-            timeline.save(file.getMetadata().uuid, selectedTimeline);
+            timeline.save(uuid, selectedTimeline);
         }
 
-        Path path = TimelineState.getTimelinePath(file.getMetadata().uuid, name);
+        Path path = TimelineState.getTimelinePath(uuid, name);
 
         if (!Files.exists(path)) {
             timeline = new TimelineState();
             timeline.getProperties().put("camera", new CameraProperty());
-            timeline.save(file.getMetadata().uuid, name);
+            timeline.save(uuid, name);
         } else {
             Gson gson = ReplayPlugin.get().getGson();
             try {

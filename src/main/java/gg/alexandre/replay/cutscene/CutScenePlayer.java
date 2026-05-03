@@ -1,37 +1,64 @@
 package gg.alexandre.replay.cutscene;
 
+import com.google.gson.Gson;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import gg.alexandre.replay.ReplayPlugin;
+import gg.alexandre.replay.replay.BasePlayer;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.replay.state.TimelineState;
 import gg.alexandre.replay.util.Position;
+import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class CutScenePlayer extends TickingSystem<EntityStore> {
+public class CutScenePlayer extends BasePlayer {
 
     private final Map<UUID, ReplayState> states = new ConcurrentHashMap<>();
 
-    public void start(@Nonnull PlayerRef playerRef, @Nonnull TimelineState timelineState) {
+    private ReplayState initState(@Nonnull PlayerRef playerRef) {
         ReplayState state = new ReplayState();
         state.playerUuid = playerRef.getUuid();
         state.lang = playerRef.getLanguage();
 
-        state.timeline = timelineState;
-
         state.cameraManager.setCutScene(true);
 
         states.put(state.playerUuid, state);
+
+        return state;
+    }
+
+    public void start(@Nonnull PlayerRef playerRef, @Nonnull Path path) {
+        ReplayState state = initState(playerRef);
+
+        state.path = path;
+        
+        Gson gson = ReplayPlugin.get().getGson();
+        state.cutSceneMetadata = gson.fromJson(path.toFile().toString(), CutSceneMetadata.class);
+
+        try {
+            state.loadTimelines(getSaveUUID(state));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void start(@Nonnull PlayerRef playerRef, @Nonnull TimelineState timelineState) {
+        ReplayState state = initState(playerRef);
+
+        state.timeline = timelineState;
+        state.useEditor = false;
     }
 
     public void stop(@Nonnull PlayerRef playerRef) {
@@ -69,12 +96,13 @@ public class CutScenePlayer extends TickingSystem<EntityStore> {
                 continue;
             }
 
+            handlePage(state, playerRef);
+
             tickEditor(state, playerRef);
 
             state.targetTick += state.edit.speed;
 
-            // TODO: stop when ended
-            if (state.targetTick > 100) {
+            if (!state.useEditor && state.targetTick > getDurationTicks(state)) {
                 stop(playerRef);
             }
         }
@@ -110,4 +138,13 @@ public class CutScenePlayer extends TickingSystem<EntityStore> {
         }
     }
 
+    @Override
+    public int getDurationTicks(@Nonnull ReplayState state) {
+        return state.cutSceneMetadata.ticks;
+    }
+
+    @Override
+    public UUID getSaveUUID(@NonNullDecl ReplayState state) {
+        return state.cutSceneMetadata.uuid;
+    }
 }

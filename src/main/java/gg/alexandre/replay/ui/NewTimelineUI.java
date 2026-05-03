@@ -7,6 +7,7 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import gg.alexandre.replay.replay.BasePlayer;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.codec.CodecConstructor;
 import gg.alexandre.replay.ui.codec.UIKey;
@@ -19,6 +20,7 @@ import javax.annotation.Nonnull;
 public class NewTimelineUI extends BaseUI<NewTimelineUI.Data> {
 
     private final ReplayState state;
+    private final BasePlayer player;
 
     private static final BuilderCodec<Data> CODEC = CodecConstructor.create(Data.class, Data::new);
 
@@ -27,10 +29,11 @@ public class NewTimelineUI extends BaseUI<NewTimelineUI.Data> {
         private String value;
     }
 
-    public NewTimelineUI(@Nonnull PlayerRef playerRef, @Nonnull ReplayState state) {
+    public NewTimelineUI(@Nonnull PlayerRef playerRef, @Nonnull BasePlayer player, @Nonnull ReplayState state) {
         super(playerRef, CustomPageLifetime.CanDismissOrCloseThroughInteraction, CODEC);
 
         this.state = state;
+        this.player = player;
     }
 
     @Override
@@ -92,7 +95,7 @@ public class NewTimelineUI extends BaseUI<NewTimelineUI.Data> {
             return;
         }
 
-        state.loadTimeline(value);
+        state.loadTimeline(player.getSaveUUID(state), value);
         context.close();
     }
 

@@ -109,6 +109,10 @@ public class ReplayPlugin extends JavaPlugin {
         replayPlayer.stop(playerRef);
     }
 
+    public void editCutScene(@Nonnull PlayerRef playerRef, @Nonnull Path path) {
+        cutScenePlayer.start(playerRef, path);
+    }
+
     public void startCutScene(@Nonnull PlayerRef playerRef, @Nonnull TimelineState timelineState) {
         cutScenePlayer.start(playerRef, timelineState);
     }

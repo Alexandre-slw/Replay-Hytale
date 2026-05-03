@@ -6,6 +6,7 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import gg.alexandre.replay.replay.BasePlayer;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.NewTimelineUI;
 import gg.alexandre.replay.ui.common.CommonUI;
@@ -19,10 +20,12 @@ import java.util.List;
 
 public class TimelinesDropdownRenderer extends BaseRenderer<EditorUI.Data> {
 
+    private final BasePlayer player;
     private List<String> cachedTimelines = new ArrayList<>();
 
-    public TimelinesDropdownRenderer(@Nonnull ReplayState state) {
+    public TimelinesDropdownRenderer(@Nonnull ReplayState state, @Nonnull BasePlayer player) {
         super(state);
+        this.player = player;
     }
 
     @Override
@@ -87,9 +90,11 @@ public class TimelinesDropdownRenderer extends BaseRenderer<EditorUI.Data> {
             Store<EntityStore> store = context.store;
             Player playerComponent = store.getComponent(ref, Player.getComponentType());
             assert playerComponent != null;
-            playerComponent.getPageManager().openCustomPage(ref, store, new NewTimelineUI(context.playerRef, state));
+            playerComponent.getPageManager().openCustomPage(ref, store, new NewTimelineUI(
+                    context.playerRef, player, state
+            ));
         } else {
-            state.loadTimeline(selected);
+            state.loadTimeline(player.getSaveUUID(state), selected);
             context.close();
         }
     }

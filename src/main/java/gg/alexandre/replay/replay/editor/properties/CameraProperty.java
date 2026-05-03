@@ -1,7 +1,7 @@
 package gg.alexandre.replay.replay.editor.properties;
 
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import gg.alexandre.replay.replay.ReplayPlayer;
+import gg.alexandre.replay.replay.BasePlayer;
 import gg.alexandre.replay.replay.editor.interpolation.InterpolationUtil;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
@@ -105,14 +105,14 @@ public class CameraProperty extends BaseProperty<Position> {
     }
 
     @Override
-    public void onClick(@Nonnull ReplayPlayer player, @Nonnull ReplayState state,
+    public void onClick(@Nonnull BasePlayer player, @Nonnull ReplayState state,
                         @Nonnull Player playerComponent, @Nonnull UIEventContext<?> context, int tick) {
         handle(state, tick);
         state.cameraManager.moveCamera(state, context.playerRef, true);
     }
 
     @Override
-    public void editKeyframe(@Nonnull ReplayPlayer player, @Nonnull ReplayState state,
+    public void editKeyframe(@Nonnull BasePlayer player, @Nonnull ReplayState state,
                              @Nonnull Player playerComponent, @Nonnull UIEventContext<?> context, int tick) {
         state.overlay.clearImmediately(context.playerRef);
 
