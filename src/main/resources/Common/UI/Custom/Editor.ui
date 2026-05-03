@@ -222,22 +222,19 @@ Group {
             );
           }
 
-          Button #ExportCutScene {
+          Button #EditCutScene {
             Anchor: (Width: 16, Height: 16, Left: 10);
             Padding: (Vertical: 2);
-            TooltipText: %replay.exportForTriggerVolumes;
+            TooltipText: %replay.editCutSceneSettings;
             Style: (
               Default: (
-                Background: (TexturePath: "Assets/ExportCutScene.png"),
+                Background: (TexturePath: "Assets/Edit.png"),
               ),
               Hovered: (
-                Background: (TexturePath: "Assets/ExportCutSceneHovered.png"),
+                Background: (TexturePath: "Assets/EditHovered.png"),
               ),
               Pressed: (
-                Background: (TexturePath: "Assets/ExportCutScenePressed.png"),
-              ),
-              Disabled: (
-                Background: (TexturePath: "Assets/ExportCutSceneDisabled.png"),
+                Background: (TexturePath: "Assets/EditPressed.png"),
               ),
               Sounds: (
                 MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
@@ -245,22 +242,19 @@ Group {
             );
           }
 
-          Button #EditCutScene {
-            Anchor: (Width: 16, Height: 16, Left: 10);
+          Button #ExportCutScene {
+            Anchor: (Width: 20, Height: 20, Left: 10);
             Padding: (Vertical: 2);
-            TooltipText: %replay.editCutScene;
+            TooltipText: %replay.exportForTriggerVolumes;
             Style: (
               Default: (
-                Background: (TexturePath: "Assets/EditCutScene.png"),
+                Background: (TexturePath: "Assets/TriggerVolumes.png"),
               ),
               Hovered: (
-                Background: (TexturePath: "Assets/EditCutSceneHovered.png"),
+                Background: (TexturePath: "Assets/TriggerVolumesHovered.png"),
               ),
               Pressed: (
-                Background: (TexturePath: "Assets/EditCutScenePressed.png"),
-              ),
-              Disabled: (
-                Background: (TexturePath: "Assets/EditCutSceneDisabled.png"),
+                Background: (TexturePath: "Assets/TriggerVolumesPressed.png"),
               ),
               Sounds: (
                 MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
