@@ -24,7 +24,7 @@ public abstract class BaseProperty<T> {
         this.defaultValue = defaultValue;
     }
 
-    public abstract void handle(@Nonnull ReplayState state, int tick);
+    public abstract void handle(@Nonnull ReplayState state, double tick);
 
     public void onClick(@Nonnull ReplayPlayer player, @Nonnull ReplayState state,
                         @Nonnull Player playerComponent, @Nonnull UIEventContext<?> context, int tick) {
@@ -35,7 +35,7 @@ public abstract class BaseProperty<T> {
                                       @Nonnull Player playerComponent, @Nonnull UIEventContext<?> context, int tick);
 
     @Nullable
-    public abstract T getValue(int tick);
+    public abstract T getValue(double tick);
 
     @Nonnull
     public abstract String id();

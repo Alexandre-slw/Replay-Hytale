@@ -16,7 +16,7 @@ public class FovProperty extends DoubleProperty {
     }
 
     @Override
-    public void handle(@Nonnull ReplayState state, int tick) {
+    public void handle(@Nonnull ReplayState state, double tick) {
         Double value = getValue(tick);
         if (value == null) {
             return;
