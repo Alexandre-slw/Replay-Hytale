@@ -123,7 +123,9 @@ public class ReplayUI extends BaseUI<ReplayUI.Data> {
     }
 
     private void onRecord(@Nonnull UIEventContext<Data> context) {
-        context.close();
+        if (!recording) {
+            context.close();
+        }
 
         Ref<EntityStore> ref = context.playerRef.getReference();
         assert ref != null;
