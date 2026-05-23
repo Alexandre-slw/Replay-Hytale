@@ -8,7 +8,7 @@ import java.util.Arrays;
 public class Base85 {
 
     private static final char[] BASE85_ALPHABET =
-            "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#".toCharArray();
+            "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()_~|;@%$#".toCharArray();
 
     private static final int[] BASE85_REVERSE = new int[128];
 
