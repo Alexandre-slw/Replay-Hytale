@@ -97,8 +97,8 @@ public class CameraManager {
 
                 settings.rotation = PositionUtil.toDirectionPacket(rotation);
                 settings.rotationType = RotationType.Custom;
-                settings.rotationLerpSpeed = 0.8f;
-                settings.positionLerpSpeed = 0.8f;
+                settings.rotationLerpSpeed = 0.15f;
+                settings.positionLerpSpeed = 0.15f;
 
                 if (!cutScene) {
                     settings.sendMouseMotion = false;
