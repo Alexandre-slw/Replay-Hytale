@@ -6,5 +6,10 @@ version = modManifest["Version"] as String
 group = "gg.alexandre"
 
 tasks.jar {
-    archiveFileName.set("${modManifest["Name"]}-${modManifest["Version"]}.jar")
+    var serverVersion = modManifest["ServerVersion"] as String;
+    if (serverVersion.contains("=")) {
+        serverVersion = serverVersion.split("=")[1].trim()
+    }
+
+    archiveFileName.set("${modManifest["Name"]}-${modManifest["Version"]}-Hytale-${serverVersion}.jar")
 }
