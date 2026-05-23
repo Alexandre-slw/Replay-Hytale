@@ -23,12 +23,12 @@ public class CutSceneEffect extends TriggerEffect {
                     CutSceneEffect.class, CutSceneEffect::new, BASE_CODEC
             )
             .append(
-                    new KeyedCodec<>("Play", Codec.BOOLEAN, false),
+                    new KeyedCodec<>("Play", Codec.BOOLEAN),
                     (e, v) -> e.play = v,
                     (e) -> e.play
             ).add()
             .append(
-                    new KeyedCodec<>("Data", Codec.STRING, false),
+                    new KeyedCodec<>("Data", Codec.STRING),
                     (e, v) -> e.data = v,
                     (e) -> e.data
             ).add()
