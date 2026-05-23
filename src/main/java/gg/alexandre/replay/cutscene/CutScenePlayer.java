@@ -139,6 +139,8 @@ public class CutScenePlayer extends BasePlayer {
 
     public void stop(@Nonnull ReplayState state) {
         states.remove(state.playerUuid);
+
+        state.timeline.save(getSaveUUID(state), state.selectedTimeline);
     }
 
     public void stopAll() {
