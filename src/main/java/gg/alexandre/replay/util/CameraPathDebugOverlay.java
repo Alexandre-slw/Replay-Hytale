@@ -1,14 +1,15 @@
 package gg.alexandre.replay.util;
 
-import com.hypixel.hytale.math.matrix.Matrix4d;
-import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.matrix.Matrix4dUtil;
 import com.hypixel.hytale.protocol.DebugFlags;
 import com.hypixel.hytale.protocol.DebugShape;
 import com.hypixel.hytale.protocol.ToClientPacket;
-import com.hypixel.hytale.protocol.Vector3f;
 import com.hypixel.hytale.protocol.packets.player.ClearDebugShapes;
 import com.hypixel.hytale.protocol.packets.player.DisplayDebug;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import org.joml.Matrix4d;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -112,24 +113,42 @@ public class CameraPathDebugOverlay {
     }
 
     @Nonnull
+    private static Vector3d directionFromYawPitch(double yaw, double pitch) {
+        return new Vector3d(
+                Math.sin(yaw) * Math.cos(pitch),
+                -Math.sin(pitch),
+                Math.cos(yaw) * Math.cos(pitch)
+        ).normalize();
+    }
+
+    @Nonnull
     private DisplayDebug makeCone(@Nonnull Position position, @Nonnull Vector3f color, double radius,
                                   @Nonnull Vector3d playerPosition) {
-        Matrix4d tmp = new Matrix4d();
+        Vector3d direction = directionFromYawPitch(position.pitch(), position.yaw());
+
         Matrix4d matrix = new Matrix4d();
         matrix.identity();
 
         matrix.translate(position.x(), position.y() + 1.8, position.z());
-        matrix.rotateAxis(-position.pitch(), 0.0, 1.0, 0.0, tmp);
-        matrix.rotateAxis((Math.PI / 2.0) - position.yaw(), 1.0, 0.0, 0.0, tmp);
-        matrix.rotateAxis(Math.PI, 1.0, 0.0, 0.0, tmp);
+
+        double angleY = Math.atan2(direction.z, direction.x);
+        matrix.rotate(-(angleY + (Math.PI / 2.0)), 0.0, 1.0, 0.0);
+
+        double angleX = Math.atan2(
+                Math.sqrt(direction.x * direction.x + direction.z * direction.z),
+                direction.y
+        );
+        matrix.rotate(-angleX, 1.0, 0.0, 0.0);
+
         matrix.scale(radius, radius, radius);
 
         float distanceOpacity = getDistanceOpacity(playerPosition, new Vector3d(
                 position.x(), position.y(), position.z()
         ));
+
         return new DisplayDebug(
                 DebugShape.Cone,
-                matrix.asFloatData(),
+                Matrix4dUtil.asFloatData(matrix),
                 new Vector3f(color),
                 lifetimeSeconds,
                 FLAG_FADE,
@@ -150,16 +169,14 @@ public class CameraPathDebugOverlay {
             return null;
         }
 
-        Matrix4d tmp = new Matrix4d();
         Matrix4d matrix = new Matrix4d();
-        matrix.identity();
         matrix.translate(start.x, start.y + 1.8, start.z);
 
         double angleY = Math.atan2(dirZ, dirX);
-        matrix.rotateAxis(angleY + (Math.PI / 2.0), 0.0, 1.0, 0.0, tmp);
+        matrix.rotate(-(angleY + (Math.PI / 2.0)), 0.0, 1.0, 0.0);
 
         double angleX = Math.atan2(Math.sqrt(dirX * dirX + dirZ * dirZ), dirY);
-        matrix.rotateAxis(angleX, 1.0, 0.0, 0.0, tmp);
+        matrix.rotate(-angleX, 1.0, 0.0, 0.0);
 
         matrix.translate(0.0, length / 2.0, 0.0);
         matrix.scale(thickness, length, thickness);
@@ -167,9 +184,10 @@ public class CameraPathDebugOverlay {
         float distanceOpacity = Math.min(
                 getDistanceOpacity(playerPosition, start), getDistanceOpacity(playerPosition, end)
         );
+
         return new DisplayDebug(
                 DebugShape.Cube,
-                matrix.asFloatData(),
+                Matrix4dUtil.asFloatData(matrix),
                 new Vector3f(color),
                 lifetimeSeconds,
                 FLAG_FADE,

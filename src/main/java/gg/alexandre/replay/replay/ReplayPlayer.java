@@ -5,10 +5,8 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
-import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
+import com.hypixel.hytale.math.vector.Rotation3f;
 import com.hypixel.hytale.protocol.*;
 import com.hypixel.hytale.protocol.packets.assets.UpdateBlockHitboxes;
 import com.hypixel.hytale.protocol.packets.assets.UpdateTranslations;
@@ -16,8 +14,6 @@ import com.hypixel.hytale.protocol.packets.connection.ClientDisconnect;
 import com.hypixel.hytale.protocol.packets.connection.Ping;
 import com.hypixel.hytale.protocol.packets.connection.Pong;
 import com.hypixel.hytale.protocol.packets.entities.EntityUpdates;
-import com.hypixel.hytale.protocol.packets.interaction.CancelInteractionChain;
-import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
 import com.hypixel.hytale.protocol.packets.interface_.*;
 import com.hypixel.hytale.protocol.packets.player.*;
@@ -28,7 +24,6 @@ import com.hypixel.hytale.server.core.Constants;
 import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.ServerManager;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
@@ -47,18 +42,15 @@ import gg.alexandre.replay.file.ReplayInputFile;
 import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.protocol.packets.TickReplayPacket;
-import gg.alexandre.replay.replay.editor.commands.SetKeyframeValueCommand;
-import gg.alexandre.replay.replay.editor.properties.CameraProperty;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
-import gg.alexandre.replay.ui.editor.EditorUI;
-import gg.alexandre.replay.ui.manager.RealtimePageManager;
 import gg.alexandre.replay.util.FovPacketUtil;
 import gg.alexandre.replay.util.Position;
 import gg.alexandre.replay.util.PositionTracker;
+import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+import org.joml.Vector3d;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -70,15 +62,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.UUID;
 
-public class ReplayPlayer extends TickingSystem<EntityStore> {
+public class ReplayPlayer extends BasePlayer {
 
     private final Path replayStatePath;
 
     private final ReplayProtocol protocol;
-    private final Map<UUID, ReplayState> states = new ConcurrentHashMap<>();
     private final HytaleLogger logger = HytaleLogger.forEnclosingClass();
 
     public ReplayPlayer(@Nonnull ReplayProtocol protocol, @Nonnull Path dataDirectory) {
@@ -177,12 +167,12 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             }
 
             if (packet instanceof Ping ||
-                    packet instanceof SetPage ||
-                    packet instanceof CustomPage ||
-                    packet instanceof ResetUserInterfaceState ||
-                    packet instanceof UpdateAnchorUI) {
+                packet instanceof SetPage ||
+                packet instanceof CustomPage ||
+                packet instanceof ResetUserInterfaceState ||
+                packet instanceof UpdateAnchorUI) {
                 return packet instanceof CustomPage customPage &&
-                        customPage.key != null && !customPage.key.startsWith("gg.alexandre.");
+                       customPage.key != null && !customPage.key.startsWith("gg.alexandre.");
             }
 
 //            if (packet instanceof UpdateBlockTypes updateBlockTypes && updateBlockTypes.blockTypes != null) {
@@ -220,7 +210,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                                     if (data instanceof TransformUpdate transformUpdate) {
                                         Position pos;
                                         if (!state.position.sentInitialPosition &&
-                                                state.file.getMetadata().position != null) {
+                                            state.file.getMetadata().position != null) {
                                             state.position.sentInitialPosition = true;
                                             pos = state.file.getMetadata().position;
                                         } else {
@@ -237,10 +227,10 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
                                                 new Vector3d(pos.x(), pos.y(), pos.z())
                                         );
                                         transformUpdate.transform.bodyOrientation = PositionUtil.toDirectionPacket(
-                                                new Vector3f(0, (float) pos.pitch(), 0)
+                                                new Rotation3f(0, (float) pos.pitch(), 0)
                                         );
                                         transformUpdate.transform.lookOrientation = PositionUtil.toDirectionPacket(
-                                                new Vector3f((float) pos.yaw(), (float) pos.pitch(), 0)
+                                                new Rotation3f((float) pos.yaw(), (float) pos.pitch(), 0)
                                         );
 
                                         PositionTracker.onTransformUpdate(state, transformUpdate);
@@ -272,55 +262,6 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private void handleInteractionChains(@Nonnull PacketHandler handler, @Nonnull ReplayState state,
-                                         @Nonnull SyncInteractionChains syncInteractionChains) {
-        SyncInteractionChain interactionChain = null;
-
-        for (int i = 0; i < syncInteractionChains.updates.length; i++) {
-            SyncInteractionChain chain = syncInteractionChains.updates[i];
-            if (chain.interactionType == InteractionType.Primary && chain.initial) {
-                interactionChain = chain;
-                break;
-            }
-        }
-
-        if (interactionChain == null) {
-            return;
-        }
-
-        SyncInteractionChain chain = interactionChain;
-        bypassFilter(state, () ->
-                handler.writeNoCache(new CancelInteractionChain(chain.chainId, chain.forkedId))
-        );
-        state.ui.controlGame = false;
-
-        if (state.ui.editingCamera && state.ui.selectedKeyframe != null) {
-            state.commandsStack.execute(new SetKeyframeValueCommand(
-                    state,
-                    state.ui.selectedKeyframe.propertyId(),
-                    state.ui.selectedKeyframe.tick(),
-                    new Position(
-                            state.position.x,
-                            state.position.y,
-                            state.position.z,
-                            state.position.headPitch,
-                            state.position.headYaw
-                    )
-            ));
-        }
-
-        state.ui.editingCamera = false;
-    }
-
-    @Nullable
-    private ReplayState getState(@Nonnull PacketHandler packetHandler) {
-        if (packetHandler.getAuth() == null) {
-            return null;
-        }
-
-        return states.get(packetHandler.getAuth().getUuid());
     }
 
     private void clearWorld(@Nonnull PlayerRef playerRef, @Nonnull ReplayState state) {
@@ -376,7 +317,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
 
     public void initState(@Nonnull UUID uuid, @Nonnull String lang, @Nonnull Path replayPath) {
         ReplayState state = new ReplayState();
-        state.replayPath = replayPath;
+        state.path = replayPath;
         state.playerUuid = uuid;
         state.lang = lang;
         // Run the first second so we don't see a blank world
@@ -391,7 +332,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         states.put(uuid, state);
 
         try {
-            state.loadTimelines();
+            state.loadTimelines(getSaveUUID(state));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -427,7 +368,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         JsonObject json = new JsonObject();
         json.addProperty("uuid", state.playerUuid.toString());
         json.addProperty("lang", state.lang);
-        json.addProperty("replayPath", state.replayPath.toString());
+        json.addProperty("replayPath", state.path.toString());
         json.addProperty("timestamp", System.currentTimeMillis());
 
         try (JsonWriter writer = new JsonWriter(new FileWriter(replayStatePath.toFile()))) {
@@ -474,6 +415,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
+    @Override
     public void restart(@Nonnull ReplayState state) {
         if (!state.stage.hasStarted) {
             return;
@@ -486,18 +428,17 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
 
         try {
-            state.file = new ReplayInputFile(state.replayPath, protocol);
+            state.file = new ReplayInputFile(state.path, protocol);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         state.stage.clearedWorld = false;
-        state.currentTick = 0;
         state.stage.sentJoinWorld = false;
         state.stage.clientReady = false;
         state.clientId = 0;
 
-        state.stage.isPlaying = false;
+        super.restart(state);
     }
 
     public void stop(@Nonnull PlayerRef playerRef) {
@@ -548,7 +489,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             }
 
             World world = store.getExternalData().getWorld();
-            world.execute(() -> tick(state, playerRef, world));
+            tick(state, playerRef, world);
         }
     }
 
@@ -628,7 +569,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
 
         if (move) {
-            state.cameraManager.moveCamera(state, playerRef, this, false);
+            state.cameraManager.moveCamera(state, playerRef, false);
         }
 
         handleTimeDilation(state, playerRef.getPacketHandler(), move);
@@ -646,48 +587,6 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
             Vector3d playerPosition = new Vector3d(state.position.x, state.position.y, state.position.z);
             state.fovUtil.apply(state.edit.fov, playerPosition);
         }
-    }
-
-    private void handleCameraPathDisplay(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
-        if (state.stage.isPlaying) {
-            state.overlay.clearImmediately(playerRef);
-            return;
-        }
-
-        if (!state.overlay.shouldRender()) {
-            return;
-        }
-
-        CameraProperty cameraProperty = (CameraProperty) state.timeline.getProperties().get("camera");
-
-        TreeMap<Integer, Position> values = cameraProperty.getValues();
-        if (values.isEmpty()) {
-            return;
-        }
-
-        List<Position> positions = values.values().stream().toList();
-
-        List<Vector3d> lines = new ArrayList<>();
-        int ticksResolution = 10;
-        int maxTicksWindow = 30 * 60;
-
-        int from = Math.max(values.firstKey(), state.currentTick - maxTicksWindow);
-        int to = Math.min(values.lastKey(), state.currentTick + maxTicksWindow);
-
-        for (int i = from; i <= to; i += ticksResolution) {
-            Position position = cameraProperty.getValue(i);
-            if (position == null) {
-                continue;
-            }
-
-            lines.add(new Vector3d(position.x(), position.y(), position.z()));
-        }
-
-        Vector3d playerPosition = new Vector3d(state.position.x, state.position.y, state.position.z);
-
-        state.overlay.renderTo(
-                playerRef, positions, lines, playerPosition, cameraProperty.getValue((int) state.targetTick)
-        );
     }
 
     private void handleTimeDilation(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler, boolean move) {
@@ -708,52 +607,6 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
-    private void handlePage(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
-        if (state.ui.controlGame) {
-            return;
-        }
-
-        Ref<EntityStore> ref = playerRef.getReference();
-        if (ref == null) {
-            return;
-        }
-
-        Store<EntityStore> store = ref.getStore();
-        Player player = store.getComponent(ref, Player.getComponentType());
-        assert player != null;
-
-        replacePageManager(playerRef, player);
-
-        EditorUI editorUI;
-
-        CustomUIPage customPage = player.getPageManager().getCustomPage();
-        if (customPage instanceof EditorUI ui) {
-            editorUI = ui;
-        } else if (customPage == null) {
-            editorUI = new EditorUI(playerRef, this, state);
-            player.getPageManager().openCustomPage(ref, store, editorUI);
-        } else {
-            return;
-        }
-
-        editorUI.tick();
-    }
-
-    private void replacePageManager(@Nonnull PlayerRef playerRef, @Nonnull Player player) {
-        if (player.getPageManager() instanceof RealtimePageManager) {
-            return;
-        }
-
-        try {
-            Field pageManagerField = Player.class.getDeclaredField("pageManager");
-            pageManagerField.setAccessible(true);
-
-            pageManagerField.set(player, new RealtimePageManager(playerRef, player.getWindowManager()));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private boolean canProcessPackets(@Nonnull ReplayState state) {
         if (!state.stage.sentJoinWorld) {
             return true;
@@ -762,6 +615,7 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         return state.stage.clientReady;
     }
 
+    @Override
     public void bypassFilter(@Nonnull ReplayState state, @Nonnull Runnable runnable) {
         if (!state.stage.isFilteringPackets || state.stage.isProcessingPackets) {
             runnable.run();
@@ -776,4 +630,13 @@ public class ReplayPlayer extends TickingSystem<EntityStore> {
         }
     }
 
+    @Override
+    public int getDurationTicks(@Nonnull ReplayState state) {
+        return state.file.getMetadata().ticks;
+    }
+
+    @Override
+    public UUID getSaveUUID(@NonNullDecl ReplayState state) {
+        return state.file.getMetadata().uuid;
+    }
 }

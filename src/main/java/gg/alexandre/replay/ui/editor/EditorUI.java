@@ -11,12 +11,10 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import gg.alexandre.replay.file.ReplayMetadata;
-import gg.alexandre.replay.replay.ReplayPlayer;
+import gg.alexandre.replay.cutscene.CutSceneCodec;
+import gg.alexandre.replay.replay.BasePlayer;
 import gg.alexandre.replay.replay.state.ReplayState;
-import gg.alexandre.replay.ui.BaseUI;
-import gg.alexandre.replay.ui.CloseUI;
-import gg.alexandre.replay.ui.HideUI;
+import gg.alexandre.replay.ui.*;
 import gg.alexandre.replay.ui.codec.CodecConstructor;
 import gg.alexandre.replay.ui.codec.UIKey;
 import gg.alexandre.replay.ui.editor.renderers.*;
@@ -46,7 +44,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
         public int tick;
     }
 
-    private final ReplayPlayer player;
+    private final BasePlayer player;
     private final ReplayState state;
 
     private boolean needToResume = false;
@@ -58,7 +56,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     private final List<BaseRenderer<Data>> layoutRenderers;
     private final List<BaseRenderer<Data>> tickRenderers;
 
-    public EditorUI(@Nonnull PlayerRef playerRef, ReplayPlayer player, ReplayState state) {
+    public EditorUI(@Nonnull PlayerRef playerRef, BasePlayer player, ReplayState state) {
         super(playerRef, CustomPageLifetime.CanDismissOrCloseThroughInteraction, CODEC);
         this.player = player;
         this.state = state;
@@ -67,13 +65,13 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
         layoutRenderers = List.of(
                 new PlayheadLayoutRenderer(state),
-                new TimeScaleRenderer(state),
+                new TimeScaleRenderer(state, player),
                 keyframesRenderer
         );
 
         tickRenderers = List.of(
-                new TimelinesDropdownRenderer(state),
-                new PlaytailRenderer(state),
+                new TimelinesDropdownRenderer(state, player),
+                new PlaytailRenderer(state, player),
                 new PropertiesDropdownRenderer(state),
                 new PropertiesHeaderRenderer(state),
                 keyframesRenderer,
@@ -87,8 +85,10 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
         uiCommandBuilder.append("Editor.ui");
 
-        ReplayMetadata metadata = state.file.getMetadata();
-        uiCommandBuilder.set("#Playhead.Max", metadata.ticks);
+        uiCommandBuilder.set("#Playhead.Max", player.getDurationTicks(state));
+
+        uiCommandBuilder.set("#ExportCutScene.Visible", state.cutSceneMetadata != null);
+        uiCommandBuilder.set("#EditCutScene.Visible", state.cutSceneMetadata != null);
 
         layout(uiCommandBuilder, eventHandler);
         tick(uiCommandBuilder, eventHandler);
@@ -167,6 +167,16 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
                 "#Help",
                 this::onHelp
         );
+
+        eventHandler.handle(CustomUIEventBindingType.Activating,
+                "#ExportCutScene",
+                this::onExportCutScene
+        );
+
+        eventHandler.handle(CustomUIEventBindingType.Activating,
+                "#EditCutScene",
+                this::onEditCutScene
+        );
     }
 
     private void onPlayhead(@Nonnull UIEventContext<Data> context) {
@@ -226,7 +236,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     }
 
     private void onSave(@Nonnull UIEventContext<Data> context) {
-        state.timeline.save(state.file.getMetadata().uuid, state.selectedTimeline);
+        state.timeline.save(player.getSaveUUID(state), state.selectedTimeline);
 
         player.bypassFilter(state, () ->
                 playerRef.sendMessage(
@@ -258,6 +268,32 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
     private void onHelp(@Nonnull UIEventContext<Data> context) {
         helpVisible = !helpVisible;
         context.uiCommandBuilder.set("#HelpPanel.Visible", helpVisible);
+    }
+
+    private void onExportCutScene(@Nonnull UIEventContext<Data> context) {
+        context.store.getExternalData().getWorld().execute(() -> {
+            Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
+            assert playerComponent != null;
+
+            CutSceneCodec.Data data = new CutSceneCodec.Data(state.timeline, player.getDurationTicks(state));
+
+            playerComponent.getPageManager().openCustomPage(
+                    context.ref, context.store, new CopyUI(playerRef, CutSceneCodec.toDataString(data))
+            );
+        });
+    }
+
+    private void onEditCutScene(@Nonnull UIEventContext<Data> context) {
+        context.store.getExternalData().getWorld().execute(() -> {
+            Player playerComponent = context.store.getComponent(context.ref, Player.getComponentType());
+            assert playerComponent != null;
+
+            playerComponent.getPageManager().openCustomPage(
+                    context.ref, context.store, new EditCutSceneUI(
+                            playerRef, state.path, state.cutSceneMetadata, false, state
+                    )
+            );
+        });
     }
 
     private void onClose(@Nonnull UIEventContext<Data> context) {

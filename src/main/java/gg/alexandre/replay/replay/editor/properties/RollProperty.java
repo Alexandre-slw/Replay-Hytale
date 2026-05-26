@@ -1,7 +1,7 @@
 package gg.alexandre.replay.replay.editor.properties;
 
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import gg.alexandre.replay.replay.ReplayPlayer;
+import gg.alexandre.replay.replay.BasePlayer;
 import gg.alexandre.replay.replay.editor.properties.base.DoubleProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.EditKeyframeUI;
@@ -26,7 +26,7 @@ public class RollProperty extends DoubleProperty {
     }
 
     @Override
-    public void editKeyframe(@Nonnull ReplayPlayer player, @Nonnull ReplayState state,
+    public void editKeyframe(@Nonnull BasePlayer player, @Nonnull ReplayState state,
                              @Nonnull Player playerComponent, @Nonnull UIEventContext<?> context, int tick) {
         Double value = getValue(tick);
         if (value == null) {

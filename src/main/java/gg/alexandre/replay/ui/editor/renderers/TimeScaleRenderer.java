@@ -1,7 +1,7 @@
 package gg.alexandre.replay.ui.editor.renderers;
 
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
-import gg.alexandre.replay.file.ReplayMetadata;
+import gg.alexandre.replay.replay.BasePlayer;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.editor.EditorUI;
 import gg.alexandre.replay.ui.event.UIEventHandler;
@@ -19,8 +19,11 @@ public class TimeScaleRenderer extends BaseRenderer<EditorUI.Data> {
             86400000
     };
 
-    public TimeScaleRenderer(@Nonnull ReplayState state) {
+    private final BasePlayer player;
+
+    public TimeScaleRenderer(@Nonnull ReplayState state, @Nonnull BasePlayer player) {
         super(state);
+        this.player = player;
     }
 
     @Override
@@ -29,10 +32,9 @@ public class TimeScaleRenderer extends BaseRenderer<EditorUI.Data> {
         uiCommandBuilder.clear("#Timestamps");
         uiCommandBuilder.clear("#Ticks");
 
-        ReplayMetadata metadata = state.file.getMetadata();
-        double msPerPixel = getMsPerPixel(metadata, width);
+        int totalTicks = player.getDurationTicks(state);
+        double msPerPixel = getMsPerPixel(totalTicks, width);
 
-        long totalTicks = metadata.ticks;
         long totalDurationMs = ticksToDuration(totalTicks).toMillis();
 
         int minorTickIntervalMs = getMinorTickInterval(msPerPixel);
@@ -99,8 +101,8 @@ public class TimeScaleRenderer extends BaseRenderer<EditorUI.Data> {
         return STEPS_MS[STEPS_MS.length - 1];
     }
 
-    private double getMsPerPixel(@Nonnull ReplayMetadata metadata, int width) {
-        return ticksToDuration(metadata.ticks).toMillis() / (double) width;
+    private double getMsPerPixel(int ticks, int width) {
+        return ticksToDuration(ticks).toMillis() / (double) width;
     }
 
     @Nonnull

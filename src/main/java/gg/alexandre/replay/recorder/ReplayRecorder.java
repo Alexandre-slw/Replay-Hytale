@@ -37,6 +37,7 @@ import gg.alexandre.replay.ui.SaveUI;
 import gg.alexandre.replay.util.DummyUtil;
 import gg.alexandre.replay.util.Position;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
 import javax.annotation.Nonnull;
@@ -230,7 +231,7 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
             type = cachedPacket.getPacketType();
         }
 
-        PacketIO.writeFramedPacket(packet, type, buffer, PacketStatsRecorder.NOOP);
+        PacketIO.writeFramedPacket(packet, type, buffer, ByteBufAllocator.DEFAULT, PacketStatsRecorder.NOOP);
 
         return new HytaleReplayPacket(buffer);
     }

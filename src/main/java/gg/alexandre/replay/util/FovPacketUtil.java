@@ -2,7 +2,6 @@ package gg.alexandre.replay.util;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.math.util.ChunkUtil;
-import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.protocol.*;
 import com.hypixel.hytale.protocol.packets.assets.UpdateFluidFX;
 import com.hypixel.hytale.protocol.packets.assets.UpdateFluids;
@@ -12,6 +11,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.chunk.section.FluidSection;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
+import org.joml.Vector3d;
 
 import javax.annotation.Nonnull;
 import java.util.*;

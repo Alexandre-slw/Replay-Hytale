@@ -11,16 +11,18 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import gg.alexandre.replay.ReplayPlugin;
-import gg.alexandre.replay.ui.ReplayUI;
+import gg.alexandre.replay.ui.CutSceneUI;
 import gg.alexandre.replay.util.UpdateUtil;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 
-public class ReplayCommand extends AbstractPlayerCommand {
+public class CutSceneCommand extends AbstractPlayerCommand {
 
-    public ReplayCommand(@Nonnull String name, @Nonnull String description) {
+    public CutSceneCommand(@Nonnull String name, @Nonnull String description) {
         super(name, description);
+
+        addAliases("cutscenes");
     }
 
     @Override
@@ -55,7 +57,9 @@ public class ReplayCommand extends AbstractPlayerCommand {
             player.getPageManager().openCustomPage(
                     ref,
                     store,
-                    new ReplayUI(playerRef, ReplayPlugin.get().getRepository(), ReplayPlugin.get().getRecorder())
+                    new CutSceneUI(
+                            playerRef, ReplayPlugin.get().getCutSceneRepository(), ReplayPlugin.get().getRecorder()
+                    )
             );
         });
     }

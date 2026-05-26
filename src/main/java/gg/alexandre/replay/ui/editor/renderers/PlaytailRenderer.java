@@ -3,6 +3,7 @@ package gg.alexandre.replay.ui.editor.renderers;
 import com.hypixel.hytale.server.core.ui.Anchor;
 import com.hypixel.hytale.server.core.ui.Value;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
+import gg.alexandre.replay.replay.BasePlayer;
 import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.ui.editor.EditorUI;
 import gg.alexandre.replay.ui.event.UIEventHandler;
@@ -15,8 +16,11 @@ public class PlaytailRenderer extends BaseRenderer<EditorUI.Data> {
     private int lastWidth = -1;
     private boolean lastDragging;
 
-    public PlaytailRenderer(@Nonnull ReplayState state) {
+    private final BasePlayer player;
+
+    public PlaytailRenderer(@Nonnull ReplayState state, @Nonnull BasePlayer player) {
         super(state);
+        this.player = player;
     }
 
     @Override
@@ -31,7 +35,7 @@ public class PlaytailRenderer extends BaseRenderer<EditorUI.Data> {
 
         width += 7;
 
-        int x = (int) Math.round(width * (state.ui.draggingTick / (double) state.file.getMetadata().ticks));
+        int x = (int) Math.round(width * (state.ui.draggingTick / (double) player.getDurationTicks(state)));
 
         Anchor anchor = new Anchor();
         anchor.setLeft(Value.of(x - 1));

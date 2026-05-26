@@ -3,7 +3,7 @@ package gg.alexandre.replay.ui.editor.renderers;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
-import gg.alexandre.replay.replay.ReplayPlayer;
+import gg.alexandre.replay.replay.BasePlayer;
 import gg.alexandre.replay.replay.editor.commands.MoveKeyframeCommand;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
@@ -16,11 +16,11 @@ import javax.annotation.Nonnull;
 
 public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
 
-    private final ReplayPlayer player;
+    private final BasePlayer player;
 
     private int lastWidth = -1;
 
-    public KeyframesRenderer(@Nonnull ReplayState state, @Nonnull ReplayPlayer player) {
+    public KeyframesRenderer(@Nonnull ReplayState state, @Nonnull BasePlayer player) {
         super(state);
         this.player = player;
     }
@@ -65,7 +65,7 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
                 };
                 """, width + 7));
 
-        int ticks = state.file.getMetadata().ticks;
+        int ticks = player.getDurationTicks(state);
         for (BaseProperty<?> property : state.timeline.getProperties().values()) {
             String id = property.id();
 

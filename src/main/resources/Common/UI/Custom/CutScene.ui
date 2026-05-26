@@ -1,0 +1,37 @@
+$C = "Common.ui";
+
+Group {
+  LayoutMode: MiddleCenter;
+
+  $C.@DecoratedContainer {
+    Anchor: (Width: 800);
+
+    #Title {
+      $C.@Title { @Text = %replay.cutScenesTitle; }
+    }
+
+    #Content {
+      LayoutMode: Top;
+      Padding: (Full: 30);
+
+      $C.@PanelTitle {
+        @Text = %replay.create;
+
+        $C.@TextButton #Create {
+          @Text = %replay.newCutScene;
+        }
+      }
+
+      $C.@PanelTitle {
+        @Text = %replay.cutScenes;
+        Anchor: (Top: 20);
+        
+        Group #List {
+          LayoutMode: TopScrolling;
+          ScrollbarStyle: $C.@DefaultScrollbarStyle;
+          Anchor: (Height: 500, Top: 10);
+        }
+      }
+    }
+  }
+}

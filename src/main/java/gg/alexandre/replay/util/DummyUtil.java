@@ -30,8 +30,11 @@ public class DummyUtil {
     @Nonnull
     public static CompletableFuture<PlayerRef> spawnDummyWatcher(@Nonnull PlayerRef targetPlayer, @Nonnull String name,
                                                                  @Nonnull UUID uuid) {
-        Player player = targetPlayer.getReference().getStore().getComponent(
-                targetPlayer.getReference(), Player.getComponentType()
+        Ref<EntityStore> reference = targetPlayer.getReference();
+        assert reference != null;
+
+        Player player = reference.getStore().getComponent(
+                reference, Player.getComponentType()
         );
 
         EmbeddedChannel dummyChannel = new EmbeddedChannel();
@@ -39,18 +42,15 @@ public class DummyUtil {
         NettyUtil.TimeoutContext.init(dummyChannel, "play", "");
 
         return Universe.get().addPlayer(
-                dummyChannel,
+                new NettyUtil.NettyChannelConnection(dummyChannel),
                 targetPlayer.getLanguage(),
                 targetPlayer.getPacketHandler().getProtocolVersion(),
-                uuid,
-                name,
                 new PlayerAuthentication(uuid, name),
-                player.getClientViewRadius(),
-                null
+                player.getClientViewRadius()
         ).thenApply(playerRef -> {
             Ref<EntityStore> ref = playerRef.getReference();
 
-            ref.getStore().putComponent(ref, ReplayPlugin.TAG_TYPE, new TargetWatcherTag(targetPlayer.getReference()));
+            ref.getStore().putComponent(ref, ReplayPlugin.TAG_TYPE, new TargetWatcherTag(reference));
             makeGhost(ref.getStore(), ref);
 
             return playerRef;

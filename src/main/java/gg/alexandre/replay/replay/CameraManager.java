@@ -1,7 +1,6 @@
 package gg.alexandre.replay.replay;
 
-import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
+import com.hypixel.hytale.math.vector.Rotation3f;
 import com.hypixel.hytale.protocol.*;
 import com.hypixel.hytale.protocol.packets.camera.SetServerCamera;
 import com.hypixel.hytale.protocol.packets.player.ClientTeleport;
@@ -10,6 +9,7 @@ import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.util.PositionUtil;
 import gg.alexandre.replay.replay.state.ReplayState;
+import org.joml.Vector3d;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,86 +22,100 @@ public class CameraManager {
     private boolean hasFov;
     private int offset;
 
-    private Vector3f lastRotation = Vector3f.ZERO;
+    private Rotation3f lastRotation = new Rotation3f();
 
-    public void moveCamera(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef, @Nonnull ReplayPlayer player,
-                           boolean force) {
-        player.bypassFilter(state, () -> {
-            boolean hadFov = hasFov;
-            hasFov = state.edit.fov != 1.0;
+    private boolean cutScene = false;
 
-            boolean wasFollowingPath = followingPath;
-            followingPath = (state.stage.isPlaying && !state.ui.controlGame) || force;
+    public void moveCamera(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef, boolean force) {
+        boolean hadFov = hasFov;
+        hasFov = state.edit.fov != 1.0;
 
-            boolean startedFollowing = !wasFollowingPath && followingPath;
-            boolean stoppedFollowing = wasFollowingPath && !followingPath;
-            boolean fovEnabled = !hadFov && hasFov;
-            boolean fovDisabled = hadFov && !hasFov;
+        boolean wasFollowingPath = followingPath;
+        followingPath = (state.stage.isPlaying && !state.ui.controlGame) || force;
 
-            Vector3d position = new Vector3d(
-                    state.edit.cameraPosition.x(), state.edit.cameraPosition.y(), state.edit.cameraPosition.z()
-            );
-            Vector3f rotation = new Vector3f(
-                    (float) state.edit.cameraPosition.yaw(),
-                    (float) state.edit.cameraPosition.pitch(),
-                    (float) Math.toRadians(-state.edit.roll)
-            );
+        boolean startedFollowing = !wasFollowingPath && followingPath;
+        boolean stoppedFollowing = wasFollowingPath && !followingPath;
+        boolean fovEnabled = !hadFov && hasFov;
+        boolean fovDisabled = hadFov && !hasFov;
 
-            PacketHandler packetHandler = playerRef.getPacketHandler();
+        Vector3d position = new Vector3d(
+                state.edit.cameraPosition.x(), state.edit.cameraPosition.y(), state.edit.cameraPosition.z()
+        );
+        Rotation3f rotation = new Rotation3f(
+                (float) state.edit.cameraPosition.yaw(),
+                (float) state.edit.cameraPosition.pitch(),
+                (float) Math.toRadians(-state.edit.roll)
+        );
+
+        PacketHandler packetHandler = playerRef.getPacketHandler();
+        if (!cutScene) {
             packetHandler.writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
+        }
 
-            if (stoppedFollowing || fovEnabled) {
-                setDefaultCamera(packetHandler);
-                teleportPlayer(packetHandler, position, rotation);
-            } else if ((startedFollowing || fovDisabled) && followingPath && !hasFov) {
-                offset = 1000;
-                lastRotation = rotation;
-            }
+        if (stoppedFollowing || fovEnabled) {
+            setDefaultCamera(packetHandler);
+            teleportPlayer(packetHandler, position, rotation);
+        } else if ((startedFollowing || fovDisabled) && followingPath && !hasFov &&
+                   (state.cutSceneMetadata == null || cutScene)) {
+            offset = 1000;
+            lastRotation = rotation;
+        }
 
-            if (followingPath) {
-                boolean useSmootherRotation = offset != 0;
+        if (followingPath) {
+            boolean useSmootherRotation = offset != 0;
+            if (!cutScene) {
                 teleportPlayer(
                         packetHandler,
                         new Vector3d(0, -offset, 0).add(position),
                         useSmootherRotation ? lastRotation : rotation
                 );
+            }
 
-                state.position.x = position.x;
-                state.position.y = position.y;
-                state.position.z = position.z;
+            state.position.x = position.x;
+            state.position.y = position.y;
+            state.position.z = position.z;
 
-                state.position.bodyPitch = 0;
-                state.position.bodyRoll = rotation.getYaw();
-                state.position.bodyYaw = 0;
+            state.position.bodyPitch = 0;
+            state.position.bodyRoll = rotation.yaw();
+            state.position.bodyYaw = 0;
 
-                state.position.headPitch = rotation.getPitch();
-                state.position.headYaw = rotation.getYaw();
-                state.position.headRoll = rotation.getRoll();
+            state.position.headPitch = rotation.pitch();
+            state.position.headYaw = rotation.yaw();
+            state.position.headRoll = rotation.roll();
 
-                if (useSmootherRotation) {
-                    ServerCameraSettings settings = new ServerCameraSettings();
+            if (useSmootherRotation) {
+                ServerCameraSettings settings = new ServerCameraSettings();
 
-                    settings.isFirstPerson = false;
+                settings.isFirstPerson = false;
+
+                if (cutScene) {
+                    settings.position = PositionUtil.toPositionPacket(position);
+                    settings.positionType = PositionType.Custom;
+                } else {
                     settings.positionOffset = PositionUtil.toPositionPacket(new Vector3d(0, offset + 1.6, 0));
-                    settings.rotation = PositionUtil.toDirectionPacket(rotation);
-                    settings.rotationType = RotationType.Custom;
+                }
+
+                settings.rotation = PositionUtil.toDirectionPacket(rotation);
+                settings.rotationType = RotationType.Custom;
+                settings.rotationLerpSpeed = 0.15f;
+                settings.positionLerpSpeed = 0.15f;
+
+                if (!cutScene) {
                     settings.sendMouseMotion = false;
-                    settings.rotationLerpSpeed = 0.8f;
-                    settings.positionLerpSpeed = 0.8f;
                     settings.skipCharacterPhysics = true;
                     settings.allowPitchControls = false;
-
-                    packetHandler.writeNoCache(new SetServerCamera(
-                            ClientCameraView.Custom, true, settings
-                    ));
                 }
+
+                packetHandler.writeNoCache(new SetServerCamera(
+                        ClientCameraView.Custom, true, settings
+                ));
             }
-        });
+        }
     }
 
     private void teleportPlayer(@Nonnull PacketHandler handler, @Nonnull Vector3d position,
-                                @Nonnull Vector3f rotation) {
-        Vector3f bodyRotation = new Vector3f(0.0F, rotation.getYaw(), 0.0F);
+                                @Nonnull Rotation3f rotation) {
+        Rotation3f bodyRotation = new Rotation3f(0.0F, rotation.yaw(), 0.0F);
 
         ModelTransform transform = new ModelTransform(
                 PositionUtil.toPositionPacket(position),
@@ -117,11 +131,15 @@ public class CameraManager {
     }
 
     public void setDefaultCamera(@Nonnull PacketHandler handler) {
-        handler.writeNoCache(new SetServerCamera(ClientCameraView.FirstPerson, true, null));
+        handler.writeNoCache(new SetServerCamera(ClientCameraView.FirstPerson, !cutScene, null));
         offset = 0;
     }
 
     public boolean isFollowingPath() {
         return followingPath;
+    }
+
+    public void setCutScene(boolean cutScene) {
+        this.cutScene = cutScene;
     }
 }

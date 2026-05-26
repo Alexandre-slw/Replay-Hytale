@@ -221,6 +221,46 @@ Group {
               )
             );
           }
+
+          Button #EditCutScene {
+            Anchor: (Width: 16, Height: 16, Left: 10);
+            Padding: (Vertical: 2);
+            TooltipText: %replay.editCutSceneSettings;
+            Style: (
+              Default: (
+                Background: (TexturePath: "Assets/Edit.png"),
+              ),
+              Hovered: (
+                Background: (TexturePath: "Assets/EditHovered.png"),
+              ),
+              Pressed: (
+                Background: (TexturePath: "Assets/EditPressed.png"),
+              ),
+              Sounds: (
+                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+              )
+            );
+          }
+
+          Button #ExportCutScene {
+            Anchor: (Width: 20, Height: 20, Left: 10);
+            Padding: (Vertical: 2);
+            TooltipText: %replay.exportForTriggerVolumes;
+            Style: (
+              Default: (
+                Background: (TexturePath: "Assets/TriggerVolumes.png"),
+              ),
+              Hovered: (
+                Background: (TexturePath: "Assets/TriggerVolumesHovered.png"),
+              ),
+              Pressed: (
+                Background: (TexturePath: "Assets/TriggerVolumesPressed.png"),
+              ),
+              Sounds: (
+                MouseHover: (SoundPath: $Sounds.@ButtonsLightHover, Volume: 6)
+              )
+            );
+          }
         }
 
         Group {
