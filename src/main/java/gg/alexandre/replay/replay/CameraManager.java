@@ -89,7 +89,7 @@ public class CameraManager {
                 settings.isFirstPerson = false;
 
                 if (cutScene) {
-                    settings.position = PositionUtil.toPositionPacket(position);
+                    settings.position = PositionUtil.toPositionPacket(position.add(0, 1.6, 0));
                     settings.positionType = PositionType.Custom;
                 } else {
                     settings.positionOffset = PositionUtil.toPositionPacket(new Vector3d(0, offset + 1.6, 0));
