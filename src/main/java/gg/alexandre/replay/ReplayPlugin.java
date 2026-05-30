@@ -5,9 +5,12 @@ import com.google.gson.GsonBuilder;
 import com.hypixel.hytale.builtin.triggervolumes.effect.TriggerEffect;
 import com.hypixel.hytale.component.ComponentRegistryProxy;
 import com.hypixel.hytale.component.ComponentType;
+import com.hypixel.hytale.event.EventPriority;
 import com.hypixel.hytale.server.core.event.events.ShutdownEvent;
+import com.hypixel.hytale.server.core.event.events.player.AddPlayerToWorldEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerConnectEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
+import com.hypixel.hytale.server.core.event.events.player.RemovedPlayerFromWorldEvent;
 import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
@@ -72,6 +75,12 @@ public class ReplayPlugin extends JavaPlugin {
         getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, DisconnectEvent::onPlayerDisconnect);
         getEventRegistry().registerGlobal(ShutdownEvent.class, DisconnectEvent::onShutdown);
         getEventRegistry().registerGlobal(PlayerConnectEvent.class, WatcherConnectEvent::onPlayerConnect);
+        getEventRegistry().registerGlobal(
+                EventPriority.LAST, AddPlayerToWorldEvent.class, WatcherConnectEvent::onAddPlayerToWorld
+        );
+        getEventRegistry().registerGlobal(
+                EventPriority.LAST, RemovedPlayerFromWorldEvent.class, WatcherConnectEvent::onRemovedPlayerFromWorld
+        );
 
         entityStoreRegistry.registerSystem(replayPlayer);
         entityStoreRegistry.registerSystem(recorder);
@@ -84,6 +93,7 @@ public class ReplayPlugin extends JavaPlugin {
         replayPlayer.setup();
 
         TriggerEffect.CODEC.register("CutScene", CutSceneEffect.class, CutSceneEffect.CODEC);
+
     }
 
     @Override
