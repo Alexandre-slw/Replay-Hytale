@@ -3,6 +3,7 @@ package gg.alexandre.replay.file;
 import com.google.gson.annotations.SerializedName;
 import gg.alexandre.replay.util.Position;
 
+import java.util.Map;
 import java.util.UUID;
 
 public class ReplayMetadata {
@@ -19,10 +20,14 @@ public class ReplayMetadata {
     @SerializedName("position")
     public Position position;
 
-    public ReplayMetadata(long durationMs, int ticks, Position position) {
+    @SerializedName("snapshotOffsets")
+    public Map<Integer, Integer> snapshotOffsets;
+
+    public ReplayMetadata(long durationMs, int ticks, Position position, Map<Integer, Integer> snapshotOffsets) {
         this.uuid = UUID.randomUUID();
         this.durationMs = durationMs;
         this.ticks = ticks;
         this.position = position;
+        this.snapshotOffsets = snapshotOffsets;
     }
 }

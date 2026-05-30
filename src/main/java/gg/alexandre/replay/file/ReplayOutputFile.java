@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -64,7 +65,14 @@ public class ReplayOutputFile {
         }
     }
 
-    public synchronized void startSnapshot(int tick) {
+    public synchronized void startSnapshot(int tick, Map<Integer, Integer> snapshotOffsets) {
+        try {
+            packetsOutputStream.flush();
+            snapshotOffsets.put(tick, packetsOutputStream.size());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         write(new StartSnapshotReplayPacket(), tick);
     }
 

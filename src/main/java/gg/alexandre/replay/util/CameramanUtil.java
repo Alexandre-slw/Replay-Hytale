@@ -23,13 +23,13 @@ import javax.annotation.Nonnull;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class DummyUtil {
+public class CameramanUtil {
 
     public static String NAME_PREFIX = "ReplayRecorder_";
 
     @Nonnull
-    public static CompletableFuture<PlayerRef> spawnDummyWatcher(@Nonnull PlayerRef targetPlayer, @Nonnull String name,
-                                                                 @Nonnull UUID uuid) {
+    public static CompletableFuture<PlayerRef> spawnCameraman(@Nonnull PlayerRef targetPlayer, @Nonnull String name,
+                                                              @Nonnull UUID uuid) {
         Ref<EntityStore> reference = targetPlayer.getReference();
         assert reference != null;
 
@@ -49,9 +49,11 @@ public class DummyUtil {
                 player.getClientViewRadius()
         ).thenApply(playerRef -> {
             Ref<EntityStore> ref = playerRef.getReference();
+            assert ref != null;
+            Store<EntityStore> store = ref.getStore();
 
-            ref.getStore().putComponent(ref, ReplayPlugin.TAG_TYPE, new TargetWatcherTag(reference));
-            makeGhost(ref.getStore(), ref);
+            store.putComponent(ref, ReplayPlugin.TAG_TYPE, new TargetWatcherTag(reference));
+            makeGhost(store, ref);
 
             return playerRef;
         });

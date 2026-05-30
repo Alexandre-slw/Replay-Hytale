@@ -15,7 +15,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import gg.alexandre.replay.commands.CutSceneCommand;
 import gg.alexandre.replay.commands.ReplayCommand;
-import gg.alexandre.replay.components.DummyViewerSystem;
+import gg.alexandre.replay.components.CameramanSystem;
 import gg.alexandre.replay.components.TargetWatcherTag;
 import gg.alexandre.replay.cutscene.CutSceneMetadata;
 import gg.alexandre.replay.cutscene.CutScenePlayer;
@@ -88,7 +88,7 @@ public class ReplayPlugin extends JavaPlugin {
 
     @Override
     protected void start() {
-        getEntityStoreRegistry().registerSystem(new DummyViewerSystem(
+        getEntityStoreRegistry().registerSystem(new CameramanSystem(
                 EntityTrackerSystems.EntityViewer.getComponentType(), TAG_TYPE
         ));
     }

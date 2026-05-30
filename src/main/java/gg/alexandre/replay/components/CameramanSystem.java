@@ -11,12 +11,12 @@ import com.hypixel.hytale.server.core.modules.entity.component.TransformComponen
 import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import gg.alexandre.replay.util.DummyUtil;
+import gg.alexandre.replay.util.CameramanUtil;
 
 import javax.annotation.Nonnull;
 import java.util.Set;
 
-public class DummyViewerSystem extends EntityTickingSystem<EntityStore> {
+public class CameramanSystem extends EntityTickingSystem<EntityStore> {
 
     private static final Set<Dependency<EntityStore>> DEPENDENCIES = Set.of(
             new SystemGroupDependency<>(Order.AFTER, EntityTrackerSystems.FIND_VISIBLE_ENTITIES_GROUP),
@@ -27,7 +27,7 @@ public class DummyViewerSystem extends EntityTickingSystem<EntityStore> {
     private final ComponentType<EntityStore, TargetWatcherTag> tagType;
     private final Query<EntityStore> query;
 
-    public DummyViewerSystem(
+    public CameramanSystem(
             @Nonnull ComponentType<EntityStore, EntityTrackerSystems.EntityViewer> viewerType,
             @Nonnull ComponentType<EntityStore, TargetWatcherTag> tagType
     ) {
@@ -57,30 +57,30 @@ public class DummyViewerSystem extends EntityTickingSystem<EntityStore> {
             return;
         }
 
-        Ref<EntityStore> dummyRef = chunk.getReferenceTo(index);
+        Ref<EntityStore> cameramanRef = chunk.getReferenceTo(index);
         World currentWorld = store.getExternalData().getWorld();
         World targetWorld = tag.target.getStore().getExternalData().getWorld();
 
         if (targetWorld != currentWorld) {
             cb.run(s -> {
-                Holder<EntityStore> holder = s.removeEntity(dummyRef, EntityStore.REGISTRY.newHolder(), RemoveReason.UNLOAD);
+                Holder<EntityStore> holder = s.removeEntity(cameramanRef, EntityStore.REGISTRY.newHolder(), RemoveReason.UNLOAD);
 
                 targetWorld.execute(() -> {
                     Store<EntityStore> worldStore = targetWorld.getEntityStore().getStore();
-                    Ref<EntityStore> newDummyRef = worldStore.addEntity(holder, AddReason.LOAD);
+                    Ref<EntityStore> newCameramanRef = worldStore.addEntity(holder, AddReason.LOAD);
 
-                    assert newDummyRef != null;
-                    DummyUtil.makeGhost(worldStore, newDummyRef);
+                    assert newCameramanRef != null;
+                    CameramanUtil.makeGhost(worldStore, newCameramanRef);
                 });
             });
             return;
         }
 
         TransformComponent targetTransform = store.getComponent(tag.target, TransformComponent.getComponentType());
-        TransformComponent dummyTransform = chunk.getComponent(index, TransformComponent.getComponentType());
+        TransformComponent cameramanTransform = chunk.getComponent(index, TransformComponent.getComponentType());
 
-        if (targetTransform != null && dummyTransform != null) {
-            dummyTransform.setPosition(targetTransform.getPosition());
+        if (targetTransform != null && cameramanTransform != null) {
+            cameramanTransform.setPosition(targetTransform.getPosition());
         }
 
         viewer.visible.add(tag.target);

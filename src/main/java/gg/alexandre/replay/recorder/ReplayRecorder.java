@@ -34,7 +34,7 @@ import gg.alexandre.replay.protocol.ReplayProtocol;
 import gg.alexandre.replay.protocol.packets.HytaleReplayPacket;
 import gg.alexandre.replay.repository.ReplayRepository;
 import gg.alexandre.replay.ui.SaveUI;
-import gg.alexandre.replay.util.DummyUtil;
+import gg.alexandre.replay.util.CameramanUtil;
 import gg.alexandre.replay.util.Position;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -45,6 +45,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,7 +81,7 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
 
         recordings.put(playerRef, data);
 
-        String name = DummyUtil.NAME_PREFIX + playerRef.getUsername();
+        String name = CameramanUtil.NAME_PREFIX + playerRef.getUsername();
         UUID uuid = UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8));
         watcherToPlayer.put(uuid, playerRef);
 
@@ -91,37 +92,71 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
         Store<EntityStore> store = ref.getStore();
         World world = store.getExternalData().getWorld();
 
-        data.file.startSnapshot(data.tick);
-        world.execute(() -> DummyUtil.spawnDummyWatcher(playerRef, name, uuid)
-                .thenAccept(watcher -> {
-                    data.file.endSnapshot(data.tick);
+        world.execute(() -> {
+            data.file.startSnapshot(data.tick, data.snapshotOffsets);
+            CameramanUtil.spawnCameraman(playerRef, name, uuid)
+                    .thenAccept(watcher -> {
+                        data.file.endSnapshot(data.tick);
 
-                    data.watcher = watcher;
+                        data.watcher = watcher;
 
-                    TransformComponent transform = store.getComponent(ref, TransformComponent.getComponentType());
-                    assert transform != null;
-                    data.position = new Position(
-                            transform.getPosition().x,
-                            transform.getPosition().y,
-                            transform.getPosition().z,
-                            0,
-                            0
-                    );
-
-                    data.file.configPhase(() -> {
-                        PacketHandler packetHandler = watcher.getPacketHandler();
-                        AssetRegistryLoader.sendAssets(packetHandler);
-                        I18nModule.get().sendTranslations(packetHandler, watcher.getLanguage());
-                        packetHandler.write(new WorldLoadProgress(
-                                Message.translation(
-                                        "client.general.worldLoad.loadingWorld"
-                                ).getFormattedMessage(),
+                        TransformComponent transform = store.getComponent(ref, TransformComponent.getComponentType());
+                        assert transform != null;
+                        data.position = new Position(
+                                transform.getPosition().x,
+                                transform.getPosition().y,
+                                transform.getPosition().z,
                                 0,
                                 0
-                        ));
-                        packetHandler.write(new WorldLoadFinished());
+                        );
+
+                        data.file.configPhase(() -> {
+                            PacketHandler packetHandler = watcher.getPacketHandler();
+                            AssetRegistryLoader.sendAssets(packetHandler);
+                            I18nModule.get().sendTranslations(packetHandler, watcher.getLanguage());
+                            packetHandler.write(new WorldLoadProgress(
+                                    Message.translation(
+                                            "client.general.worldLoad.loadingWorld"
+                                    ).getFormattedMessage(),
+                                    0,
+                                    0
+                            ));
+                            packetHandler.write(new WorldLoadFinished());
+                        });
                     });
-                }));
+        });
+    }
+
+    public void snapshot(@Nonnull PlayerRef playerRef) {
+        RecordingData data = recordings.get(playerRef);
+        if (data == null) {
+            return;
+        }
+
+        Ref<EntityStore> ref = playerRef.getReference();
+        assert ref != null;
+        Store<EntityStore> store = ref.getStore();
+        World world = store.getExternalData().getWorld();
+
+        String name = CameramanUtil.NAME_PREFIX + playerRef.getUsername();
+        UUID uuid = UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8));
+
+        world.execute(() -> {
+            if (data.watcher != null) {
+                Ref<EntityStore> watcherRef = data.watcher.getReference();
+                if (watcherRef != null && watcherRef.isValid()) {
+                    world.getEntityStore().getStore().removeEntity(watcherRef, RemoveReason.REMOVE);
+                }
+            }
+
+            data.file.startSnapshot(data.tick, data.snapshotOffsets);
+            CameramanUtil.spawnCameraman(playerRef, name, uuid)
+                    .thenAccept(watcher -> {
+                        data.file.endSnapshot(data.tick);
+
+                        data.watcher = watcher;
+                    });
+        });
     }
 
     public void stop(@Nonnull PlayerRef playerRef) {
@@ -149,7 +184,8 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
             ReplayMetadata metadata = new ReplayMetadata(
                     data.start.until(Instant.now()).toMillis(),
                     data.tick,
-                    data.position
+                    data.position,
+                    data.snapshotOffsets
             );
 
             data.file.close(metadata);
@@ -184,6 +220,11 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
             }
 
             data.tick++;
+
+            if (data.lastSnapshot.plus(20, ChronoUnit.SECONDS).isBefore(Instant.now())) {
+                data.lastSnapshot = Instant.now();
+                snapshot(watcherToPlayer.get(data.watcher.getUuid()));
+            }
         }
     }
 
@@ -204,10 +245,10 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
             }
 
             if (packet instanceof SpawnParticleSystem particleSystem &&
-                    "PlayerSpawn_Spawn".equals(particleSystem.particleSystemId) &&
-                    particleSystem.position != null &&
-                    particleSystem.position.x == 0 &&
-                    particleSystem.position.z == 0) {
+                "PlayerSpawn_Spawn".equals(particleSystem.particleSystemId) &&
+                particleSystem.position != null &&
+                particleSystem.position.x == 0 &&
+                particleSystem.position.z == 0) {
                 // Hide fake player spawn particles
                 particleSystem.scale = 0;
                 return;
