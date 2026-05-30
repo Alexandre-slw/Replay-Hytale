@@ -24,7 +24,7 @@ public class StartSnapshotReplayPacket implements ReplayPacket {
 
     @Override
     public void handle(@Nonnull PacketHandler packetHandler, @Nonnull ReplayState state) {
-
+        state.ignorePackets = state.processedSnapshot;
     }
 
 }

@@ -45,10 +45,11 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static gg.alexandre.replay.replay.ReplayPlayer.SNAPSHOT_INTERVAL_TICKS;
 
 public class ReplayRecorder extends TickingSystem<EntityStore> {
 
@@ -221,8 +222,8 @@ public class ReplayRecorder extends TickingSystem<EntityStore> {
 
             data.tick++;
 
-            if (data.lastSnapshot.plus(20, ChronoUnit.SECONDS).isBefore(Instant.now())) {
-                data.lastSnapshot = Instant.now();
+            if (data.tick - data.lastSnapshotTick >= SNAPSHOT_INTERVAL_TICKS) {
+                data.lastSnapshotTick = data.tick;
                 snapshot(watcherToPlayer.get(data.watcher.getUuid()));
             }
         }

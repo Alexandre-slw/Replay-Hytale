@@ -181,7 +181,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
 
     private void onPlayhead(@Nonnull UIEventContext<Data> context) {
         if (context.data.playhead > state.targetTick) {
-            state.targetTick = context.data.playhead;
+            player.goTo(state, context.data.playhead);
         }
 
         if (state.stage.isPlaying) {
@@ -199,11 +199,7 @@ public class EditorUI extends BaseUI<EditorUI.Data> {
             needToResume = false;
         }
 
-        if (context.data.playhead < state.targetTick) {
-            player.restart(state);
-        }
-
-        state.targetTick = context.data.playhead;
+        player.goTo(state, context.data.playhead);
 
         state.ui.draggingTick = context.data.playhead;
         state.ui.dragging = false;

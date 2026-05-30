@@ -6,8 +6,7 @@ import gg.alexandre.replay.util.Position;
 
 import javax.annotation.Nonnull;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.TreeMap;
 
 public class RecordingData {
 
@@ -18,8 +17,8 @@ public class RecordingData {
     public int tick = 0;
     public PlayerRef watcher;
 
-    public Instant lastSnapshot = Instant.now();
-    public Map<Integer, Integer> snapshotOffsets = new HashMap<>();
+    public int lastSnapshotTick = 0;
+    public TreeMap<Integer, Integer> snapshotOffsets = new TreeMap<>();
 
     public RecordingData(@Nonnull ReplayOutputFile file) {
         this.file = file;

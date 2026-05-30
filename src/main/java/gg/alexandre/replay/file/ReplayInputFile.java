@@ -64,6 +64,15 @@ public class ReplayInputFile {
         }
     }
 
+    public synchronized void skip(int offset) {
+        try {
+            packetsInputStream.skipNBytes(offset);
+            packet = null;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public synchronized boolean read(int tick) {
         try {
             if (packet == null) {

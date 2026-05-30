@@ -36,6 +36,9 @@ public class ReplayState {
     public CutSceneMetadata cutSceneMetadata;
     public boolean useEditor = true;
 
+    public boolean processedSnapshot;
+    public boolean ignorePackets;
+
     public Set<Integer> entityIds = new HashSet<>();
     public int clientId;
 

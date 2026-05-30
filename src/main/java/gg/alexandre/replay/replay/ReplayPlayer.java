@@ -41,6 +41,7 @@ import gg.alexandre.replay.ReplayPlugin;
 import gg.alexandre.replay.file.ReplayInputFile;
 import gg.alexandre.replay.protocol.ReplayPacket;
 import gg.alexandre.replay.protocol.ReplayProtocol;
+import gg.alexandre.replay.protocol.packets.EndSnapshotReplayPacket;
 import gg.alexandre.replay.protocol.packets.TickReplayPacket;
 import gg.alexandre.replay.replay.editor.properties.base.BaseProperty;
 import gg.alexandre.replay.replay.state.ReplayState;
@@ -62,9 +63,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 public class ReplayPlayer extends BasePlayer {
+
+    public static final int SNAPSHOT_INTERVAL_TICKS = 30 * 60 * 5;
 
     private final Path replayStatePath;
 
@@ -415,8 +420,7 @@ public class ReplayPlayer extends BasePlayer {
         }
     }
 
-    @Override
-    public void restart(@Nonnull ReplayState state) {
+    public void restart(@Nonnull ReplayState state, int tick) {
         if (!state.stage.hasStarted) {
             return;
         }
@@ -429,16 +433,27 @@ public class ReplayPlayer extends BasePlayer {
 
         try {
             state.file = new ReplayInputFile(state.path, protocol);
+
+            TreeMap<Integer, Integer> snapshotOffsets = state.file.getMetadata().snapshotOffsets;
+            if (snapshotOffsets != null) {
+                Map.Entry<Integer, Integer> entry = snapshotOffsets.floorEntry(tick);
+                if (entry != null) {
+                    state.file.skip(entry.getValue());
+                }
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
+        state.processedSnapshot = false;
         state.stage.clearedWorld = false;
         state.stage.sentJoinWorld = false;
         state.stage.clientReady = false;
         state.clientId = 0;
 
         super.restart(state);
+
+        state.targetTick = tick;
     }
 
     public void stop(@Nonnull PlayerRef playerRef) {
@@ -515,8 +530,11 @@ public class ReplayPlayer extends BasePlayer {
                        state.file.read(forceProcess ? Integer.MAX_VALUE : (int) state.targetTick) &&
                        processedPackets < (forceProcess ? 10 : 400)) {
                     ReplayPacket replayPacket = state.file.consumePacket();
-                    replayPacket.handle(packetHandler, state);
-                    processedPackets++;
+
+                    if (!state.ignorePackets || replayPacket instanceof EndSnapshotReplayPacket) {
+                        replayPacket.handle(packetHandler, state);
+                        processedPackets++;
+                    }
 
                     if (replayPacket instanceof TickReplayPacket) {
                         tickEditor(state, playerRef, world, false);
@@ -638,5 +656,14 @@ public class ReplayPlayer extends BasePlayer {
     @Override
     public UUID getSaveUUID(@NonNullDecl ReplayState state) {
         return state.file.getMetadata().uuid;
+    }
+
+    @Override
+    public void goTo(@Nonnull ReplayState state, int tick) {
+        if (tick < state.targetTick || tick - state.currentTick >= SNAPSHOT_INTERVAL_TICKS) {
+            restart(state, tick);
+        }
+
+        state.targetTick = tick;
     }
 }

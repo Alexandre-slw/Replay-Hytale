@@ -140,11 +140,7 @@ public class KeyframesRenderer extends BaseRenderer<EditorUI.Data> {
     }
 
     private void select(@Nonnull String propertyId, int tick, boolean select) {
-        if (tick < state.targetTick) {
-            player.restart(state);
-        }
-
-        state.targetTick = tick;
+        player.goTo(state, tick);
         state.stage.isPlaying = false;
 
         if (select) {

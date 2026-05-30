@@ -24,7 +24,6 @@ import gg.alexandre.replay.replay.state.ReplayState;
 import gg.alexandre.replay.replay.state.TimelineState;
 import gg.alexandre.replay.util.Position;
 import gg.alexandre.replay.util.PositionTracker;
-import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -225,7 +224,16 @@ public class CutScenePlayer extends BasePlayer {
     }
 
     @Override
-    public UUID getSaveUUID(@NonNullDecl ReplayState state) {
+    public UUID getSaveUUID(@Nonnull ReplayState state) {
         return state.cutSceneMetadata.uuid;
+    }
+
+    @Override
+    public void goTo(@Nonnull ReplayState state, int tick) {
+        if (tick < state.targetTick) {
+            restart(state);
+        }
+
+        state.targetTick = tick;
     }
 }

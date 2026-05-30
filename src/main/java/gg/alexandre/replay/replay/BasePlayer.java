@@ -180,4 +180,6 @@ public abstract class BasePlayer extends TickingSystem<EntityStore> {
 
     public abstract UUID getSaveUUID(@Nonnull ReplayState state);
 
+    public abstract void goTo(@Nonnull ReplayState state, int tick);
+
 }
