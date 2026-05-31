@@ -202,7 +202,6 @@ public class ReplayPlayer extends BasePlayer {
 
             if (packet instanceof UpdateTime updateTime) {
                 setDayTime(state, updateTime);
-                return false;
             }
 
             boolean filter = state.stage.isFilteringPackets && !state.stage.isProcessingPackets;
