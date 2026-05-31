@@ -1,8 +1,8 @@
 {
     "Group": "Alexandre",
     "Name": "Replay",
-    "Version": "0.3.1",
-    "Description": "Record, Replay and Edit your Hytale sessions.",
+    "Version": "1.0.0",
+    "Description": "Replay mod with in-game editor and Cut Scenes with Trigger Volumes support.",
     "Authors": [
         {
             "Name": "Alexandre",
@@ -17,6 +17,6 @@
         "Hytale:AssetModule": "*"
     },
     "OptionalDependencies": {},
-    "ServerVersion": ">=0.5.0",
+    "ServerVersion": "0.5.x",
     "Main": "gg.alexandre.replay.ReplayPlugin"
 }
