@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -124,11 +125,34 @@ public class ReplayOutputFile {
                 savePath.toFile()
         )))) {
             for (String file : files) {
-                FileInputStream fileInputStream = new FileInputStream(recordPath.resolve(file).toFile());
-                zipOutputStream.putNextEntry(new ZipEntry(file));
-                fileInputStream.transferTo(zipOutputStream);
+                File fileHandle = recordPath.resolve(file).toFile();
+
+                ZipEntry entry = new ZipEntry(file);
+                if (file.endsWith(".dat")) {
+                    CRC32 crc = new CRC32();
+
+                    try (FileInputStream crcInputStream = new FileInputStream(fileHandle)) {
+                        byte[] buffer = new byte[8192];
+                        int bytesRead;
+
+                        while ((bytesRead = crcInputStream.read(buffer)) != -1) {
+                            crc.update(buffer, 0, bytesRead);
+                        }
+                    }
+
+                    entry.setMethod(ZipEntry.STORED);
+                    entry.setSize(fileHandle.length());
+                    entry.setCompressedSize(fileHandle.length());
+                    entry.setCrc(crc.getValue());
+                }
+
+                zipOutputStream.putNextEntry(entry);
+
+                try (FileInputStream fileInputStream = new FileInputStream(fileHandle)) {
+                    fileInputStream.transferTo(zipOutputStream);
+                }
+
                 zipOutputStream.closeEntry();
-                fileInputStream.close();
             }
 
             String metadataString = ReplayPlugin.get().getGson().toJson(metadata);

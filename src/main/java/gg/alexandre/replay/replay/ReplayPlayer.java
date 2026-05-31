@@ -542,8 +542,9 @@ public class ReplayPlayer extends BasePlayer {
 
                 if (!state.ignorePackets || replayPacket instanceof EndSnapshotReplayPacket) {
                     replayPacket.handle(packetHandler, state);
-                    processedPackets++;
                 }
+
+                processedPackets++;
 
                 if (replayPacket instanceof TickReplayPacket) {
                     tickEditor(state, playerRef, world, false);
