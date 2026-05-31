@@ -529,27 +529,29 @@ public class ReplayPlayer extends BasePlayer {
             if (!state.stage.clearedWorld) {
                 clearWorld(playerRef, state);
                 return;
-            } else {
-                boolean forceProcess = !state.stage.restoredViewRadius;
+            }
 
-                int processedPackets = 0;
-                while (canProcessPackets(state) &&
-                       state.file.read(forceProcess ? Integer.MAX_VALUE : (int) state.targetTick) &&
-                       processedPackets < (forceProcess ? 10 : 400)) {
-                    ReplayPacket replayPacket = state.file.consumePacket();
+            boolean forceProcess = !state.stage.restoredViewRadius;
 
-                    if (!state.ignorePackets || replayPacket instanceof EndSnapshotReplayPacket) {
-                        replayPacket.handle(packetHandler, state);
-                        processedPackets++;
-                    }
+            int processedPackets = 0;
+            int packetLimit = forceProcess ? 10 : 400;
 
-                    if (replayPacket instanceof TickReplayPacket) {
-                        tickEditor(state, playerRef, world, false);
-                    }
+            while (canProcessPackets(state) &&
+                   state.file.read(forceProcess ? Integer.MAX_VALUE : (int) state.targetTick) &&
+                   processedPackets < packetLimit) {
+                ReplayPacket replayPacket = state.file.consumePacket();
+
+                if (!state.ignorePackets || replayPacket instanceof EndSnapshotReplayPacket) {
+                    replayPacket.handle(packetHandler, state);
+                    processedPackets++;
+                }
+
+                if (replayPacket instanceof TickReplayPacket) {
+                    tickEditor(state, playerRef, world, false);
                 }
             }
 
-            if ((!state.stage.sentJoinWorld || state.stage.isPlaying) && canProcessPackets(state)) {
+            if (processedPackets < packetLimit && (!state.stage.sentJoinWorld || state.stage.isPlaying) && canProcessPackets(state)) {
                 state.targetTick += Math.max(0.01, state.edit.speed);
                 state.targetTick = Math.min(state.targetTick, state.file.getMetadata().ticks);
             }
