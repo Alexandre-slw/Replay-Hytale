@@ -1,9 +1,6 @@
 package gg.alexandre.replay.cutscene;
 
-import gg.alexandre.replay.cutscene.codec.CameraCodec;
-import gg.alexandre.replay.cutscene.codec.PropertyCodec;
-import gg.alexandre.replay.cutscene.codec.RollCodec;
-import gg.alexandre.replay.cutscene.codec.SpeedCodec;
+import gg.alexandre.replay.cutscene.codec.*;
 
 import javax.annotation.Nonnull;
 

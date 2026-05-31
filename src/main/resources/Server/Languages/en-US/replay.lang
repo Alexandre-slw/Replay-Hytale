@@ -65,3 +65,4 @@ exportForTriggerVolumes=Export for Trigger Volumes
 editCutSceneSettings=Edit Cut Scene Settings
 triggerVolumesData=Trigger Volumes Data
 copyDataMessage=Copy this into the Data field of the Camera Effect of your Trigger Volume:
+time=Time

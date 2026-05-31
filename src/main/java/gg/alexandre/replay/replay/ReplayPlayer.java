@@ -20,6 +20,7 @@ import com.hypixel.hytale.protocol.packets.player.*;
 import com.hypixel.hytale.protocol.packets.setup.RequestAssets;
 import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
 import com.hypixel.hytale.protocol.packets.setup.ViewRadius;
+import com.hypixel.hytale.protocol.packets.world.UpdateTime;
 import com.hypixel.hytale.server.core.Constants;
 import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.Message;
@@ -32,6 +33,7 @@ import com.hypixel.hytale.server.core.io.handlers.SetupPacketHandler;
 import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
 import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.modules.i18n.I18nModule;
+import com.hypixel.hytale.server.core.modules.time.WorldTimeResource;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -195,6 +197,11 @@ public class ReplayPlayer extends BasePlayer {
 
             if (packet instanceof JoinWorld && !state.stage.sentJoinWorld) {
                 state.stage.sentJoinWorld = true;
+                return false;
+            }
+
+            if (packet instanceof UpdateTime updateTime) {
+                setDayTime(state, updateTime);
                 return false;
             }
 
@@ -578,6 +585,7 @@ public class ReplayPlayer extends BasePlayer {
 
         if (state.stage.isPlaying && !state.ui.controlGame) {
             state.edit.fov = 1.0;
+            state.edit.time = -1.0;
 
             for (BaseProperty<?> property : state.timeline.getProperties().values()) {
                 property.handle(state, state.targetTick);
@@ -591,6 +599,7 @@ public class ReplayPlayer extends BasePlayer {
         }
 
         handleTimeDilation(state, playerRef.getPacketHandler(), move);
+        handleDayTime(state, playerRef.getPacketHandler());
 
         if (move && state.timeline.getProperties().containsKey("camera")) {
             handleCameraPathDisplay(state, playerRef);
@@ -622,6 +631,23 @@ public class ReplayPlayer extends BasePlayer {
         if (state.timeDilation != speed) {
             state.timeDilation = speed;
             packetHandler.writeNoCache(new SetTimeDilation(Math.min(Math.max(0.0101f, speed), 4)));
+        }
+    }
+
+    private void handleDayTime(@Nonnull ReplayState state, @Nonnull PacketHandler packetHandler) {
+        if (state.edit.time >= 0) {
+            UpdateTime packet = new UpdateTime();
+            setDayTime(state, packet);
+            packetHandler.write(packet);
+        }
+    }
+
+    private void setDayTime(@Nonnull ReplayState state, @Nonnull UpdateTime packet) {
+        if (state.edit.time >= 0) {
+            Instant instant = WorldTimeResource.ZERO_YEAR.plusNanos(
+                    (long) (WorldTimeResource.NANOS_PER_DAY * state.edit.time)
+            );
+            packet.gameTime = new InstantData(instant.getEpochSecond(), instant.getNano());
         }
     }
 

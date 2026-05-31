@@ -183,6 +183,7 @@ public class CutScenePlayer extends BasePlayer {
     private void tickEditor(@Nonnull ReplayState state, @Nonnull PlayerRef playerRef) {
         state.edit.speed = 1.0;
         state.edit.roll = 0.0;
+        state.edit.time = -1.0;
 
         state.edit.cameraPosition = new Position(
                 state.position.x,

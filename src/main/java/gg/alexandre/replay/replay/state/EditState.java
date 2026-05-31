@@ -8,5 +8,6 @@ public class EditState {
     public double speed = 1.0;
     public double fov = 1.0;
     public double roll = 0.0;
+    public double time = -1.0;
 
 }
