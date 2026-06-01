@@ -16,7 +16,10 @@ import com.hypixel.hytale.protocol.packets.connection.Pong;
 import com.hypixel.hytale.protocol.packets.entities.EntityUpdates;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
 import com.hypixel.hytale.protocol.packets.interface_.*;
-import com.hypixel.hytale.protocol.packets.player.*;
+import com.hypixel.hytale.protocol.packets.player.ClientMovement;
+import com.hypixel.hytale.protocol.packets.player.ClientReady;
+import com.hypixel.hytale.protocol.packets.player.ClientTeleport;
+import com.hypixel.hytale.protocol.packets.player.JoinWorld;
 import com.hypixel.hytale.protocol.packets.setup.RequestAssets;
 import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
 import com.hypixel.hytale.protocol.packets.setup.ViewRadius;
@@ -471,6 +474,7 @@ public class ReplayPlayer extends BasePlayer {
         stop(state);
 
         if (playerRef.isValid()) {
+            state.cameraManager.setDefaultCamera(playerRef);
             transfer(playerRef, false);
         }
     }
@@ -592,8 +596,8 @@ public class ReplayPlayer extends BasePlayer {
             for (BaseProperty<?> property : state.timeline.getProperties().values()) {
                 property.handle(state, state.targetTick);
             }
-        } else {
-            playerRef.getPacketHandler().writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
+        } else if (!state.ui.controlGame) {
+            state.cameraManager.applyFreeCameraMovement(playerRef);
         }
 
         if (move) {

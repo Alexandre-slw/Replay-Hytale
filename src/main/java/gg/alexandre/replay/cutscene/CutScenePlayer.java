@@ -3,11 +3,9 @@ package gg.alexandre.replay.cutscene;
 import com.google.gson.Gson;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.protocol.SavedMovementStates;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
 import com.hypixel.hytale.protocol.packets.player.ClientMovement;
 import com.hypixel.hytale.protocol.packets.player.ClientTeleport;
-import com.hypixel.hytale.protocol.packets.player.SetMovementStates;
 import com.hypixel.hytale.protocol.packets.setup.SetTimeDilation;
 import com.hypixel.hytale.server.core.io.PacketHandler;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
@@ -128,7 +126,7 @@ public class CutScenePlayer extends BasePlayer {
             return;
         }
 
-        state.cameraManager.setDefaultCamera(playerRef.getPacketHandler());
+        state.cameraManager.setDefaultCamera(playerRef);
         playerRef.getPacketHandler().writeNoCache(new SetTimeDilation(1));
 
         state.overlay.clearImmediately(playerRef);
@@ -197,8 +195,8 @@ public class CutScenePlayer extends BasePlayer {
             for (BaseProperty<?> property : state.timeline.getProperties().values()) {
                 property.handle(state, state.targetTick);
             }
-        } else {
-            playerRef.getPacketHandler().writeNoCache(new SetMovementStates(new SavedMovementStates(true)));
+        } else if (!state.ui.controlGame) {
+            state.cameraManager.applyFreeCameraMovement(playerRef);
         }
 
         state.cameraManager.moveCamera(state, playerRef, false);
