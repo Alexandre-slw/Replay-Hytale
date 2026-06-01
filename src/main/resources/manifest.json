@@ -1,7 +1,7 @@
 {
     "Group": "Alexandre",
     "Name": "Replay",
-    "Version": "1.0.0",
+    "Version": "1.0.1",
     "Description": "Replay mod with in-game editor and Cut Scenes with Trigger Volumes support.",
     "Authors": [
         {
